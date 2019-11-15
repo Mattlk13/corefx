@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Windows.Foundation.Tests
 {
+    [ConditionalClass(typeof(PlatformDetection), nameof(PlatformDetection.IsWinUISupported))]
     public class RectTests
     {
         [Fact]
@@ -293,7 +294,7 @@ namespace Windows.Foundation.Tests
                 Assert.Equal(expected, rect.GetHashCode().Equals(other.GetHashCode()));
             }
         }
-        
+
         public static IEnumerable<object[]> ToString_TestData()
         {
             yield return new object[] { new Rect(1, 2, 3, 4), null, null, "1,2,3,4" };
@@ -307,6 +308,7 @@ namespace Windows.Foundation.Tests
         }
 
         [Theory]
+        [ActiveIssue(41849)]
         [MemberData(nameof(ToString_TestData))]
         public void ToString_Invoke_ReturnsExpected(Rect rect, string format, IFormatProvider formatProvider, string expected)
         {

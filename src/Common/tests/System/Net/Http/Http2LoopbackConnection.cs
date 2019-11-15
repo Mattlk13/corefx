@@ -218,7 +218,7 @@ namespace System.Net.Test.Common
         public async Task ReadRstStreamAsync(int streamId)
         {
             Frame frame = await ReadFrameAsync(Timeout);
-            
+
             if (frame == null)
             {
                 throw new Exception($"Expected RST_STREAM, saw EOF");
@@ -236,33 +236,16 @@ namespace System.Net.Test.Common
         }
 
         // Wait for the client to close the connection, e.g. after the HttpClient is disposed.
-        public async Task WaitForClientDisconnectAsync()
+        public async Task WaitForClientDisconnectAsync(bool ignoreUnexpectedFrames = false)
         {
-            Frame frame = await ReadFrameAsync(Timeout);
-            Assert.Null(frame);
-        }
-
-        public void ShutdownSend()
-        {
-            _connectionSocket.Shutdown(SocketShutdown.Send);
-        }
-
-        // This will wait for the client to close the connection,
-        // and ignore any meaningless frames -- i.e. WINDOW_UPDATE or expected SETTINGS ACK --
-        // that we see while waiting for the client to close.
-        // Only call this after sending a GOAWAY.
-        public async Task WaitForConnectionShutdownAsync(bool ignoreUnexpectedFrames = false)
-        {
-            // Shutdown our send side, so the client knows there won't be any more frames coming.
-            ShutdownSend();
-
             IgnoreWindowUpdates();
+
             Frame frame = await ReadFrameAsync(Timeout).ConfigureAwait(false);
             if (frame != null)
             {
                 if (!ignoreUnexpectedFrames)
                 {
-                    throw new Exception($"Unexpected frame received while waiting for client shutdown: {frame}");
+                    throw new Exception($"Unexpected frame received while waiting for client disconnect: {frame}");
                 }
             }
 
@@ -273,6 +256,22 @@ namespace System.Net.Test.Common
 
             _ignoredSettingsAckPromise = null;
             _ignoreWindowUpdates = false;
+        }
+
+        public void ShutdownSend()
+        {
+            _connectionSocket.Shutdown(SocketShutdown.Send);
+        }
+
+        // This will cause a server-initiated shutdown of the connection.
+        // For normal operation, you should send a GOAWAY and complete any remaining streams
+        // before calling this method.
+        public async Task WaitForConnectionShutdownAsync(bool ignoreUnexpectedFrames = false)
+        {
+            // Shutdown our send side, so the client knows there won't be any more frames coming.
+            ShutdownSend();
+
+            await WaitForClientDisconnectAsync(ignoreUnexpectedFrames: ignoreUnexpectedFrames);
         }
 
         // This is similar to WaitForConnectionShutdownAsync but will send GOAWAY for you
@@ -296,14 +295,7 @@ namespace System.Net.Test.Common
 
         public async Task<int> ReadRequestHeaderAsync()
         {
-            // Receive HEADERS frame for request.
-            Frame frame = await ReadFrameAsync(Timeout).ConfigureAwait(false);
-            if (frame == null)
-            {
-                throw new IOException("Failed to read Headers frame.");
-            }
-            Assert.Equal(FrameType.Headers, frame.Type);
-            Assert.Equal(FrameFlags.EndHeaders | FrameFlags.EndStream, frame.Flags);
+            HeadersFrame frame = await ReadRequestHeaderFrameAsync();
             return frame.StreamId;
         }
 
@@ -670,11 +662,58 @@ namespace System.Net.Test.Common
             return ReadBodyAsync();
         }
 
-        public override Task SendResponseAsync(HttpStatusCode statusCode = HttpStatusCode.OK, IList<HttpHeaderData> headers = null, string body = null, bool isFinal = true, int requestId = 0)
+        public override async Task SendResponseAsync(HttpStatusCode? statusCode = null, IList<HttpHeaderData> headers = null, string body = null, bool isFinal = true, int requestId = 0)
         {
+            // TODO: Header continuation support.
+            Assert.NotNull(statusCode);
+
+            if (headers != null)
+            {
+                bool hasDate = false;
+                bool stripContentLength = false;
+                foreach (HttpHeaderData headerData in headers)
+                {
+                    // Check if we should inject Date header to match HTTP/1.
+                    if (headerData.Name.Equals("Date", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasDate = true;
+                    }
+                    else if (headerData.Name.Equals("Content-Length") && headerData.Value == null)
+                    {
+                        // Hack used for Http/1 to avoid sending content-length header.
+                        stripContentLength = true;
+                    }
+                }
+
+                if (!hasDate || stripContentLength)
+                {
+                    var newHeaders = new List<HttpHeaderData>();
+                    foreach (HttpHeaderData headerData in headers)
+                    {
+                        if (headerData.Name.Equals("Content-Length") && headerData.Value == null)
+                        {
+                            continue;
+                        }
+
+                        newHeaders.Add(headerData);
+                    }
+                    newHeaders.Add(new HttpHeaderData("Date", $"{DateTimeOffset.UtcNow:R}"));
+                    headers = newHeaders;
+                }
+            }
+
             int streamId = requestId == 0 ? _lastStreamId : requestId;
             bool endHeaders = body != null || isFinal;
-            return SendResponseHeadersAsync(streamId, endStream : isFinal, statusCode, isTrailingHeader : false, endHeaders : endHeaders, headers);
+
+            if (string.IsNullOrEmpty(body))
+            {
+                await SendResponseHeadersAsync(streamId, endStream: isFinal, (HttpStatusCode)statusCode, endHeaders: endHeaders, headers: headers);
+            }
+            else
+            {
+                await SendResponseHeadersAsync(streamId, endStream: false, (HttpStatusCode)statusCode, endHeaders: endHeaders, headers: headers);
+                await SendResponseBodyAsync(body, isFinal: isFinal, requestId: streamId);
+            }
         }
 
         public override Task SendResponseHeadersAsync(HttpStatusCode statusCode = HttpStatusCode.OK, IList<HttpHeaderData> headers = null, int requestId = 0)

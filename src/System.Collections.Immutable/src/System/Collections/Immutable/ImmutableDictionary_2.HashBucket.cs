@@ -26,7 +26,7 @@ namespace System.Collections.Immutable
             /// Any other elements that hash to the same value.
             /// </summary>
             /// <value>
-            /// This is null if and only if the entire bucket is empty (including <see cref="_firstValue"/>).  
+            /// This is null if and only if the entire bucket is empty (including <see cref="_firstValue"/>).
             /// It's empty if <see cref="_firstValue"/> has an element but no additional elements.
             /// </value>
             private readonly ImmutableList<KeyValuePair<TKey, TValue>>.Node _additionalElements;
@@ -186,7 +186,7 @@ namespace System.Collections.Immutable
                             result = OperationResult.NoChangeRequired;
                             return this;
                         case KeyCollisionBehavior.ThrowIfValueDifferent:
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
                             ref readonly var existingEntry = ref _additionalElements.ItemRef(keyCollisionIndex);
 #else
                             var existingEntry = _additionalElements[keyCollisionIndex];
@@ -227,7 +227,7 @@ namespace System.Collections.Immutable
                     if (_additionalElements.IsEmpty)
                     {
                         result = OperationResult.SizeChanged;
-                        return new HashBucket();
+                        return default;
                     }
                     else
                     {
@@ -281,7 +281,7 @@ namespace System.Collections.Immutable
                     return false;
                 }
 
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
                 value = _additionalElements.ItemRef(index).Value;
 #else
                 value = _additionalElements[index].Value;
@@ -324,7 +324,7 @@ namespace System.Collections.Immutable
                     return false;
                 }
 
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
                 actualKey = _additionalElements.ItemRef(index).Key;
 #else
                 actualKey = _additionalElements[index].Key;
@@ -415,15 +415,12 @@ namespace System.Collections.Immutable
                 {
                     get
                     {
-                        switch (_currentPosition)
+                        return _currentPosition switch
                         {
-                            case Position.First:
-                                return _bucket._firstValue;
-                            case Position.Additional:
-                                return _additionalEnumerator.Current;
-                            default:
-                                throw new InvalidOperationException();
-                        }
+                            Position.First => _bucket._firstValue,
+                            Position.Additional => _additionalEnumerator.Current,
+                            _ => throw new InvalidOperationException(),
+                        };
                     }
                 }
 
@@ -473,7 +470,7 @@ namespace System.Collections.Immutable
                 public void Reset()
                 {
                     // We can safely dispose of the additional enumerator because if the client reuses this enumerator
-                    // we'll acquire a new one anyway (and so for that matter we should be sure to dispose of this).  
+                    // we'll acquire a new one anyway (and so for that matter we should be sure to dispose of this).
                     _additionalEnumerator.Dispose();
                     _currentPosition = Position.BeforeFirst;
                 }

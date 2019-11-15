@@ -3,10 +3,9 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Globalization;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace System
 {
@@ -17,7 +16,7 @@ namespace System
         //
         private void CreateThis(string? uri, bool dontEscape, UriKind uriKind)
         {
-            // if (!Enum.IsDefined(typeof(UriKind), uriKind)) -- We currently believe that Enum.IsDefined() is too slow 
+            // if (!Enum.IsDefined(typeof(UriKind), uriKind)) -- We currently believe that Enum.IsDefined() is too slow
             // to be used here.
             if ((int)uriKind < (int)UriKind.RelativeOrAbsolute || (int)uriKind > (int)UriKind.Relative)
             {
@@ -44,7 +43,7 @@ namespace System
                 if (IsImplicitFile)
                 {
                     // V1 compat
-                    // A relative Uri wins over implicit UNC path unless the UNC path is of the form "\\something" and 
+                    // A relative Uri wins over implicit UNC path unless the UNC path is of the form "\\something" and
                     // uriKind != Absolute
                     // A relative Uri wins over implicit Unix path unless uriKind == Absolute
                     if (NotAny(Flags.DosPath) &&
@@ -82,7 +81,7 @@ namespace System
 
             bool hasUnicode = false;
 
-            _iriParsing = (s_IriParsing && ((_syntax == null) || _syntax.InFact(UriSyntaxFlags.AllowIriParsing)));
+            _iriParsing = (IriParsing && ((_syntax == null) || _syntax.InFact(UriSyntaxFlags.AllowIriParsing)));
 
             if (_iriParsing &&
                 (CheckForUnicode(_string) || CheckForEscapedUnreserved(_string)))
@@ -164,14 +163,14 @@ namespace System
                         }
                         else if (uriKind == UriKind.Relative)
                         {
-                            // Here we know that custom parser can create an absolute Uri, but the user has requested only a 
+                            // Here we know that custom parser can create an absolute Uri, but the user has requested only a
                             // relative one
                             e = GetException(ParsingError.CannotCreateRelative);
                         }
 
                         if (_iriParsing && hasUnicode)
                         {
-                            // In this scenario we need to parse the whole string 
+                            // In this scenario we need to parse the whole string
                             try
                             {
                                 EnsureParseRemaining();
@@ -186,7 +185,7 @@ namespace System
                     // will return from here
                 }
             }
-            // If we encountered any parsing errors that indicate this may be a relative Uri, 
+            // If we encountered any parsing errors that indicate this may be a relative Uri,
             // and we'll allow relative Uri's, then create one.
             else if (err != ParsingError.None && uriKind != UriKind.Absolute
                 && err <= ParsingError.LastRelativeUriOkErrIndex)
@@ -250,7 +249,7 @@ namespace System
                         && tempPtr[i + 1] >= '0' && tempPtr[i + 1] <= '7') // max 0x7F
                     {
                         char ch = UriHelper.EscapedAscii(tempPtr[i + 1], tempPtr[i + 2]);
-                        if (ch != c_DummyChar && UriHelper.Is3986Unreserved(ch))
+                        if (ch != c_DummyChar && UriHelper.IsUnreserved(ch))
                         {
                             return true;
                         }
@@ -464,7 +463,7 @@ namespace System
 
                 // User, Path, Query or Fragment may have some non escaped characters
                 if (((nonCanonical & Flags.E_CannotDisplayCanonical & (Flags.E_UserNotCanonical | Flags.E_PathNotCanonical |
-                                        Flags.E_QueryNotCanonical | Flags.E_FragmentNotCanonical)) != Flags.Zero))                   
+                                        Flags.E_QueryNotCanonical | Flags.E_FragmentNotCanonical)) != Flags.Zero))
                 {
                     return false;
                 }
@@ -527,13 +526,13 @@ namespace System
                     == (Flags.SchemeNotCanonical | Flags.AuthorityFound))
                 {
                     idx = (ushort)_syntax.SchemeName.Length;
-                    while (str[idx++] != ':') ;
+                    while (str[idx++] != ':');
                     if (idx + 1 >= _string.Length || str[idx] != '/' || str[idx + 1] != '/')
                         return false;
                 }
             }
             //
-            // May be scheme, host, port or path need some canonicalization but still the uri string is found to be a 
+            // May be scheme, host, port or path need some canonicalization but still the uri string is found to be a
             // "well formed" one
             //
             return true;
@@ -547,75 +546,39 @@ namespace System
             if (stringToUnescape.Length == 0)
                 return string.Empty;
 
-            unsafe
-            {
-                fixed (char* pStr = stringToUnescape)
-                {
-                    int position;
-                    for (position = 0; position < stringToUnescape.Length; ++position)
-                        if (pStr[position] == '%')
-                            break;
+            int position = stringToUnescape.IndexOf('%');
+            if (position == -1)
+                return stringToUnescape;
 
-                    if (position == stringToUnescape.Length)
-                        return stringToUnescape;
+            var vsb = new ValueStringBuilder(stackalloc char[256]);
+            vsb.EnsureCapacity(stringToUnescape.Length);
 
-                    UnescapeMode unescapeMode = UnescapeMode.Unescape | UnescapeMode.UnescapeAll;
-                    position = 0;
-                    char[] dest = new char[stringToUnescape.Length];
-                    dest = UriHelper.UnescapeString(stringToUnescape, 0, stringToUnescape.Length, dest, ref position,
-                        c_DummyChar, c_DummyChar, c_DummyChar, unescapeMode, null, false);
-                    return new string(dest, 0, position);
-                }
-            }
+            vsb.Append(stringToUnescape.AsSpan(0, position));
+            UriHelper.UnescapeString(
+                stringToUnescape, position, stringToUnescape.Length, ref vsb,
+                c_DummyChar, c_DummyChar, c_DummyChar,
+                UnescapeMode.Unescape | UnescapeMode.UnescapeAll,
+                syntax: null, isQuery: false);
+
+            return vsb.ToString();
         }
 
-        //
         // Where stringToEscape is intended to be a completely unescaped URI string.
         // This method will escape any character that is not a reserved or unreserved character, including percent signs.
-        // Note that EscapeUriString will also do not escape a '#' sign.
-        //
-        public static string EscapeUriString(string stringToEscape)
-        {
-            if ((object)stringToEscape == null)
-                throw new ArgumentNullException(nameof(stringToEscape));
+        public static string EscapeUriString(string stringToEscape) =>
+            UriHelper.EscapeString(stringToEscape, checkExistingEscaped: false, UriHelper.UnreservedReservedTable);
 
-            if (stringToEscape.Length == 0)
-                return string.Empty;
-
-            int position = 0;
-            char[]? dest = UriHelper.EscapeString(stringToEscape, 0, stringToEscape.Length, null, ref position, true,
-                c_DummyChar, c_DummyChar, c_DummyChar);
-            if ((object?)dest == null)
-                return stringToEscape;
-            return new string(dest, 0, position);
-        }
-
-        //
         // Where stringToEscape is intended to be URI data, but not an entire URI.
         // This method will escape any character that is not an unreserved character, including percent signs.
-        //
-        public static string EscapeDataString(string stringToEscape)
-        {
-            if ((object)stringToEscape == null)
-                throw new ArgumentNullException(nameof(stringToEscape));
-
-            if (stringToEscape.Length == 0)
-                return string.Empty;
-
-            int position = 0;
-            char[]? dest = UriHelper.EscapeString(stringToEscape, 0, stringToEscape.Length, null, ref position, false,
-                c_DummyChar, c_DummyChar, c_DummyChar);
-            if (dest == null)
-                return stringToEscape;
-            return new string(dest, 0, position);
-        }
+        public static string EscapeDataString(string stringToEscape) =>
+            UriHelper.EscapeString(stringToEscape, checkExistingEscaped: false, UriHelper.UnreservedTable);
 
         //
         // Cleans up the specified component according to Iri rules
         // a) Chars allowed by iri in a component are unescaped if found escaped
         // b) Bidi chars are stripped
         //
-        // should be called only if IRI parsing is switched on 
+        // should be called only if IRI parsing is switched on
         internal unsafe string EscapeUnescapeIri(string input, int start, int end, UriComponents component)
         {
             fixed (char* pInput = input)
@@ -637,7 +600,7 @@ namespace System
         //
         internal static Uri? CreateHelper(string uriString, bool dontEscape, UriKind uriKind, ref UriFormatException? e)
         {
-            // if (!Enum.IsDefined(typeof(UriKind), uriKind)) -- We currently believe that Enum.IsDefined() is too slow 
+            // if (!Enum.IsDefined(typeof(UriKind), uriKind)) -- We currently believe that Enum.IsDefined() is too slow
             // to be used here.
             if ((int)uriKind < (int)UriKind.RelativeOrAbsolute || (int)uriKind > (int)UriKind.Relative)
             {
@@ -684,8 +647,8 @@ namespace System
         }
 
         //
-        // Resolves into either baseUri or relativeUri according to conditions OR if not possible it uses newUriString 
-        // to  return combined URI strings from both Uris 
+        // Resolves into either baseUri or relativeUri according to conditions OR if not possible it uses newUriString
+        // to  return combined URI strings from both Uris
         // otherwise if e != null on output the operation has failed
         //
         internal static Uri? ResolveHelper(Uri baseUri, Uri? relativeUri, ref string? newUriString, ref bool userEscaped,
@@ -781,19 +744,12 @@ namespace System
         {
             if (format == UriFormat.UriEscaped)
             {
-                if (_string.Length == 0)
-                    return string.Empty;
-                int position = 0;
-                char[]? dest = UriHelper.EscapeString(_string, 0, _string.Length, null, ref position, true,
-                    c_DummyChar, c_DummyChar, '%');
-                if ((object?)dest == null)
-                    return _string;
-                return new string(dest, 0, position);
+                return UriHelper.EscapeString(_string, checkExistingEscaped: true, UriHelper.UnreservedReservedTable);
             }
-
             else if (format == UriFormat.Unescaped)
+            {
                 return UnescapeDataString(_string);
-
+            }
             else if (format == UriFormat.SafeUnescaped)
             {
                 if (_string.Length == 0)
@@ -806,7 +762,9 @@ namespace System
                 return new string(dest, 0, position);
             }
             else
+            {
                 throw new ArgumentOutOfRangeException(nameof(format));
+            }
         }
 
         //
@@ -970,10 +928,6 @@ namespace System
             if (otherUri.OriginalStringSwitched)
             {
                 _originalUnicodeString = otherUri._originalUnicodeString;
-            }
-            if (otherUri.AllowIdn && (otherUri.InFact(Flags.IdnHost) || otherUri.InFact(Flags.UnicodeHost)))
-            {
-                _dnsSafeHost = otherUri._dnsSafeHost;
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -15,33 +15,33 @@ namespace System.Diagnostics
     /// <summary>
     /// Activity represents operation with context to be used for logging.
     /// Activity has operation name, Id, start time and duration, tags and baggage.
-    ///  
+    ///
     /// Current activity can be accessed with static AsyncLocal variable Activity.Current.
-    /// 
+    ///
     /// Activities should be created with constructor, configured as necessary
     /// and then started with Activity.Start method which maintains parent-child
     /// relationships for the activities and sets Activity.Current.
-    /// 
+    ///
     /// When activity is finished, it should be stopped with static Activity.Stop method.
-    /// 
+    ///
     /// No methods on Activity allow exceptions to escape as a response to bad inputs.
     /// They are thrown and caught (that allows Debuggers and Monitors to see the error)
     /// but the exception is suppressed, and the operation does something reasonable (typically
-    /// doing nothing).  
+    /// doing nothing).
     /// </summary>
     public partial class Activity
     {
 #pragma warning disable CA1825 // Array.Empty<T>() doesn't exist in all configurations
-        private static readonly IEnumerable<KeyValuePair<string, string>> s_emptyBaggageTags = new KeyValuePair<string, string>[0];
+        private static readonly IEnumerable<KeyValuePair<string, string?>> s_emptyBaggageTags = new KeyValuePair<string, string?>[0];
 #pragma warning restore CA1825
 
         private const byte ActivityTraceFlagsIsSet = 0b_1_0000000; // Internal flag to indicate if flags have been set
         private const int RequestIdMaxLength = 1024;
 
-        // Used to generate an ID it represents the machine and process we are in.  
+        // Used to generate an ID it represents the machine and process we are in.
         private static readonly string s_uniqSuffix = "-" + GetRandomNumber().ToString("x") + ".";
 
-        // A unique number inside the appdomain, randomized between appdomains. 
+        // A unique number inside the appdomain, randomized between appdomains.
         // Int gives enough randomization and keeps hex-encoded s_currentRootId 8 chars long for most applications
         private static long s_currentRootId = (uint)GetRandomNumber();
         private static ActivityIdFormat s_defaultIdFormat;
@@ -49,49 +49,49 @@ namespace System.Diagnostics
         /// Normally if the ParentID is defined, the format of that is used to determine the
         /// format used by the Activity.   However if ForceDefaultFormat is set to true, the
         /// ID format will always be the DefaultIdFormat even if the ParentID is define and is
-        /// a different format. 
+        /// a different format.
         /// </summary>
         public static bool ForceDefaultIdFormat { get; set; }
 
-        private string _traceState;
+        private string? _traceState;
         private State _state;
         private int _currentChildId;  // A unique number for all children of this activity.
 
-        // State associated with ID. 
-        private string _id;
-        private string _rootId;
+        // State associated with ID.
+        private string? _id;
+        private string? _rootId;
         // State associated with ParentId.
-        private string _parentId;
+        private string? _parentId;
 
         // W3C formats
-        private string _parentSpanId;
-        private string _traceId;
-        private string _spanId;
+        private string? _parentSpanId;
+        private string? _traceId;
+        private string? _spanId;
 
         private byte _w3CIdFlags;
 
-        private KeyValueListNode _tags;
-        private KeyValueListNode _baggage;
+        private KeyValueListNode? _tags;
+        private KeyValueListNode? _baggage;
 
         /// <summary>
-        /// An operation name is a COARSEST name that is useful grouping/filtering. 
+        /// An operation name is a COARSEST name that is useful grouping/filtering.
         /// The name is typically a compile-time constant.   Names of Rest APIs are
         /// reasonable, but arguments (e.g. specific accounts etc), should not be in
-        /// the name but rather in the tags.  
+        /// the name but rather in the tags.
         /// </summary>
-        public string OperationName { get; }
+        public string OperationName { get; } = null!;
 
         /// <summary>
-        /// If the Activity that created this activity is from the same process you can get 
+        /// If the Activity that created this activity is from the same process you can get
         /// that Activity with Parent.  However, this can be null if the Activity has no
         /// parent (a root activity) or if the Parent is from outside the process.
         /// </summary>
         /// <seealso cref="ParentId"/>
-        public Activity Parent { get; private set; }
+        public Activity? Parent { get; private set; }
 
         /// <summary>
         /// If the Activity has ended (<see cref="Stop"/> or <see cref="SetEndTime"/> was called) then this is the delta
-        /// between <see cref="StartTimeUtc"/> and end.   If Activity is not ended and <see cref="SetEndTime"/> was not called then this is 
+        /// between <see cref="StartTimeUtc"/> and end.   If Activity is not ended and <see cref="SetEndTime"/> was not called then this is
         /// <see cref="TimeSpan.Zero"/>.
         /// </summary>
         public TimeSpan Duration { get; private set; }
@@ -104,8 +104,8 @@ namespace System.Diagnostics
 
         /// <summary>
         /// This is an ID that is specific to a particular request.   Filtering
-        /// to a particular ID insures that you get only one request that matches.  
-        /// Id has a hierarchical structure: '|root-id.id1_id2.id3_' Id is generated when 
+        /// to a particular ID insures that you get only one request that matches.
+        /// Id has a hierarchical structure: '|root-id.id1_id2.id3_' Id is generated when
         /// <see cref="Start"/> is called by appending suffix to Parent.Id
         /// or ParentId; Activity has no Id until it started
         /// <para/>
@@ -118,18 +118,18 @@ namespace System.Diagnostics
         ///  - '|a000b421-5d183ab6.1.8e2d4c28_' - Id of the grand child activity. It was started in another process and ends with '_'<para />
         /// 'a000b421-5d183ab6' is a <see cref="RootId"/> for the first Activity and all its children
         /// </example>
-        public string Id
+        public string? Id
         {
 #if ALLOW_PARTIALLY_TRUSTED_CALLERS
         [System.Security.SecuritySafeCriticalAttribute]
 #endif
             get
             {
-                // if we represented it as a traceId-spanId, convert it to a string.  
-                // We can do this concatenation with a stackalloced Span<char> if we actually used Id a lot.  
+                // if we represented it as a traceId-spanId, convert it to a string.
+                // We can do this concatenation with a stackalloced Span<char> if we actually used Id a lot.
                 if (_id == null && _spanId != null)
                 {
-                    // Convert flags to binary.  
+                    // Convert flags to binary.
                     Span<char> flagsChars = stackalloc char[2];
                     ActivityTraceId.ByteToHexDigits(flagsChars, (byte)((~ActivityTraceFlagsIsSet) & _w3CIdFlags));
                     string id = "00-" + _traceId + "-" + _spanId + "-" + flagsChars.ToString();
@@ -144,16 +144,16 @@ namespace System.Diagnostics
         /// <summary>
         /// If the parent for this activity comes from outside the process, the activity
         /// does not have a Parent Activity but MAY have a ParentId (which was deserialized from
-        /// from the parent).   This accessor fetches the parent ID if it exists at all.  
+        /// from the parent).   This accessor fetches the parent ID if it exists at all.
         /// Note this can be null if this is a root Activity (it has no parent)
         /// <para/>
         /// See <see href="https://github.com/dotnet/corefx/blob/master/src/System.Diagnostics.DiagnosticSource/src/ActivityUserGuide.md#id-format"/> for more details
         /// </summary>
-        public string ParentId
+        public string? ParentId
         {
             get
             {
-                // if we represented it as a traceId-spanId, convert it to a string.  
+                // if we represented it as a traceId-spanId, convert it to a string.
                 if (_parentId == null)
                 {
                     if (_parentSpanId != null)
@@ -177,16 +177,16 @@ namespace System.Diagnostics
         /// RootId may be null if Activity has neither ParentId nor Id.
         /// See <see href="https://github.com/dotnet/corefx/blob/master/src/System.Diagnostics.DiagnosticSource/src/ActivityUserGuide.md#id-format"/> for more details
         /// </summary>
-        public string RootId
+        public string? RootId
         {
             get
             {
-                //we expect RootId to be requested at any time after activity is created, 
+                //we expect RootId to be requested at any time after activity is created,
                 //possibly even before it was started for sampling or logging purposes
                 //Presumably, it will be called by logging systems for every log record, so we cache it.
                 if (_rootId == null)
                 {
-                    string rootId = null;
+                    string? rootId = null;
                     if (Id != null)
                     {
                         rootId = GetRootId(Id);
@@ -212,20 +212,20 @@ namespace System.Diagnostics
         /// however is NOT passed on to the children of this activity.
         /// </summary>
         /// <seealso cref="Baggage"/>
-        public IEnumerable<KeyValuePair<string, string>> Tags
+        public IEnumerable<KeyValuePair<string, string?>> Tags
         {
             get
             {
-                KeyValueListNode tags = _tags;
+                KeyValueListNode? tags = _tags;
                 return tags != null ?
                     Iterate(tags) :
                     s_emptyBaggageTags;
 
-                static IEnumerable<KeyValuePair<string, string>> Iterate(KeyValueListNode tags)
+                static IEnumerable<KeyValuePair<string, string?>> Iterate(KeyValueListNode? tags)
                 {
                     do
                     {
-                        yield return tags.keyValue;
+                        yield return tags!.keyValue;
                         tags = tags.Next;
                     }
                     while (tags != null);
@@ -235,17 +235,17 @@ namespace System.Diagnostics
 
         /// <summary>
         /// Baggage is string-string key-value pairs that represent information that will
-        /// be passed along to children of this activity.   Baggage is serialized 
+        /// be passed along to children of this activity.   Baggage is serialized
         /// when requests leave the process (along with the ID).   Typically Baggage is
-        /// used to do fine-grained control over logging of the activity and any children.  
-        /// In general, if you are not using the data at runtime, you should be using Tags 
-        /// instead. 
-        /// </summary> 
-        public IEnumerable<KeyValuePair<string, string>> Baggage
+        /// used to do fine-grained control over logging of the activity and any children.
+        /// In general, if you are not using the data at runtime, you should be using Tags
+        /// instead.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string?>> Baggage
         {
             get
             {
-                for (Activity activity = this; activity != null; activity = activity.Parent)
+                for (Activity? activity = this; activity != null; activity = activity.Parent)
                 {
                     if (activity._baggage != null)
                     {
@@ -255,11 +255,12 @@ namespace System.Diagnostics
 
                 return s_emptyBaggageTags;
 
-                static IEnumerable<KeyValuePair<string, string>> Iterate(Activity activity)
+                static IEnumerable<KeyValuePair<string, string?>> Iterate(Activity? activity)
                 {
+                    Debug.Assert(activity != null);
                     do
                     {
-                        for (KeyValueListNode baggage = activity._baggage; baggage != null; baggage = baggage.Next)
+                        for (KeyValueListNode? baggage = activity._baggage; baggage != null; baggage = baggage.Next)
                         {
                             yield return baggage.keyValue;
                         }
@@ -273,11 +274,11 @@ namespace System.Diagnostics
 
         /// <summary>
         /// Returns the value of the key-value pair added to the activity with <see cref="AddBaggage(string, string)"/>.
-        /// Returns null if that key does not exist.  
+        /// Returns null if that key does not exist.
         /// </summary>
-        public string GetBaggageItem(string key)
+        public string? GetBaggageItem(string key)
         {
-            foreach (KeyValuePair<string, string> keyValue in Baggage)
+            foreach (KeyValuePair<string, string?> keyValue in Baggage)
                 if (key == keyValue.Key)
                     return keyValue.Value;
             return null;
@@ -307,10 +308,10 @@ namespace System.Diagnostics
         /// is useful to log but not needed for runtime control (for the latter, <see cref="Baggage"/>)
         /// </summary>
         /// <returns>'this' for convenient chaining</returns>
-        public Activity AddTag(string key, string value)
+        public Activity AddTag(string key, string? value)
         {
-            KeyValueListNode currentTags = _tags;
-            KeyValueListNode newTags = new KeyValueListNode() { keyValue = new KeyValuePair<string, string>(key, value) };
+            KeyValueListNode? currentTags = _tags;
+            KeyValueListNode newTags = new KeyValueListNode() { keyValue = new KeyValuePair<string, string?>(key, value) };
             do
             {
                 newTags.Next = currentTags;
@@ -324,15 +325,15 @@ namespace System.Diagnostics
         /// Update the Activity to have baggage with an additional 'key' and value 'value'.
         /// This shows up in the <see cref="Baggage"/> enumeration as well as the <see cref="GetBaggageItem(string)"/>
         /// method.
-        /// Baggage is meant for information that is needed for runtime control.   For information 
+        /// Baggage is meant for information that is needed for runtime control.   For information
         /// that is simply useful to show up in the log with the activity use <see cref="Tags"/>.
         /// Returns 'this' for convenient chaining.
         /// </summary>
         /// <returns>'this' for convenient chaining</returns>
-        public Activity AddBaggage(string key, string value)
+        public Activity AddBaggage(string key, string? value)
         {
-            KeyValueListNode currentBaggage = _baggage;
-            KeyValueListNode newBaggage = new KeyValueListNode() { keyValue = new KeyValuePair<string, string>(key, value) };
+            KeyValueListNode? currentBaggage = _baggage;
+            KeyValueListNode newBaggage = new KeyValueListNode() { keyValue = new KeyValuePair<string, string?>(key, value) };
 
             do
             {
@@ -345,10 +346,10 @@ namespace System.Diagnostics
 
         /// <summary>
         /// Updates the Activity To indicate that the activity with ID <paramref name="parentId"/>
-        /// caused this activity.   This is intended to be used only at 'boundary' 
-        /// scenarios where an activity from another process logically started 
-        /// this activity. The Parent ID shows up the Tags (as well as the ParentID 
-        /// property), and can be used to reconstruct the causal tree.  
+        /// caused this activity.   This is intended to be used only at 'boundary'
+        /// scenarios where an activity from another process logically started
+        /// this activity. The Parent ID shows up the Tags (as well as the ParentID
+        /// property), and can be used to reconstruct the causal tree.
         /// Returns 'this' for convenient chaining.
         /// </summary>
         /// <param name="parentId">The id of the parent operation.</param>
@@ -375,7 +376,7 @@ namespace System.Diagnostics
 
         /// <summary>
         /// Set the parent ID using the W3C convention using a TraceId and a SpanId.   This
-        /// constructor has the advantage that no string manipulation is needed to set the ID.  
+        /// constructor has the advantage that no string manipulation is needed to set the ID.
         /// </summary>
         public Activity SetParentId(ActivityTraceId traceId, ActivitySpanId spanId, ActivityTraceFlags activityTraceFlags = ActivityTraceFlags.None)
         {
@@ -450,7 +451,7 @@ namespace System.Diagnostics
         /// <seealso cref="SetStartTime(DateTime)"/>
         public Activity Start()
         {
-            // Has the ID already been set (have we called Start()).  
+            // Has the ID already been set (have we called Start()).
             if (_id != null || _spanId != null)
             {
                 NotifyError(new InvalidOperationException(SR.ActivityStartAlreadyStarted));
@@ -459,12 +460,12 @@ namespace System.Diagnostics
             {
                 if (_parentId == null && _parentSpanId is null)
                 {
-                    Activity parent = Current;
+                    Activity? parent = Current;
                     if (parent != null)
                     {
                         // The parent change should not form a loop.   We are actually guaranteed this because
-                        // 1. Unstarted activities can't be 'Current' (thus can't be 'parent'), we throw if you try.  
-                        // 2. All started activities have a finite parent change (by inductive reasoning).  
+                        // 1. Unstarted activities can't be 'Current' (thus can't be 'parent'), we throw if you try.
+                        // 2. All started activities have a finite parent change (by inductive reasoning).
                         Parent = parent;
                     }
                 }
@@ -474,7 +475,7 @@ namespace System.Diagnostics
 
                 if (IdFormat == ActivityIdFormat.Unknown)
                 {
-                    // Figure out what format to use.  
+                    // Figure out what format to use.
                     IdFormat =
                         ForceDefaultIdFormat ? DefaultIdFormat :
                         Parent != null ? Parent.IdFormat :
@@ -483,8 +484,8 @@ namespace System.Diagnostics
                         IsW3CId(_parentId) ? ActivityIdFormat.W3C :
                         ActivityIdFormat.Hierarchical;
                 }
-               
-                // Generate the ID in the appropriate format.  
+
+                // Generate the ID in the appropriate format.
                 if (IdFormat == ActivityIdFormat.W3C)
                     GenerateW3CId();
                 else
@@ -526,25 +527,25 @@ namespace System.Diagnostics
         /* W3C support functionality (see https://w3c.github.io/trace-context) */
 
         /// <summary>
-        /// Holds the W3C 'tracestate' header as a string.   
-        /// 
-        /// Tracestate is intended to carry information supplemental to trace identity contained 
-        /// in traceparent. List of key value pairs carried by tracestate convey information 
-        /// about request position in multiple distributed tracing graphs. It is typically used 
+        /// Holds the W3C 'tracestate' header as a string.
+        ///
+        /// Tracestate is intended to carry information supplemental to trace identity contained
+        /// in traceparent. List of key value pairs carried by tracestate convey information
+        /// about request position in multiple distributed tracing graphs. It is typically used
         /// by distributed tracing systems and should not be used as a general purpose baggage
         /// as this use may break correlation of a distributed trace.
-        /// 
+        ///
         /// Logically it is just a kind of baggage (if flows just like baggage), but because
-        /// it is expected to be special cased (it has its own HTTP header), it is more 
-        /// convenient/efficient if it is not lumped in with other baggage.   
+        /// it is expected to be special cased (it has its own HTTP header), it is more
+        /// convenient/efficient if it is not lumped in with other baggage.
         /// </summary>
-        public string TraceStateString
+        public string? TraceStateString
         {
             get
             {
-                for (Activity activity = this; activity != null; activity = activity.Parent)
+                for (Activity? activity = this; activity != null; activity = activity.Parent)
                 {
-                    string val = activity._traceState;
+                    string? val = activity._traceState;
                     if (val != null)
                         return val;
                 }
@@ -557,7 +558,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// If the Activity has the W3C format, this returns the ID for the SPAN part of the Id.  
+        /// If the Activity has the W3C format, this returns the ID for the SPAN part of the Id.
         /// Otherwise it returns a zero SpanId.
         /// </summary>
         public ActivitySpanId SpanId
@@ -582,8 +583,8 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// If the Activity has the W3C format, this returns the ID for the TraceId part of the Id.  
-        /// Otherwise it returns a zero TraceId. 
+        /// If the Activity has the W3C format, this returns the ID for the TraceId part of the Id.
+        /// Otherwise it returns a zero TraceId.
         /// </summary>
         public ActivityTraceId TraceId
         {
@@ -599,12 +600,12 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// True if the W3CIdFlags.Recorded flag is set.   
+        /// True if the W3CIdFlags.Recorded flag is set.
         /// </summary>
         public bool Recorded { get => (ActivityTraceFlags & ActivityTraceFlags.Recorded) != 0; }
 
         /// <summary>
-        /// Return the flags (defined by the W3C ID specification) associated with the activity.  
+        /// Return the flags (defined by the W3C ID specification) associated with the activity.
         /// </summary>
         public ActivityTraceFlags ActivityTraceFlags
         {
@@ -623,8 +624,8 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// If the parent Activity ID has the W3C format, this returns the ID for the SpanId part of the ParentId.  
-        /// Otherwise it returns a zero SpanId. 
+        /// If the parent Activity ID has the W3C format, this returns the ID for the SpanId part of the ParentId.
+        /// Otherwise it returns a zero SpanId.
         /// </summary>
         public ActivitySpanId ParentSpanId
         {
@@ -635,7 +636,7 @@ namespace System.Diagnostics
             {
                 if (_parentSpanId is null)
                 {
-                    string parentSpanId = null;
+                    string? parentSpanId = null;
                     if (_parentId != null && IsW3CId(_parentId))
                     {
                         try
@@ -661,8 +662,8 @@ namespace System.Diagnostics
         /* static state (configuration) */
         /// <summary>
         /// Activity tries to use the same format for IDs as its parent.
-        /// However if the activity has no parent, it has to do something.   
-        /// This determines the default format we use.  
+        /// However if the activity has no parent, it has to do something.
+        /// This determines the default format we use.
         /// </summary>
         public static ActivityIdFormat DefaultIdFormat
         {
@@ -702,29 +703,29 @@ namespace System.Diagnostics
         /// </summary>
         private static bool IsW3CId(string id)
         {
-            // A W3CId is  
+            // A W3CId is
             //  * 2 chars Version
             //  * 1 char - char
             //  * 32 chars traceId
-            //  * 1 char - char 
+            //  * 1 char - char
             //  * 16 chars spanId
             //  * 1 char - char
-            //  * 2 chars flags 
+            //  * 2 chars flags
             //  = 55 chars (see https://w3c.github.io/trace-context)
-            // We require that all non-WC3IDs NOT start with a digit.  
-            // The digit is used to indicate that this is a WC3 ID.   
+            // We require that all non-WC3IDs NOT start with a digit.
+            // The digit is used to indicate that this is a WC3 ID.
             return id.Length == 55 && '0' <= id[0] && id[0] <= '9';
         }
 
         /// <summary>
         /// Set the ID (lazily, avoiding strings if possible) to a W3C ID (using the
-        /// traceId from the parent if possible 
+        /// traceId from the parent if possible
         /// </summary>
         private void GenerateW3CId()
         {
             // Called from .Start()
 
-            // Get the TraceId from the parent or make a new one.  
+            // Get the TraceId from the parent or make a new one.
             if (_traceId is null)
             {
                 if (!TrySetTraceIdFromParent())
@@ -738,7 +739,7 @@ namespace System.Diagnostics
                 TrySetTraceFlagsFromParent();
             }
 
-            // Create a new SpanID. 
+            // Create a new SpanID.
 
             _spanId = ActivitySpanId.CreateRandom().ToHexString();
         }
@@ -747,8 +748,8 @@ namespace System.Diagnostics
         {
             // Throw and catch the exception.  This lets it be seen by the debugger
             // ETW, and other monitoring tools.   However we immediately swallow the
-            // exception.   We may wish in the future to allow users to hook this 
-            // in other useful ways but for now we simply swallow the exceptions.  
+            // exception.   We may wish in the future to allow users to hook this
+            // in other useful ways but for now we simply swallow the exceptions.
             try
             {
                 throw exception;
@@ -757,7 +758,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns a new ID using the Hierarchical Id 
+        /// Returns a new ID using the Hierarchical Id
         /// </summary>
         private string GenerateHierarchicalId()
         {
@@ -774,7 +775,7 @@ namespace System.Diagnostics
                 // Start from outside the process (e.g. incoming HTTP)
                 Debug.Assert(ParentId.Length != 0);
 
-                //sanitize external RequestId as it may not be hierarchical. 
+                //sanitize external RequestId as it may not be hierarchical.
                 //we cannot update ParentId, we must let it be logged exactly as it was passed.
                 string parentId = ParentId[0] == '|' ? ParentId : '|' + ParentId;
 
@@ -788,17 +789,17 @@ namespace System.Diagnostics
             }
             else
             {
-                // A Root Activity (no parent).  
+                // A Root Activity (no parent).
                 ret = GenerateRootId();
             }
-            // Useful place to place a conditional breakpoint.  
+            // Useful place to place a conditional breakpoint.
             return ret;
         }
 
         private string GetRootId(string id)
         {
             // If this is a W3C ID it has the format Version2-TraceId32-SpanId16-Flags2
-            // and the root ID is the TraceId.   
+            // and the root ID is the TraceId.
             if (IdFormat == ActivityIdFormat.W3C)
                 return id.Substring(3, 32);
 
@@ -843,17 +844,17 @@ namespace System.Diagnostics
 #endif
         private static unsafe long GetRandomNumber()
         {
-            // Use the first 8 bytes of the GUID as a random number.  
+            // Use the first 8 bytes of the GUID as a random number.
             Guid g = Guid.NewGuid();
             return *((long*)&g);
         }
 
-        private static bool ValidateSetCurrent(Activity activity)
+        private static bool ValidateSetCurrent(Activity? activity)
         {
             bool canSet = activity == null || (activity.Id != null && !activity.IsFinished);
             if (!canSet)
             {
-                NotifyError(new InvalidOperationException("Trying to set an Activity that is not running"));
+                NotifyError(new InvalidOperationException(SR.ActivityNotRunning));
             }
 
             return canSet;
@@ -926,7 +927,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns the format for the ID.   
+        /// Returns the format for the ID.
         /// </summary>
         public ActivityIdFormat IdFormat
         {
@@ -935,12 +936,12 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Having our own key-value linked list allows us to be more efficient  
+        /// Having our own key-value linked list allows us to be more efficient
         /// </summary>
         private partial class KeyValueListNode
         {
-            public KeyValuePair<string, string> keyValue;
-            public KeyValueListNode Next;
+            public KeyValuePair<string, string?> keyValue;
+            public KeyValueListNode? Next;
         }
 
         [Flags]
@@ -958,7 +959,7 @@ namespace System.Diagnostics
     }
 
     /// <summary>
-    /// These flags are defined by the W3C standard along with the ID for the activity. 
+    /// These flags are defined by the W3C standard along with the ID for the activity.
     /// </summary>
     [Flags]
     public enum ActivityTraceFlags
@@ -972,28 +973,28 @@ namespace System.Diagnostics
     /// </summary>
     public enum ActivityIdFormat
     {
-        Unknown = 0,      // ID format is not known.     
+        Unknown = 0,      // ID format is not known.
         Hierarchical = 1, //|XXXX.XX.X_X ... see https://github.com/dotnet/corefx/blob/master/src/System.Diagnostics.DiagnosticSource/src/ActivityUserGuide.md#id-format
         W3C = 2,          // 00-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXXXXXXXXXX-XX see https://w3c.github.io/trace-context/
     };
 
     /// <summary>
-    /// A TraceId is the format the W3C standard requires for its ID for the entire trace. 
+    /// A TraceId is the format the W3C standard requires for its ID for the entire trace.
     /// It represents 16 binary bytes of information, typically displayed as 32 characters
     /// of Hexadecimal.  A TraceId is a STRUCT, and does contain the 16 bytes of binary information
     /// so there is value in passing it by reference.   It does know how to convert to and
     /// from its Hexadecimal string representation, tries to avoid changing formats until
-    /// it has to, and caches the string representation after it was created.   
-    /// It is mostly useful as an exchange type.  
+    /// it has to, and caches the string representation after it was created.
+    /// It is mostly useful as an exchange type.
     /// </summary>
 #if ALLOW_PARTIALLY_TRUSTED_CALLERS
         [System.Security.SecuritySafeCriticalAttribute]
 #endif
     public readonly struct ActivityTraceId : IEquatable<ActivityTraceId>
     {
-        private readonly string _hexString;
+        private readonly string? _hexString;
 
-        internal ActivityTraceId(string hexString) => _hexString = hexString;
+        internal ActivityTraceId(string? hexString) => _hexString = hexString;
 
         /// <summary>
         /// Create a new TraceId with at random number in it (very likely to be unique)
@@ -1022,7 +1023,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns the TraceId as a 32 character hexadecimal string.  
+        /// Returns the TraceId as a 32 character hexadecimal string.
         /// </summary>
         public string ToHexString()
         {
@@ -1030,7 +1031,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns the TraceId as a 32 character hexadecimal string.  
+        /// Returns the TraceId as a 32 character hexadecimal string.
         /// </summary>
         public override string ToString() => ToHexString();
 
@@ -1046,7 +1047,7 @@ namespace System.Diagnostics
         {
             return _hexString == traceId._hexString;
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is ActivityTraceId traceId)
                 return _hexString == traceId._hexString;
@@ -1058,7 +1059,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// This is exposed as CreateFromUtf8String, but we are modifying fields, so the code needs to be in a constructor.  
+        /// This is exposed as CreateFromUtf8String, but we are modifying fields, so the code needs to be in a constructor.
         /// </summary>
         /// <param name="idData"></param>
         private ActivityTraceId(ReadOnlySpan<byte> idData)
@@ -1105,18 +1106,18 @@ namespace System.Diagnostics
         /// <param name="outBytes"></param>
         internal static unsafe void SetToRandomBytes(Span<byte> outBytes)
         {
-            Debug.Assert(outBytes.Length <= sizeof(Guid));     // Guid is 16 bytes, and so is TraceId 
+            Debug.Assert(outBytes.Length <= sizeof(Guid));     // Guid is 16 bytes, and so is TraceId
             Guid guid = Guid.NewGuid();
             ReadOnlySpan<byte> guidBytes = new ReadOnlySpan<byte>(&guid, sizeof(Guid));
             guidBytes.Slice(0, outBytes.Length).CopyTo(outBytes);
         }
 
-        // CONVERSION binary spans to hex spans, and hex spans to binary spans  
-        /* It would be nice to use generic Hex number conversion routines, but there 
+        // CONVERSION binary spans to hex spans, and hex spans to binary spans
+        /* It would be nice to use generic Hex number conversion routines, but there
          * is nothing that is exposed publicly and efficient */
         /// <summary>
         /// Converts each byte in 'bytes' to hex (thus two characters) and concatenates them
-        /// and returns the resulting string.  
+        /// and returns the resulting string.
         /// </summary>
         internal static string SpanToHexString(ReadOnlySpan<byte> bytes)
         {
@@ -1199,22 +1200,22 @@ namespace System.Diagnostics
     }
 
     /// <summary>
-    /// A SpanId is the format the W3C standard requires for its ID for a single span in a trace.  
+    /// A SpanId is the format the W3C standard requires for its ID for a single span in a trace.
     /// It represents 8 binary bytes of information, typically displayed as 16 characters
     /// of Hexadecimal.  A SpanId is a STRUCT, and does contain the 8 bytes of binary information
     /// so there is value in passing it by reference.  It does know how to convert to and
     /// from its Hexadecimal string representation, tries to avoid changing formats until
-    /// it has to, and caches the string representation after it was created.   
-    /// It is mostly useful as an exchange type.  
+    /// it has to, and caches the string representation after it was created.
+    /// It is mostly useful as an exchange type.
     /// </summary>
 #if ALLOW_PARTIALLY_TRUSTED_CALLERS
         [System.Security.SecuritySafeCriticalAttribute]
 #endif
     public readonly struct ActivitySpanId : IEquatable<ActivitySpanId>
     {
-        private readonly string _hexString;
+        private readonly string? _hexString;
 
-        internal ActivitySpanId(string hexString) => _hexString = hexString;
+        internal ActivitySpanId(string? hexString) => _hexString = hexString;
 
         /// <summary>
         /// Create a new SpanId with at random number in it (very likely to be unique)
@@ -1243,7 +1244,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns the TraceId as a 16 character hexadecimal string.  
+        /// Returns the TraceId as a 16 character hexadecimal string.
         /// </summary>
         /// <returns></returns>
         public string ToHexString()
@@ -1252,7 +1253,7 @@ namespace System.Diagnostics
         }
 
         /// <summary>
-        /// Returns SpanId as a hex string. 
+        /// Returns SpanId as a hex string.
         /// </summary>
         public override string ToString() => ToHexString();
 
@@ -1268,15 +1269,11 @@ namespace System.Diagnostics
         {
             return _hexString == spanId._hexString;
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (!(obj is ActivitySpanId))
-            {
-                return false;
-            }
-
-            ActivitySpanId spanId = (ActivitySpanId)obj;
-            return _hexString == spanId._hexString;
+            if (obj is ActivitySpanId spanId)
+                return _hexString == spanId._hexString;
+            return false;
         }
         public override int GetHashCode()
         {

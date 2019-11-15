@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Apple;
 using System.Security.Cryptography.Asn1;
+using System.Security.Cryptography.Asn1.Pkcs12;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Internal.Cryptography.Pal
@@ -43,7 +44,7 @@ namespace Internal.Cryptography.Pal
                             {
                                 // SecCertificateCopyKey returns null for DSA, so fall back to manually building it.
                                 return DecodeDsaPublicKey(encodedKeyValue, encodedParameters);
-                            } 
+                            }
                             return new DSAImplementation.DSASecurityTransforms(key);
                         case Oids.EcPublicKey:
                             // If X509GetPublicKey uses the new SecCertificateCopyKey API it can return an invalid
@@ -149,8 +150,21 @@ namespace Internal.Cryptography.Pal
                     // Throw to match Windows and Unix behavior.
                     throw Interop.AppleCrypto.CreateExceptionForOSStatus(errSecUnknownFormat);
                 }
-                
+
                 X509ContentType contentType = Interop.AppleCrypto.X509GetContentType(rawData, rawData.Length);
+
+                // Apple doesn't seem to recognize PFX files with no MAC, so try a quick maybe-it's-a-PFX test
+                if (contentType == X509ContentType.Unknown)
+                {
+                    try
+                    {
+                        PfxAsn.Decode(rawData, AsnEncodingRules.BER);
+                        contentType = X509ContentType.Pkcs12;
+                    }
+                    catch (CryptographicException)
+                    {
+                    }
+                }
 
                 if (contentType == X509ContentType.Unknown)
                 {

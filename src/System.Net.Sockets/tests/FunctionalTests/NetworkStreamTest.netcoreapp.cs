@@ -353,7 +353,7 @@ namespace System.Net.Sockets.Tests
         public async Task DisposeAsync_ClosesStream()
         {
             await RunWithConnectedNetworkStreamsAsync(async (server, client) =>
-            { 
+            {
                 Assert.True(client.DisposeAsync().IsCompletedSuccessfully);
                 Assert.True(server.DisposeAsync().IsCompletedSuccessfully);
 
@@ -392,6 +392,37 @@ namespace System.Net.Sockets.Tests
                 await server.WriteAsync(new ReadOnlyMemory<byte>(new byte[1] { 42 }));
                 Assert.Equal(1, await vt);
                 Assert.Equal(42, buffer[0]);
+            });
+        }
+
+        [Fact]
+        public async Task WriteAsync_CancelPendingWrite_SucceedsOrThrowsOperationCanceled()
+        {
+            await RunWithConnectedNetworkStreamsAsync(async (server, client) =>
+            {
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.WriteAsync(new byte[1], 0, 1, new CancellationToken(true)));
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => { await client.WriteAsync(new Memory<byte>(new byte[1]), new CancellationToken(true)); });
+
+                byte[] hugeBuffer = new byte[100_000_000];
+                Exception e;
+
+                var cts = new CancellationTokenSource();
+                Task t = client.WriteAsync(hugeBuffer, 0, hugeBuffer.Length, cts.Token);
+                cts.Cancel();
+                e = await Record.ExceptionAsync(async () => await t);
+                if (e != null)
+                {
+                    Assert.IsAssignableFrom<OperationCanceledException>(e);
+                }
+
+                cts = new CancellationTokenSource();
+                ValueTask vt = client.WriteAsync(new Memory<byte>(hugeBuffer), cts.Token);
+                cts.Cancel();
+                e = await Record.ExceptionAsync(async () => await vt);
+                if (e != null)
+                {
+                    Assert.IsAssignableFrom<OperationCanceledException>(e);
+                }
             });
         }
 

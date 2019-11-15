@@ -12,7 +12,7 @@ namespace System.Reflection.Emit
     /// </summary>
     public struct FieldToken
     {
-        public static readonly FieldToken Empty = new FieldToken();
+        public static readonly FieldToken Empty = default;
 
         private readonly object _class;
 
@@ -23,9 +23,9 @@ namespace System.Reflection.Emit
         }
 
         public int Token { get; }
-        
+
         public override int GetHashCode() => Token;
-        
+
         public override bool Equals(object? obj) => obj is FieldToken ft && Equals(ft);
 
         public bool Equals(FieldToken obj) => obj.Token == Token && obj._class == _class;

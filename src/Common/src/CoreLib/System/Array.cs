@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Internal.Runtime.CompilerServices;
 
 namespace System
@@ -17,7 +17,7 @@ namespace System
     [System.Runtime.CompilerServices.TypeForwardedFrom("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")]
     public abstract partial class Array : ICloneable, IList, IStructuralComparable, IStructuralEquatable
     {
-        // We impose limits on maximum array lenght in each dimension to allow efficient
+        // We impose limits on maximum array length in each dimension to allow efficient
         // implementation of advanced range check elimination in future.
         // Keep in sync with vm\gcscan.cpp and HashHelpers.MaxPrimeArrayLength.
         // The constants are defined in this method: inline SIZE_T MaxArrayLength(SIZE_T componentSize) from gcscan
@@ -25,9 +25,8 @@ namespace System
         internal const int MaxArrayLength = 0X7FEFFFFF;
         internal const int MaxByteArrayLength = 0x7FFFFFC7;
 
-        // This ctor exists solely to prevent C# from generating a protected .ctor that violates the surface area. I really want this to be a
-        // "protected-and-internal" rather than "internal" but C# has no keyword for the former.
-        internal Array() { }
+        // This ctor exists solely to prevent C# from generating a protected .ctor that violates the surface area.
+        private protected Array() { }
 
         public static ReadOnlyCollection<T> AsReadOnly<T>(T[] array)
         {
@@ -237,32 +236,32 @@ namespace System
 
         public long GetLongLength(int dimension)
         {
-            //This method should throw an IndexOufOfRangeException for compat if dimension < 0 or >= Rank
+            // This method should throw an IndexOufOfRangeException for compat if dimension < 0 or >= Rank
             return GetLength(dimension);
         }
 
         // Number of elements in the Array.
-        int ICollection.Count { get { return Length; } }
+        int ICollection.Count => Length;
 
-        // Returns an object appropriate for synchronizing access to this 
+        // Returns an object appropriate for synchronizing access to this
         // Array.
-        public object SyncRoot { get { return this; } }
+        public object SyncRoot => this;
 
         // Is this Array read-only?
-        public bool IsReadOnly { get { return false; } }
+        public bool IsReadOnly => false;
 
-        public bool IsFixedSize { get { return true; } }
+        public bool IsFixedSize => true;
 
         // Is this Array synchronized (i.e., thread-safe)?  If you want a synchronized
-        // collection, you can use SyncRoot as an object to synchronize your 
-        // collection with.  You could also call GetSynchronized() 
+        // collection, you can use SyncRoot as an object to synchronize your
+        // collection with.  You could also call GetSynchronized()
         // to get a synchronized wrapper around the Array.
-        public bool IsSynchronized { get { return false; } }
+        public bool IsSynchronized => false;
 
         object? IList.this[int index]
         {
-            get { return GetValue(index); }
-            set { SetValue(value, index); }
+            get => GetValue(index);
+            set => SetValue(value, index);
         }
 
         int IList.Add(object? value)
@@ -302,7 +301,7 @@ namespace System
         }
 
         // Make a new array which is a shallow copy of the original array.
-        // 
+        //
         public object Clone()
         {
             return MemberwiseClone();
@@ -370,11 +369,6 @@ namespace System
             return true;
         }
 
-        private static int CombineHashCodes(int h1, int h2)
-        {
-            return (((h1 << 5) + h1) ^ h2);
-        }
-
         int IStructuralEquatable.GetHashCode(IEqualityComparer comparer)
         {
             if (comparer == null)
@@ -384,7 +378,7 @@ namespace System
 
             for (int i = (this.Length >= 8 ? this.Length - 8 : 0); i < this.Length; i++)
             {
-                ret = CombineHashCodes(ret, comparer.GetHashCode(GetValue(i)!));
+                ret = HashCode.Combine(ret, comparer.GetHashCode(GetValue(i)!));
             }
 
             return ret;
@@ -402,7 +396,7 @@ namespace System
         // integer. The bitwise complement operator (~) can be applied to a
         // negative result to produce the index of the first element (if any) that
         // is larger than the given search value.
-        // 
+        //
         public static int BinarySearch(Array array, object? value)
         {
             if (array == null)
@@ -422,7 +416,7 @@ namespace System
         // integer. The bitwise complement operator (~) can be applied to a
         // negative result to produce the index of the first element (if any) that
         // is larger than the given search value.
-        // 
+        //
         public static int BinarySearch(Array array, int index, int length, object? value)
         {
             return BinarySearch(array, index, length, value, null);
@@ -435,13 +429,13 @@ namespace System
         // interface, which in that case must be implemented by all elements of the
         // array and the given search value. This method assumes that the array is
         // already sorted; if this is not the case, the result will be incorrect.
-        // 
+        //
         // The method returns the index of the given value in the array. If the
         // array does not contain the given value, the method returns a negative
         // integer. The bitwise complement operator (~) can be applied to a
         // negative result to produce the index of the first element (if any) that
         // is larger than the given search value.
-        // 
+        //
         public static int BinarySearch(Array array, object? value, IComparer? comparer)
         {
             if (array == null)
@@ -457,13 +451,13 @@ namespace System
         // all elements of the array and the given search value. This method
         // assumes that the array is already sorted; if this is not the case, the
         // result will be incorrect.
-        // 
+        //
         // The method returns the index of the given value in the array. If the
         // array does not contain the given value, the method returns a negative
         // integer. The bitwise complement operator (~) can be applied to a
         // negative result to produce the index of the first element (if any) that
         // is larger than the given search value.
-        // 
+        //
         public static int BinarySearch(Array array, int index, int length, object? value, IComparer? comparer)
         {
             if (array == null)
@@ -478,16 +472,7 @@ namespace System
             if (array.Rank != 1)
                 ThrowHelper.ThrowRankException(ExceptionResource.Rank_MultiDimNotSupported);
 
-            if (comparer == null) comparer = Comparer.Default;
-#if CORECLR
-            if (comparer == Comparer.Default)
-            {
-                int retval;
-                bool r = TrySZBinarySearch(array, index, length, value, out retval);
-                if (r)
-                    return retval;
-            }
-#endif
+            comparer ??= Comparer.Default;
 
             int lo = index;
             int hi = index + length - 1;
@@ -495,7 +480,7 @@ namespace System
             {
                 while (lo <= hi)
                 {
-                    // i might overflow if lo and hi are both large positive numbers. 
+                    // i might overflow if lo and hi are both large positive numbers.
                     int i = GetMedian(lo, hi);
 
                     int c;
@@ -518,32 +503,92 @@ namespace System
                         hi = i - 1;
                     }
                 }
+                return ~lo;
             }
-            else
-            {
-                while (lo <= hi)
-                {
-                    int i = GetMedian(lo, hi);
 
-                    int c;
-                    try
+            if (comparer == Comparer.Default)
+            {
+                CorElementType et = array.GetCorElementTypeOfElementType();
+                if (et.IsPrimitiveType()
+                    // IntPtr/UIntPtr does not implement IComparable
+                    && (et != CorElementType.ELEMENT_TYPE_I) && (et != CorElementType.ELEMENT_TYPE_U))
+                {
+                    if (value == null)
+                        return ~index;
+
+                    if (array.IsValueOfElementType(value))
                     {
-                        c = comparer.Compare(array.GetValue(i), value);
+                        int adjustedIndex = index - lb;
+                        int result = -1;
+                        switch (et)
+                        {
+                            case CorElementType.ELEMENT_TYPE_I1:
+                                result = GenericBinarySearch<sbyte>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_U1:
+                            case CorElementType.ELEMENT_TYPE_BOOLEAN:
+                                result = GenericBinarySearch<byte>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_I2:
+                                result = GenericBinarySearch<short>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_U2:
+                            case CorElementType.ELEMENT_TYPE_CHAR:
+                                result = GenericBinarySearch<ushort>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_I4:
+                                result = GenericBinarySearch<int>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_U4:
+                                result = GenericBinarySearch<uint>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_I8:
+                                result = GenericBinarySearch<long>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_U8:
+                                result = GenericBinarySearch<ulong>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_R4:
+                                result = GenericBinarySearch<float>(array, adjustedIndex, length, value);
+                                break;
+                            case CorElementType.ELEMENT_TYPE_R8:
+                                result = GenericBinarySearch<double>(array, adjustedIndex, length, value);
+                                break;
+                            default:
+                                Debug.Fail("All primitive types should be handled above");
+                                break;
+                        }
+
+                        return (result >= 0) ? (index + result) : ~(index + ~result);
+
+                        static int GenericBinarySearch<T>(Array array, int adjustedIndex, int length, object value) where T: struct, IComparable<T>
+                            => UnsafeArrayAsSpan<T>(array, adjustedIndex, length).BinarySearch(Unsafe.As<byte, T>(ref value.GetRawData()));
                     }
-                    catch (Exception e)
-                    {
-                        ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_IComparerFailed, e);
-                        return default;
-                    }
-                    if (c == 0) return i;
-                    if (c < 0)
-                    {
-                        lo = i + 1;
-                    }
-                    else
-                    {
-                        hi = i - 1;
-                    }
+                }
+            }
+
+            while (lo <= hi)
+            {
+                int i = GetMedian(lo, hi);
+
+                int c;
+                try
+                {
+                    c = comparer.Compare(array.GetValue(i), value);
+                }
+                catch (Exception e)
+                {
+                    ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_IComparerFailed, e);
+                    return default;
+                }
+                if (c == 0) return i;
+                if (c < 0)
+                {
+                    lo = i + 1;
+                }
+                else
+                {
+                    hi = i - 1;
                 }
             }
             return ~lo;
@@ -605,11 +650,11 @@ namespace System
 
         // CopyTo copies a collection into an Array, starting at a particular
         // index into the array.
-        // 
+        //
         // This method is to support the ICollection interface, and calls
         // Array.Copy internally.  If you aren't using ICollection explicitly,
         // call Array.Copy to avoid an extra indirection.
-        // 
+        //
         public void CopyTo(Array array, int index)
         {
             if (array != null && array.Rank != 1)
@@ -629,7 +674,9 @@ namespace System
 
         private static class EmptyArray<T>
         {
+#pragma warning disable CA1825 // this is the implementation of Array.Empty<T>()
             internal static readonly T[] Value = new T[0];
+#pragma warning restore CA1825
         }
 
         public static T[] Empty<T>()
@@ -769,7 +816,7 @@ namespace System
             int endIndex = startIndex + count;
             for (int i = startIndex; i < endIndex; i++)
             {
-                if (match!(array[i]))
+                if (match(array[i]))
                     return i;
             }
             return -1;
@@ -840,7 +887,7 @@ namespace System
             }
             else
             {
-                // Make sure we're not out of range            
+                // Make sure we're not out of range
                 if (startIndex < 0 || startIndex >= array.Length)
                 {
                     ThrowHelper.ThrowStartIndexArgumentOutOfRange_ArgumentOutOfRange_Index();
@@ -885,7 +932,7 @@ namespace System
         // Returns the index of the first occurrence of a given value in an array.
         // The array is searched forwards, and the elements of the array are
         // compared to the given value using the Object.Equals method.
-        // 
+        //
         public static int IndexOf(Array array, object? value)
         {
             if (array == null)
@@ -898,7 +945,7 @@ namespace System
         // startIndex and ending at the last element of the array. The
         // elements of the array are compared to the given value using the
         // Object.Equals method.
-        // 
+        //
         public static int IndexOf(Array array, object? value, int startIndex)
         {
             if (array == null)
@@ -912,7 +959,7 @@ namespace System
         // startIndex and upto count elements. The
         // elements of the array are compared to the given value using the
         // Object.Equals method.
-        // 
+        //
         public static int IndexOf(Array array, object? value, int startIndex, int count)
         {
             if (array == null)
@@ -926,17 +973,8 @@ namespace System
             if (count < 0 || count > array.Length - startIndex + lb)
                 ThrowHelper.ThrowCountArgumentOutOfRange_ArgumentOutOfRange_Count();
 
-#if CORECLR
-            // Try calling a quick native method to handle primitive types.
-            int retVal;
-            bool r = TrySZIndexOf(array, startIndex, count, value, out retVal);
-            if (r)
-                return retVal;
-#endif
-
-            object[]? objArray = array as object[];
             int endIndex = startIndex + count;
-            if (objArray != null)
+            if (array is object[] objArray)
             {
                 if (value == null)
                 {
@@ -955,22 +993,77 @@ namespace System
                             return i;
                     }
                 }
+                return -1;
             }
-            else
+
+            CorElementType et = array.GetCorElementTypeOfElementType();
+            if (et.IsPrimitiveType())
             {
-                for (int i = startIndex; i < endIndex; i++)
+                if (value == null)
+                    return lb - 1;
+
+                if (array.IsValueOfElementType(value))
                 {
-                    object? obj = array.GetValue(i);
-                    if (obj == null)
+                    int adjustedIndex = startIndex - lb;
+                    int result = -1;
+                    switch (et)
                     {
-                        if (value == null)
-                            return i;
+                        case CorElementType.ELEMENT_TYPE_I1:
+                        case CorElementType.ELEMENT_TYPE_U1:
+                        case CorElementType.ELEMENT_TYPE_BOOLEAN:
+                            result = GenericIndexOf<byte>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I2:
+                        case CorElementType.ELEMENT_TYPE_U2:
+                        case CorElementType.ELEMENT_TYPE_CHAR:
+                            result = GenericIndexOf<char>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I4:
+                        case CorElementType.ELEMENT_TYPE_U4:
+#if !BIT64
+                        case CorElementType.ELEMENT_TYPE_I:
+                        case CorElementType.ELEMENT_TYPE_U:
+#endif
+                            result = GenericIndexOf<int>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I8:
+                        case CorElementType.ELEMENT_TYPE_U8:
+#if BIT64
+                        case CorElementType.ELEMENT_TYPE_I:
+                        case CorElementType.ELEMENT_TYPE_U:
+#endif
+                            result = GenericIndexOf<long>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_R4:
+                            result = GenericIndexOf<float>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_R8:
+                            result = GenericIndexOf<double>(array, value, adjustedIndex, count);
+                            break;
+                        default:
+                            Debug.Fail("All primitive types should be handled above");
+                            break;
                     }
-                    else
-                    {
-                        if (obj.Equals(value))
-                            return i;
-                    }
+
+                    return (result >= 0 ? startIndex : lb) + result;
+
+                    static int GenericIndexOf<T>(Array array, object value, int adjustedIndex, int length) where T : struct, IEquatable<T>
+                        => UnsafeArrayAsSpan<T>(array, adjustedIndex, length).IndexOf(Unsafe.As<byte, T>(ref value.GetRawData()));
+                }
+            }
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                object? obj = array.GetValue(i);
+                if (obj == null)
+                {
+                    if (value == null)
+                        return i;
+                }
+                else
+                {
+                    if (obj.Equals(value))
+                        return i;
                 }
             }
             // Return one less than the lower bound of the array.  This way,
@@ -1017,8 +1110,6 @@ namespace System
                 ThrowHelper.ThrowCountArgumentOutOfRange_ArgumentOutOfRange_Count();
             }
 
-            // Hits a code generation bug on ProjectN
-#if !PROJECTN
             if (RuntimeHelpers.IsBitwiseEquatable<T>())
             {
                 if (Unsafe.SizeOf<T>() == sizeof(byte))
@@ -1054,9 +1145,8 @@ namespace System
                     return (result >= 0 ? startIndex : 0) + result;
                 }
             }
-#endif
 
-#if CORECLR
+#if !CORERT
             return EqualityComparer<T>.Default.IndexOf(array, value, startIndex, count);
 #else
             return IndexOfImpl(array, value, startIndex, count);
@@ -1066,7 +1156,7 @@ namespace System
         // Returns the index of the last occurrence of a given value in an array.
         // The array is searched backwards, and the elements of the array are
         // compared to the given value using the Object.Equals method.
-        // 
+        //
         public static int LastIndexOf(Array array, object? value)
         {
             if (array == null)
@@ -1079,7 +1169,7 @@ namespace System
         // an array. The array is searched backwards, starting at index
         // startIndex and ending at index 0. The elements of the array are
         // compared to the given value using the Object.Equals method.
-        // 
+        //
         public static int LastIndexOf(Array array, object? value, int startIndex)
         {
             if (array == null)
@@ -1093,7 +1183,7 @@ namespace System
         // startIndex and counting uptocount elements. The elements of
         // the array are compared to the given value using the Object.Equals
         // method.
-        // 
+        //
         public static int LastIndexOf(Array array, object? value, int startIndex, int count)
         {
             if (array == null)
@@ -1113,17 +1203,8 @@ namespace System
             if (array.Rank != 1)
                 ThrowHelper.ThrowRankException(ExceptionResource.Rank_MultiDimNotSupported);
 
-#if CORECLR
-            // Try calling a quick native method to handle primitive types.
-            int retVal;
-            bool r = TrySZLastIndexOf(array, startIndex, count, value, out retVal);
-            if (r)
-                return retVal;
-#endif
-
-            object[]? objArray = array as object[];
             int endIndex = startIndex - count + 1;
-            if (objArray != null)
+            if (array is object[] objArray)
             {
                 if (value == null)
                 {
@@ -1142,22 +1223,77 @@ namespace System
                             return i;
                     }
                 }
+                return -1;
             }
-            else
+
+            CorElementType et = array.GetCorElementTypeOfElementType();
+            if (et.IsPrimitiveType())
             {
-                for (int i = startIndex; i >= endIndex; i--)
+                if (value == null)
+                    return lb - 1;
+
+                if (array.IsValueOfElementType(value))
                 {
-                    object? obj = array.GetValue(i);
-                    if (obj == null)
+                    int adjustedIndex = endIndex - lb;
+                    int result = -1;
+                    switch (et)
                     {
-                        if (value == null)
-                            return i;
+                        case CorElementType.ELEMENT_TYPE_I1:
+                        case CorElementType.ELEMENT_TYPE_U1:
+                        case CorElementType.ELEMENT_TYPE_BOOLEAN:
+                            result = GenericLastIndexOf<byte>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I2:
+                        case CorElementType.ELEMENT_TYPE_U2:
+                        case CorElementType.ELEMENT_TYPE_CHAR:
+                            result = GenericLastIndexOf<char>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I4:
+                        case CorElementType.ELEMENT_TYPE_U4:
+#if !BIT64
+                        case CorElementType.ELEMENT_TYPE_I:
+                        case CorElementType.ELEMENT_TYPE_U:
+#endif
+                            result = GenericLastIndexOf<int>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_I8:
+                        case CorElementType.ELEMENT_TYPE_U8:
+#if BIT64
+                        case CorElementType.ELEMENT_TYPE_I:
+                        case CorElementType.ELEMENT_TYPE_U:
+#endif
+                            result = GenericLastIndexOf<long>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_R4:
+                            result = GenericLastIndexOf<float>(array, value, adjustedIndex, count);
+                            break;
+                        case CorElementType.ELEMENT_TYPE_R8:
+                            result = GenericLastIndexOf<double>(array, value, adjustedIndex, count);
+                            break;
+                        default:
+                            Debug.Fail("All primitive types should be handled above");
+                            break;
                     }
-                    else
-                    {
-                        if (obj.Equals(value))
-                            return i;
-                    }
+
+                    return (result >= 0 ? endIndex : lb) + result;
+
+                    static int GenericLastIndexOf<T>(Array array, object value, int adjustedIndex, int length) where T : struct, IEquatable<T>
+                        => UnsafeArrayAsSpan<T>(array, adjustedIndex, length).LastIndexOf(Unsafe.As<byte, T>(ref value.GetRawData()));
+                }
+            }
+
+            for (int i = startIndex; i >= endIndex; i--)
+            {
+                object? obj = array.GetValue(i);
+                if (obj == null)
+                {
+                    if (value == null)
+                        return i;
+                }
+                else
+                {
+                    if (obj.Equals(value))
+                        return i;
                 }
             }
             return lb - 1;  // Return lb-1 for arrays with negative lower bounds.
@@ -1209,7 +1345,7 @@ namespace System
                 return -1;
             }
 
-            // Make sure we're not out of range            
+            // Make sure we're not out of range
             if ((uint)startIndex >= (uint)array.Length)
             {
                 ThrowHelper.ThrowStartIndexArgumentOutOfRange_ArgumentOutOfRange_Index();
@@ -1221,8 +1357,6 @@ namespace System
                 ThrowHelper.ThrowCountArgumentOutOfRange_ArgumentOutOfRange_Count();
             }
 
-            // Hits a code generation bug on ProjectN
-#if !PROJECTN
             if (RuntimeHelpers.IsBitwiseEquatable<T>())
             {
                 if (Unsafe.SizeOf<T>() == sizeof(byte))
@@ -1266,10 +1400,8 @@ namespace System
                     return (result >= 0 ? endIndex : 0) + result;
                 }
             }
-            
-#endif
 
-#if CORECLR
+#if !CORERT
             return EqualityComparer<T>.Default.LastIndexOf(array, value, startIndex, count);
 #else
             return LastIndexOfImpl(array, value, startIndex, count);
@@ -1280,7 +1412,7 @@ namespace System
         // method, an element previously located at index i will now be
         // located at index length - i - 1, where length is the
         // length of the array.
-        // 
+        //
         public static void Reverse(Array array)
         {
             if (array == null)
@@ -1293,7 +1425,7 @@ namespace System
         // which was previously located at index i will now be located at
         // index index + (index + count - i - 1).
         // Reliability note: This may fail because it may have to box objects.
-        // 
+        //
         public static void Reverse(Array array, int index, int length)
         {
             if (array == null)
@@ -1312,28 +1444,53 @@ namespace System
             if (length <= 1)
                 return;
 
-#if CORECLR
-            bool r = TrySZReverse(array, index, length);
-            if (r)
-                return;
+            int adjustedIndex = index - lowerBound;
+            switch (array.GetCorElementTypeOfElementType())
+            {
+                case CorElementType.ELEMENT_TYPE_I1:
+                case CorElementType.ELEMENT_TYPE_U1:
+                case CorElementType.ELEMENT_TYPE_BOOLEAN:
+                    UnsafeArrayAsSpan<byte>(array, adjustedIndex, length).Reverse();
+                    return;
+                case CorElementType.ELEMENT_TYPE_I2:
+                case CorElementType.ELEMENT_TYPE_U2:
+                case CorElementType.ELEMENT_TYPE_CHAR:
+                    UnsafeArrayAsSpan<short>(array, adjustedIndex, length).Reverse();
+                    return;
+                case CorElementType.ELEMENT_TYPE_I4:
+                case CorElementType.ELEMENT_TYPE_U4:
+#if !BIT64
+                case CorElementType.ELEMENT_TYPE_I:
+                case CorElementType.ELEMENT_TYPE_U:
 #endif
-
-            if (array is object[] objArray)
-            {
-                Array.Reverse<object>(objArray, index, length);
+                case CorElementType.ELEMENT_TYPE_R4:
+                    UnsafeArrayAsSpan<int>(array, adjustedIndex, length).Reverse();
+                    return;
+                case CorElementType.ELEMENT_TYPE_I8:
+                case CorElementType.ELEMENT_TYPE_U8:
+#if BIT64
+                case CorElementType.ELEMENT_TYPE_I:
+                case CorElementType.ELEMENT_TYPE_U:
+#endif
+                case CorElementType.ELEMENT_TYPE_R8:
+                    UnsafeArrayAsSpan<long>(array, adjustedIndex, length).Reverse();
+                    return;
+                case CorElementType.ELEMENT_TYPE_OBJECT:
+                case CorElementType.ELEMENT_TYPE_ARRAY:
+                case CorElementType.ELEMENT_TYPE_SZARRAY:
+                    UnsafeArrayAsSpan<object>(array, adjustedIndex, length).Reverse();
+                    return;
             }
-            else
+
+            int i = index;
+            int j = index + length - 1;
+            while (i < j)
             {
-                int i = index;
-                int j = index + length - 1;
-                while (i < j)
-                {
-                    object? temp = array.GetValue(i);
-                    array.SetValue(array.GetValue(j), i);
-                    array.SetValue(temp, j);
-                    i++;
-                    j--;
-                }
+                object? temp = array.GetValue(i);
+                array.SetValue(array.GetValue(j), i);
+                array.SetValue(temp, j);
+                i++;
+                j--;
             }
         }
 
@@ -1373,7 +1530,7 @@ namespace System
         // Sorts the elements of an array. The sort compares the elements to each
         // other using the IComparable interface, which must be implemented
         // by all elements of the array.
-        // 
+        //
         public static void Sort(Array array)
         {
             if (array == null)
@@ -1386,7 +1543,7 @@ namespace System
         // corresponding elements in the items array. The sort compares the
         // keys to each other using the IComparable interface, which must be
         // implemented by all elements of the keys array.
-        // 
+        //
         public static void Sort(Array keys, Array? items)
         {
             if (keys == null)
@@ -1397,7 +1554,7 @@ namespace System
         // Sorts the elements in a section of an array. The sort compares the
         // elements to each other using the IComparable interface, which
         // must be implemented by all elements in the given section of the array.
-        // 
+        //
         public static void Sort(Array array, int index, int length)
         {
             Sort(array, null, index, length, null);
@@ -1408,7 +1565,7 @@ namespace System
         // corresponding elements in the items array. The sort compares the
         // keys to each other using the IComparable interface, which must be
         // implemented by all elements of the keys array.
-        // 
+        //
         public static void Sort(Array keys, Array? items, int index, int length)
         {
             Sort(keys, items, index, length, null);
@@ -1419,12 +1576,12 @@ namespace System
         // null, the elements are compared to each other using the
         // IComparable interface, which in that case must be implemented by
         // all elements of the array.
-        // 
+        //
         public static void Sort(Array array, IComparer? comparer)
         {
             if (array == null)
                 ThrowHelper.ThrowArgumentNullException(ExceptionArgument.array);
-            Sort(array!, null, array!.GetLowerBound(0), array.Length, comparer);
+            Sort(array, null, array.GetLowerBound(0), array.Length, comparer);
         }
 
         // Sorts the elements of two arrays based on the keys in the first array.
@@ -1434,7 +1591,7 @@ namespace System
         // comparer is null, the elements are compared to each other using
         // the IComparable interface, which in that case must be implemented
         // by all elements of the keys array.
-        // 
+        //
         public static void Sort(Array keys, Array? items, IComparer? comparer)
         {
             if (keys == null)
@@ -1447,7 +1604,7 @@ namespace System
         // comparer is null, the elements are compared to each other using
         // the IComparable interface, which in that case must be implemented
         // by all elements in the given section of the array.
-        // 
+        //
         public static void Sort(Array array, int index, int length, IComparer? comparer)
         {
             Sort(array, null, index, length, comparer);
@@ -1460,7 +1617,7 @@ namespace System
         // comparer is null, the elements are compared to each other using
         // the IComparable interface, which in that case must be implemented
         // by all elements of the given section of the keys array.
-        // 
+        //
         public static void Sort(Array keys, Array? items, int index, int length, IComparer? comparer)
         {
             if (keys == null)
@@ -1478,17 +1635,95 @@ namespace System
             if (keys.Length - (index - keysLowerBound) < length || (items != null && (index - keysLowerBound) > items.Length - length))
                 ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_InvalidOffLen);
 
-            if (length > 1)
+            if (length <= 1)
+                return;
+
+            comparer ??= Comparer.Default;
+
+            if (keys is object[] objKeys)
             {
-                SortImpl(keys, items, index, length, comparer ?? Comparer.Default);
+                object[]? objItems = items as object[];
+                if (items == null || objItems != null)
+                {
+                    new SorterObjectArray(objKeys, objItems, comparer).Sort(index, length);
+                    return;
+                }
             }
+
+            if (comparer == Comparer.Default)
+            {
+                CorElementType et = keys.GetCorElementTypeOfElementType();
+                if (items == null || items.GetCorElementTypeOfElementType() == et)
+                {
+                    int adjustedIndex = index - keysLowerBound;
+                    switch (et)
+                    {
+                        case CorElementType.ELEMENT_TYPE_I1:
+                            GenericSort<sbyte>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_U1:
+                        case CorElementType.ELEMENT_TYPE_BOOLEAN:
+                            GenericSort<byte>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_I2:
+                            GenericSort<short>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_U2:
+                        case CorElementType.ELEMENT_TYPE_CHAR:
+                            GenericSort<ushort>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_I4:
+                            GenericSort<int>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_U4:
+                            GenericSort<uint>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_I8:
+                            GenericSort<long>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_U8:
+                            GenericSort<ulong>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_R4:
+                            GenericSort<float>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_R8:
+                            GenericSort<double>(keys, items, adjustedIndex, length);
+                            return;
+                        case CorElementType.ELEMENT_TYPE_I:
+                        case CorElementType.ELEMENT_TYPE_U:
+                            // IntPtr/UIntPtr does not implement IComparable
+                            break;
+                    }
+
+                    static void GenericSort<T>(Array keys, Array? items, int adjustedIndex, int length) where T: struct
+                    {
+                        Span<T> keysSpan = UnsafeArrayAsSpan<T>(keys, adjustedIndex, length);
+                        if (items != null)
+                        {
+                            keysSpan.Sort<T, T>(UnsafeArrayAsSpan<T>(items, adjustedIndex, length));
+                        }
+                        else
+                        {
+                            keysSpan.Sort<T>();
+                        }
+                    }
+                }
+            }
+
+            new SorterGenericArray(keys, items, comparer).Sort(index, length);
         }
 
         public static void Sort<T>(T[] array)
         {
             if (array == null)
                 ThrowHelper.ThrowArgumentNullException(ExceptionArgument.array);
-            Sort<T>(array, 0, array.Length, null);
+
+            if (array.Length > 1)
+            {
+                var span = new Span<T>(ref Unsafe.As<byte, T>(ref array.GetRawSzArrayData()), array.Length);
+                ArraySortHelper<T>.Default.Sort(span, null);
+            }
         }
 
         public static void Sort<TKey, TValue>(TKey[] keys, TValue[]? items)
@@ -1535,17 +1770,8 @@ namespace System
 
             if (length > 1)
             {
-#if CORECLR
-                if (comparer == null || comparer == Comparer<T>.Default)
-                {
-                    if (TrySZSort(array, null, index, index + length - 1))
-                    {
-                        return;
-                    }
-                }
-#endif
-
-                ArraySortHelper<T>.Default.Sort(array, index, length, comparer);
+                var span = new Span<T>(ref Unsafe.Add(ref Unsafe.As<byte, T>(ref array.GetRawSzArrayData()), index), length);
+                ArraySortHelper<T>.Default.Sort(span, comparer);
             }
         }
 
@@ -1562,23 +1788,15 @@ namespace System
 
             if (length > 1)
             {
-#if CORECLR
-                if (comparer == null || comparer == Comparer<TKey>.Default)
-                {
-                    if (TrySZSort(keys, items, index, index + length - 1))
-                    {
-                        return;
-                    }
-                }
-#endif
-
                 if (items == null)
                 {
                     Sort<TKey>(keys, index, length, comparer);
                     return;
                 }
 
-                ArraySortHelper<TKey, TValue>.Default.Sort(keys, items, index, length, comparer);
+                var spanKeys = new Span<TKey>(ref Unsafe.Add(ref Unsafe.As<byte, TKey>(ref keys.GetRawSzArrayData()), index), length);
+                var spanItems = new Span<TValue>(ref Unsafe.Add(ref Unsafe.As<byte, TValue>(ref items.GetRawSzArrayData()), index), length);
+                ArraySortHelper<TKey, TValue>.Default.Sort(spanKeys, spanItems, comparer);
             }
         }
 
@@ -1594,7 +1812,8 @@ namespace System
                 ThrowHelper.ThrowArgumentNullException(ExceptionArgument.comparison);
             }
 
-            ArraySortHelper<T>.Sort(array, 0, array.Length, comparison!);
+            var span = new Span<T>(ref Unsafe.As<byte, T>(ref array.GetRawSzArrayData()), array.Length);
+            ArraySortHelper<T>.Sort(span, comparison);
         }
 
         public static bool TrueForAll<T>(T[] array, Predicate<T> match)
@@ -1619,7 +1838,6 @@ namespace System
             return true;
         }
 
-#if !CORERT
         // Private value type used by the Sort methods.
         private readonly struct SorterObjectArray
         {
@@ -1634,7 +1852,7 @@ namespace System
                 this.comparer = comparer;
             }
 
-            internal void SwapIfGreaterWithItems(int a, int b)
+            internal void SwapIfGreater(int a, int b)
             {
                 if (a != b)
                 {
@@ -1704,14 +1922,14 @@ namespace System
                         }
                         if (partitionSize == 2)
                         {
-                            SwapIfGreaterWithItems(lo, hi);
+                            SwapIfGreater(lo, hi);
                             return;
                         }
                         if (partitionSize == 3)
                         {
-                            SwapIfGreaterWithItems(lo, hi - 1);
-                            SwapIfGreaterWithItems(lo, hi);
-                            SwapIfGreaterWithItems(hi - 1, hi);
+                            SwapIfGreater(lo, hi - 1);
+                            SwapIfGreater(lo, hi);
+                            SwapIfGreater(hi - 1, hi);
                             return;
                         }
 
@@ -1737,9 +1955,9 @@ namespace System
                 // Compute median-of-three.  But also partition them, since we've done the comparison.
                 int mid = lo + (hi - lo) / 2;
                 // Sort lo, mid and hi appropriately, then pick mid as the pivot.
-                SwapIfGreaterWithItems(lo, mid);
-                SwapIfGreaterWithItems(lo, hi);
-                SwapIfGreaterWithItems(mid, hi);
+                SwapIfGreater(lo, mid);
+                SwapIfGreater(lo, hi);
+                SwapIfGreater(mid, hi);
 
                 object pivot = keys[mid];
                 Swap(mid, hi - 1);
@@ -1757,18 +1975,18 @@ namespace System
                 }
 
                 // Put pivot in the right location.
-                Swap(left, (hi - 1));
+                Swap(left, hi - 1);
                 return left;
             }
 
             private void Heapsort(int lo, int hi)
             {
                 int n = hi - lo + 1;
-                for (int i = n / 2; i >= 1; i = i - 1)
+                for (int i = n / 2; i >= 1; i--)
                 {
                     DownHeap(i, n, lo);
                 }
-                for (int i = n; i > 1; i = i - 1)
+                for (int i = n; i > 1; i--)
                 {
                     Swap(lo, lo + i - 1);
 
@@ -1779,7 +1997,7 @@ namespace System
             private void DownHeap(int i, int n, int lo)
             {
                 object d = keys[lo + i - 1];
-                object? dt = (items != null) ? items[lo + i - 1] : null;
+                object? dt = items?[lo + i - 1];
                 int child;
                 while (i <= n / 2)
                 {
@@ -1809,7 +2027,7 @@ namespace System
                 {
                     j = i;
                     t = keys[i + 1];
-                    ti = (items != null) ? items[i + 1] : null;
+                    ti = items?[i + 1];
                     while (j >= lo && comparer.Compare(t, keys[j]) < 0)
                     {
                         keys[j + 1] = keys[j];
@@ -1840,7 +2058,7 @@ namespace System
                 this.comparer = comparer;
             }
 
-            internal void SwapIfGreaterWithItems(int a, int b)
+            internal void SwapIfGreater(int a, int b)
             {
                 if (a != b)
                 {
@@ -1910,14 +2128,14 @@ namespace System
                         }
                         if (partitionSize == 2)
                         {
-                            SwapIfGreaterWithItems(lo, hi);
+                            SwapIfGreater(lo, hi);
                             return;
                         }
                         if (partitionSize == 3)
                         {
-                            SwapIfGreaterWithItems(lo, hi - 1);
-                            SwapIfGreaterWithItems(lo, hi);
-                            SwapIfGreaterWithItems(hi - 1, hi);
+                            SwapIfGreater(lo, hi - 1);
+                            SwapIfGreater(lo, hi);
+                            SwapIfGreater(hi - 1, hi);
                             return;
                         }
 
@@ -1943,9 +2161,9 @@ namespace System
                 // Compute median-of-three.  But also partition them, since we've done the comparison.
                 int mid = lo + (hi - lo) / 2;
 
-                SwapIfGreaterWithItems(lo, mid);
-                SwapIfGreaterWithItems(lo, hi);
-                SwapIfGreaterWithItems(mid, hi);
+                SwapIfGreater(lo, mid);
+                SwapIfGreater(lo, hi);
+                SwapIfGreater(mid, hi);
 
                 object? pivot = keys.GetValue(mid);
                 Swap(mid, hi - 1);
@@ -1963,18 +2181,18 @@ namespace System
                 }
 
                 // Put pivot in the right location.
-                Swap(left, (hi - 1));
+                Swap(left, hi - 1);
                 return left;
             }
 
             private void Heapsort(int lo, int hi)
             {
                 int n = hi - lo + 1;
-                for (int i = n / 2; i >= 1; i = i - 1)
+                for (int i = n / 2; i >= 1; i--)
                 {
                     DownHeap(i, n, lo);
                 }
-                for (int i = n; i > 1; i = i - 1)
+                for (int i = n; i > 1; i--)
                 {
                     Swap(lo, lo + i - 1);
 
@@ -1985,7 +2203,7 @@ namespace System
             private void DownHeap(int i, int n, int lo)
             {
                 object? d = keys.GetValue(lo + i - 1);
-                object? dt = (items != null) ? items.GetValue(lo + i - 1) : null;
+                object? dt = items?.GetValue(lo + i - 1);
                 int child;
                 while (i <= n / 2)
                 {
@@ -2017,7 +2235,7 @@ namespace System
                 {
                     j = i;
                     t = keys.GetValue(i + 1);
-                    dt = (items != null) ? items.GetValue(i + 1) : null;
+                    dt = items?.GetValue(i + 1);
 
                     while (j >= lo && comparer.Compare(t, keys.GetValue(j)) < 0)
                     {
@@ -2034,6 +2252,10 @@ namespace System
             }
         }
 
+        private static Span<T> UnsafeArrayAsSpan<T>(Array array, int adjustedIndex, int length) =>
+            new Span<T>(ref Unsafe.As<byte, T>(ref array.GetRawArrayData()), array.Length).Slice(adjustedIndex, length);
+
+#if !CORERT
         public IEnumerator GetEnumerator()
         {
             int lowerBound = GetLowerBound(0);

@@ -82,10 +82,7 @@ namespace System
                 members = GetMember(defaultMemberName);
             }
 
-            if (members == null)
-                members = Array.Empty<MemberInfo>();
-
-            return members;
+            return members ?? Array.Empty<MemberInfo>();
         }
 
         public override Type GetElementType() => RuntimeTypeHandle.GetElementType(this);
@@ -190,8 +187,6 @@ namespace System
                     typeCode = TypeCode.Single; break;
                 case CorElementType.ELEMENT_TYPE_R8:
                     typeCode = TypeCode.Double; break;
-                case CorElementType.ELEMENT_TYPE_STRING:
-                    typeCode = TypeCode.String; break;
                 case CorElementType.ELEMENT_TYPE_VALUETYPE:
                     if (this == Convert.ConvertTypes[(int)TypeCode.Decimal])
                         typeCode = TypeCode.Decimal;
@@ -271,7 +266,7 @@ namespace System
                 ulong[] ulValues = Enum.InternalGetValues(this);
                 ulong ulValue = Enum.ToUInt64(value);
 
-                return (Array.BinarySearch(ulValues, ulValue) >= 0);
+                return Array.BinarySearch(ulValues, ulValue) >= 0;
             }
             else
             {
@@ -282,7 +277,7 @@ namespace System
         protected override bool IsValueTypeImpl()
         {
             // We need to return true for generic parameters with the ValueType constraint.
-            // So we cannot use the faster RuntimeTypeHandle.IsValueType because it returns 
+            // So we cannot use the faster RuntimeTypeHandle.IsValueType because it returns
             // false for all generic parameters.
             if (this == typeof(ValueType) || this == typeof(Enum))
                 return false;
@@ -369,8 +364,7 @@ namespace System
 
                     if (constraint.IsGenericParameter)
                     {
-                        GenericParameterAttributes special;
-                        special = constraint.GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask;
+                        GenericParameterAttributes special = constraint.GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask;
 
                         if ((special & GenericParameterAttributes.ReferenceTypeConstraint) == 0 &&
                             (special & GenericParameterAttributes.NotNullableValueTypeConstraint) == 0)
@@ -382,8 +376,7 @@ namespace System
 
                 if (baseType == ObjectType)
                 {
-                    GenericParameterAttributes special;
-                    special = GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask;
+                    GenericParameterAttributes special = GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask;
                     if ((special & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
                         baseType = ValueType;
                 }
@@ -392,6 +385,6 @@ namespace System
             }
 
             return RuntimeTypeHandle.GetBaseType(this);
-        }        
+        }
     }
 }

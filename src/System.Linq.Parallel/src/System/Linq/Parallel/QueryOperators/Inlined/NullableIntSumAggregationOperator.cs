@@ -15,7 +15,7 @@ using System.Threading;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// An inlined sum aggregation and its enumerator, for Nullable ints. 
+    /// An inlined sum aggregation and its enumerator, for Nullable ints.
     /// </summary>
     internal sealed class NullableIntSumAggregationOperator : InlinedAggregationOperator<int?, int?, int?>
     {
@@ -35,9 +35,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override int? InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override int? InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -62,7 +62,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<int?, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<int?, TKey> source, object sharedData, CancellationToken cancellationToken)
+            int index, int count, QueryOperatorEnumerator<int?, TKey> source, object? sharedData, CancellationToken cancellationToken)
         {
             return new NullableIntSumAggregationOperatorEnumerator<TKey>(source, index, cancellationToken);
         }
@@ -74,7 +74,7 @@ namespace System.Linq.Parallel
 
         private class NullableIntSumAggregationOperatorEnumerator<TKey> : InlinedAggregationOperatorEnumerator<int?>
         {
-            private QueryOperatorEnumerator<int?, TKey> _source; // The source data.
+            private readonly QueryOperatorEnumerator<int?, TKey> _source; // The source data.
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new aggregation operator.
@@ -96,7 +96,7 @@ namespace System.Linq.Parallel
             protected override bool MoveNextCore(ref int? currentElement)
             {
                 int? element = default(int?);
-                TKey keyUnused = default(TKey);
+                TKey keyUnused = default(TKey)!;
 
                 QueryOperatorEnumerator<int?, TKey> source = _source;
                 if (source.MoveNext(ref element, ref keyUnused))

@@ -28,7 +28,7 @@ public static partial class DataContractJsonSerializerTests
     {
         MethodInfo method = typeof(DataContractSerializer).GetMethod(SerializationOptionSetterName, BindingFlags.NonPublic | BindingFlags.Static);
         Assert.True(method != null, $"No method named {SerializationOptionSetterName}");
-        method.Invoke(null, new object[] { 1 }); 
+        method.Invoke(null, new object[] { 1 });
     }
 #endif
     [Fact]
@@ -72,7 +72,7 @@ public static partial class DataContractJsonSerializerTests
         Assert.StrictEqual(SerializeAndDeserialize<char>((char)0x85, @"""\u0085"""), (char)0x85);
 
         // Between #2 and #3
-        Assert.StrictEqual('ñ', SerializeAndDeserialize<char>('ñ', @"""ñ""")); // 0x00F1
+        Assert.StrictEqual('\u00F1', SerializeAndDeserialize<char>('\u00F1', "\"\u00F1\"")); // 0x00F1
 
         // #3. 0x2028 - 0x2029
         Assert.StrictEqual(SerializeAndDeserialize<char>((char)0x2028, @"""\u2028"""), (char)0x2028);
@@ -87,7 +87,7 @@ public static partial class DataContractJsonSerializerTests
         Assert.StrictEqual(SerializeAndDeserialize<char>((char)0xdfff, @"""\udfff"""), (char)0xdfff);
 
         // Between #4 and #5
-        Assert.StrictEqual(SerializeAndDeserialize<char>((char)0xeabc, @""""""), (char)0xeabc);
+        Assert.StrictEqual(SerializeAndDeserialize<char>((char)0xeabc, "\"\uEABC\""), (char)0xeabc);
 
         // #5. 0xFFFE - 0xFFFF
         Assert.StrictEqual(SerializeAndDeserialize<char>((char)0xfffe, @"""\ufffe"""), (char)0xfffe);
@@ -226,7 +226,7 @@ public static partial class DataContractJsonSerializerTests
     [Fact]
     public static void DCJS_StringAsRoot()
     {
-        foreach (string value in new string[] { "abc", "  a b  ", null, "", " ", "Hello World! 漢 ñ" })
+        foreach (string value in new string[] { "abc", "  a b  ", null, "", " ", "Hello World! \u6F22 \u00F1" })
         {
             Assert.Equal(SerializeAndDeserialize<string>(value, value == null ? "null" : string.Format(@"""{0}""", value.ToString())), value);
         }
@@ -682,7 +682,7 @@ public static partial class DataContractJsonSerializerTests
 
         foreach (var item in x)
         {
-            Assert.True(y.Contains(item));
+            Assert.Contains(item, y);
         }
     }
 
@@ -1091,7 +1091,7 @@ public static partial class DataContractJsonSerializerTests
     public static void DCJS_WithDuplicateNames()
     {
         var x = new WithDuplicateNames(true);
-        var y = SerializeAndDeserialize<WithDuplicateNames>(x, @"{""ClassA1"":{""Name"":""Hello World! 漢 ñ""},""ClassA2"":{""Nombre"":""""},""EnumA1"":1,""EnumA2"":1,""StructA1"":{""Text"":""""},""StructA2"":{""Texto"":""""}}");
+        var y = SerializeAndDeserialize<WithDuplicateNames>(x, "{\"ClassA1\":{\"Name\":\"Hello World! \u6F22 \u00F1\"},\"ClassA2\":{\"Nombre\":\"\"},\"EnumA1\":1,\"EnumA2\":1,\"StructA1\":{\"Text\":\"\"},\"StructA2\":{\"Texto\":\"\"}}");
 
         Assert.Equal(x.ClassA1.Name, y.ClassA1.Name);
         Assert.StrictEqual(x.StructA1, y.StructA1);
@@ -1169,10 +1169,10 @@ public static partial class DataContractJsonSerializerTests
     [Fact]
     public static void DCJS_TypeNamesWithSpecialCharacters()
     {
-        var x = new __TypeNameWithSpecialCharacters漢ñ() { PropertyNameWithSpecialCharacters漢ñ = "Test" };
-        var y = SerializeAndDeserialize<__TypeNameWithSpecialCharacters漢ñ>(x, @"{""PropertyNameWithSpecialCharacters漢ñ"":""Test""}");
+        var x = new __TypeNameWithSpecialCharacters\u6F22\u00F1() { PropertyNameWithSpecialCharacters\u6F22\u00F1 = "Test" };
+        var y = SerializeAndDeserialize<__TypeNameWithSpecialCharacters\u6F22\u00F1>(x, "{\"PropertyNameWithSpecialCharacters\u6F22\u00F1\":\"Test\"}");
 
-        Assert.Equal(x.PropertyNameWithSpecialCharacters漢ñ, y.PropertyNameWithSpecialCharacters漢ñ);
+        Assert.Equal(x.PropertyNameWithSpecialCharacters\u6F22\u00F1, y.PropertyNameWithSpecialCharacters\u6F22\u00F1);
     }
 
     [Fact]
@@ -1970,7 +1970,7 @@ public static partial class DataContractJsonSerializerTests
             DoubleMember = 123.456,
             FloatMember = 456.789f,
             GuidMember = Guid.Parse("2054fd3e-e118-476a-9962-1a882be51860"),
-            //public byte[] HexBinaryMember 
+            //public byte[] HexBinaryMember
             StringMember = "abc",
             IntMember = 123
         };
@@ -2379,7 +2379,7 @@ public static partial class DataContractJsonSerializerTests
             Utils.CompareResult result2 = Utils.Compare(baseline2, actualOutput2);
             Assert.True(result2.Equal, $"{nameof(actualOutput2)} was not as expected: {Environment.NewLine}Expected: {baseline2}{Environment.NewLine}Actual: {actualOutput2}");
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Assert.True(false, $"Error occurred when comparing results: {Environment.NewLine}{e.Message}{Environment.NewLine}Expected: {baseline2}{Environment.NewLine}Actual: {actualOutput2}");
         }
@@ -2591,13 +2591,13 @@ public static partial class DataContractJsonSerializerTests
         dcjsSettings = new DataContractJsonSerializerSettings() { DateTimeFormat = jsonTypes.DTF_DMMMM };
         var actual3 = SerializeAndDeserialize(graph, "{\"DateTime\":\"1, mayo\",\"OffsetMinutes\":60}", dcjsSettings);
         var expected3 = new DateTimeOffset(DateTime.Now.Year, 5, 1, 0, 0, 0, new TimeSpan(1, 0, 0));
-        Assert.True(actual3 == expected3, 
+        Assert.True(actual3 == expected3,
             $"{nameof(actual3)} was not as expected.\r\nExpected: {expected3} \r\n Actual: {actual3}");
 
         var dt35832 = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 3, 58, 32);
         var dt = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
         dcjsSettings = new DataContractJsonSerializerSettings() { DateTimeFormat = jsonTypes.DTF_hmsFt };
-        string actualam = GetAmString(jsonTypes.DTF_hmsFt); 
+        string actualam = GetAmString(jsonTypes.DTF_hmsFt);
         string baselinelist = $"[\"03:58:32.00 {actualam}\",\"12:00:00.00 {actualam}\",\"12:00:00.00 {actualam}\",\"03:58:32.00 {actualam}\"]";
         var actual4 = SerializeAndDeserialize(jsonTypes.DT_List, baselinelist, dcjsSettings);
         Assert.NotNull(actual4);
@@ -2640,7 +2640,7 @@ public static partial class DataContractJsonSerializerTests
         {
             DateTimeFormat = jsonTypes.DTF_hmsFt,
             UseSimpleDictionaryFormat = true,
-            EmitTypeInformation = EmitTypeInformation.AsNeeded, 
+            EmitTypeInformation = EmitTypeInformation.AsNeeded,
             KnownTypes = new List<Type>()
         };
         string actualam = GetAmString(jsonTypes.DTF_hmsFt);
@@ -2919,7 +2919,7 @@ public static partial class DataContractJsonSerializerTests
         var value = new UnspecifiedRootSerializationType();
         string baseline = "{\"MyIntProperty\":0,\"MyStringProperty\":null}";
         var actual = SerializeAndDeserialize(value, baseline);
-        
+
         Assert.Equal(value.MyIntProperty, actual.MyIntProperty);
         Assert.Equal(value.MyStringProperty, actual.MyStringProperty);
     }
@@ -3061,15 +3061,6 @@ public static partial class DataContractJsonSerializerTests
 
     private static string GetAmString(DateTimeFormat dateTimeFormat)
     {
-        var dcjsSettings = new DataContractJsonSerializerSettings() { DateTimeFormat = dateTimeFormat };
-        var dcjs = new DataContractJsonSerializer(typeof(DateTime), dcjsSettings);
-        using (var ms = new MemoryStream())
-        {
-            dcjs.WriteObject(ms, new DateTime());
-            ms.Position = 0;
-            string output = new StreamReader(ms).ReadToEnd();
-            string actualam = output.Contains("a.m.") ? "a.m." : "a. m.";
-            return actualam;
-        }
+        return ((CultureInfo)dateTimeFormat.FormatProvider).DateTimeFormat.AMDesignator;
     }
 }

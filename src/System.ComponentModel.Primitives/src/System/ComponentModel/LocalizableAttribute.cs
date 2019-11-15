@@ -25,13 +25,13 @@ namespace System.ComponentModel
 
         /// <summary>
         /// Specifies that a property should be localized.
-        /// This <see langword='static'/> field is read-only. 
+        /// This <see langword='static'/> field is read-only.
         /// </summary>
         public static readonly LocalizableAttribute Yes = new LocalizableAttribute(true);
 
         /// <summary>
         /// Specifies that a property should not be localized.
-        /// This <see langword='static'/> field is read-only. 
+        /// This <see langword='static'/> field is read-only.
         /// </summary>
         public static readonly LocalizableAttribute No = new LocalizableAttribute(false);
 
@@ -42,16 +42,8 @@ namespace System.ComponentModel
         /// </summary>
         public static readonly LocalizableAttribute Default = No;
 
-        public override bool Equals(object obj)
-        {
-            if (obj == this)
-            {
-                return true;
-            }
-
-            LocalizableAttribute other = obj as LocalizableAttribute;
-            return other?.IsLocalizable == IsLocalizable;
-        }
+        public override bool Equals(object? obj) =>
+            obj is LocalizableAttribute other && other.IsLocalizable == IsLocalizable;
 
         public override int GetHashCode() => base.GetHashCode();
 

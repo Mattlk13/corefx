@@ -142,7 +142,7 @@ namespace System.ComponentModel
                 if (_properties != null)
                 {
                     PropertyDescriptor[] newProps = new PropertyDescriptor[Count];
-                    Array.Copy(_properties, 0, newProps, 0, Count);
+                    Array.Copy(_properties, newProps, Count);
                     _properties = newProps;
                 }
             }
@@ -172,7 +172,7 @@ namespace System.ComponentModel
 
             int newSize = Math.Max(sizeNeeded, _properties.Length * 2);
             PropertyDescriptor[] newProps = new PropertyDescriptor[newSize];
-            Array.Copy(_properties, 0, newProps, 0, Count);
+            Array.Copy(_properties, newProps, Count);
             _properties = newProps;
         }
 
@@ -285,7 +285,7 @@ namespace System.ComponentModel
         }
 
         /// <summary>
-        /// Sorts the members of this PropertyDescriptorCollection, using the default sort for this collection, 
+        /// Sorts the members of this PropertyDescriptorCollection, using the default sort for this collection,
         /// which is usually alphabetical.
         /// </summary>
         public virtual PropertyDescriptorCollection Sort()
@@ -295,7 +295,7 @@ namespace System.ComponentModel
 
 
         /// <summary>
-        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will 
+        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will
         /// be applied first, followed by sort using the specified IComparer.
         /// </summary>
         public virtual PropertyDescriptorCollection Sort(string[] names)
@@ -304,7 +304,7 @@ namespace System.ComponentModel
         }
 
         /// <summary>
-        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will 
+        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will
         /// be applied first, followed by sort using the specified IComparer.
         /// </summary>
         public virtual PropertyDescriptorCollection Sort(string[] names, IComparer comparer)
@@ -313,7 +313,7 @@ namespace System.ComponentModel
         }
 
         /// <summary>
-        /// Sorts the members of this PropertyDescriptorCollection, using the specified IComparer to compare, 
+        /// Sorts the members of this PropertyDescriptorCollection, using the specified IComparer to compare,
         /// the PropertyDescriptors contained in the collection.
         /// </summary>
         public virtual PropertyDescriptorCollection Sort(IComparer comparer)
@@ -322,7 +322,7 @@ namespace System.ComponentModel
         }
 
         /// <summary>
-        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will 
+        /// Sorts the members of this PropertyDescriptorCollection. Any specified NamedSort arguments will
         /// be applied first, followed by sort using the specified IComparer.
         /// </summary>
         protected void InternalSort(string[] names)
@@ -400,7 +400,7 @@ namespace System.ComponentModel
             if (_properties.Length != Count)
             {
                 PropertyDescriptor[] enumProps = new PropertyDescriptor[Count];
-                Array.Copy(_properties, 0, enumProps, 0, Count);
+                Array.Copy(_properties, enumProps, Count);
                 return enumProps.GetEnumerator();
             }
             return _properties.GetEnumerator();
@@ -531,7 +531,7 @@ namespace System.ComponentModel
                 if (_properties.Length != Count)
                 {
                     PropertyDescriptor[] newProps = new PropertyDescriptor[Count];
-                    Array.Copy(_properties, 0, newProps, 0, Count);
+                    Array.Copy(_properties, newProps, Count);
                     return newProps;
                 }
                 else
@@ -595,7 +595,7 @@ namespace System.ComponentModel
 
         private class PropertyDescriptorEnumerator : IDictionaryEnumerator
         {
-            private PropertyDescriptorCollection _owner;
+            private readonly PropertyDescriptorCollection _owner;
             private int _index = -1;
 
             public PropertyDescriptorEnumerator(PropertyDescriptorCollection owner)

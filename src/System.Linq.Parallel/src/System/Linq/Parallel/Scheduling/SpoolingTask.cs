@@ -179,11 +179,11 @@ namespace System.Linq.Parallel
     internal class StopAndGoSpoolingTask<TInputOutput, TIgnoreKey> : SpoolingTaskBase
     {
         // The data source from which to pull data.
-        private QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
+        private readonly QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
 
         // The destination channel into which data is placed. This can be null if we are
         // enumerating "for effect", e.g. forall loop.
-        private SynchronousChannel<TInputOutput> _destination;
+        private readonly SynchronousChannel<TInputOutput> _destination;
 
         //-----------------------------------------------------------------------------------
         // Creates, but does not execute, a new spooling task.
@@ -216,15 +216,15 @@ namespace System.Linq.Parallel
         {
             // We just enumerate over the entire source data stream, placing each element
             // into the destination channel.
-            TInputOutput current = default(TInputOutput);
-            TIgnoreKey keyUnused = default(TIgnoreKey);
+            TInputOutput current = default(TInputOutput)!;
+            TIgnoreKey keyUnused = default(TIgnoreKey)!;
 
             QueryOperatorEnumerator<TInputOutput, TIgnoreKey> source = _source;
             SynchronousChannel<TInputOutput> destination = _destination;
             CancellationToken cancelToken = _groupState.CancellationState.MergedCancellationToken;
 
             destination.Init();
-            while (source.MoveNext(ref current, ref keyUnused))
+            while (source.MoveNext(ref current!, ref keyUnused))
             {
                 // If an abort has been requested, stop this worker immediately.
                 if (cancelToken.IsCancellationRequested)
@@ -268,11 +268,11 @@ namespace System.Linq.Parallel
     internal class PipelineSpoolingTask<TInputOutput, TIgnoreKey> : SpoolingTaskBase
     {
         // The data source from which to pull data.
-        private QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
+        private readonly QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
 
         // The destination channel into which data is placed. This can be null if we are
         // enumerating "for effect", e.g. forall loop.
-        private AsynchronousChannel<TInputOutput> _destination;
+        private readonly AsynchronousChannel<TInputOutput> _destination;
 
         //-----------------------------------------------------------------------------------
         // Creates, but does not execute, a new spooling task.
@@ -305,14 +305,14 @@ namespace System.Linq.Parallel
         {
             // We just enumerate over the entire source data stream, placing each element
             // into the destination channel.
-            TInputOutput current = default(TInputOutput);
-            TIgnoreKey keyUnused = default(TIgnoreKey);
+            TInputOutput current = default(TInputOutput)!;
+            TIgnoreKey keyUnused = default(TIgnoreKey)!;
 
             QueryOperatorEnumerator<TInputOutput, TIgnoreKey> source = _source;
             AsynchronousChannel<TInputOutput> destination = _destination;
             CancellationToken cancelToken = _groupState.CancellationState.MergedCancellationToken;
 
-            while (source.MoveNext(ref current, ref keyUnused))
+            while (source.MoveNext(ref current!, ref keyUnused))
             {
                 // If an abort has been requested, stop this worker immediately.
                 if (cancelToken.IsCancellationRequested)
@@ -359,7 +359,7 @@ namespace System.Linq.Parallel
     internal class ForAllSpoolingTask<TInputOutput, TIgnoreKey> : SpoolingTaskBase
     {
         // The data source from which to pull data.
-        private QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
+        private readonly QueryOperatorEnumerator<TInputOutput, TIgnoreKey> _source;
 
         //-----------------------------------------------------------------------------------
         // Creates, but does not execute, a new spooling task.
@@ -390,11 +390,11 @@ namespace System.Linq.Parallel
         protected override void SpoolingWork()
         {
             // We just enumerate over the entire source data stream for effect.
-            TInputOutput currentUnused = default(TInputOutput);
-            TIgnoreKey keyUnused = default(TIgnoreKey);
+            TInputOutput currentUnused = default(TInputOutput)!;
+            TIgnoreKey keyUnused = default(TIgnoreKey)!;
 
             //Note: this only ever runs with a ForAll operator, and ForAllEnumerator performs cancellation checks
-            while (_source.MoveNext(ref currentUnused, ref keyUnused))
+            while (_source.MoveNext(ref currentUnused!, ref keyUnused))
                 ;
         }
 

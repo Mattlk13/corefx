@@ -52,7 +52,7 @@ namespace System.Resources
         private static volatile CultureInfo s_globalResourceContextBestFitCultureInfo;
         private static volatile global::Windows.ApplicationModel.Resources.Core.ResourceManager s_globalResourceManager;
 
-        private static object s_objectForLock = new object(); // Used by InitializeStatics
+        private static readonly object s_objectForLock = new object(); // Used by InitializeStatics
 
         private static bool InitializeStatics()
         {
@@ -148,7 +148,7 @@ namespace System.Resources
                     return new CultureInfo(languages[i]);
                 }
 
-                int result = Interop.Kernel32.ResolveLocaleName(languages[i], localeNameBuffer, Interop.Kernel32.LOCALE_NAME_MAX_LENGTH); 
+                int result = Interop.Kernel32.ResolveLocaleName(languages[i], localeNameBuffer, Interop.Kernel32.LOCALE_NAME_MAX_LENGTH);
                 if (result != 0)
                 {
                     string localeName = new string(localeNameBuffer, 0, result - 1); // result length includes null terminator
@@ -248,12 +248,12 @@ namespace System.Resources
             }
 
             List<string> languages = new List<string>(langs);
-            
+
             if (languages.Count > 0 && languages[0] == c_InvariantCulturePrivateName)
             {
                 languages[0] = CultureInfo.InvariantCulture.Name;
             }
-            
+
             s_globalResourceContextBestFitCultureInfo = GetBestFitCultureFromLanguageList(languages);
             s_globalResourceContextFallBackList = ReadOnlyListToString(languages);
         }
@@ -273,7 +273,7 @@ namespace System.Resources
                    (libpath[packagepath.Length] == '\\' || packagepath.EndsWith("\\"));
         }
 
-#if netstandard
+#if NETSTANDARD2_0 || NETCOREAPP
         /* Returns true if libpath is path to an ni image and if the path contains packagename as a subfolder */
         private static bool LibpathContainsPackagename(string libpath, string packagename)
         {
@@ -305,7 +305,7 @@ namespace System.Resources
                 }
             }
 
-#if netstandard
+#if NETSTANDARD2_0 || NETCOREAPP
             /* On phone libpath is usually ni path and not IL path as we do not touch the IL on phone.
                On Phone NI images are no longer under package root. Due to this above logic fails to
                find the package to which the library belongs. We assume that NI paths usually have
@@ -363,7 +363,7 @@ namespace System.Resources
                 {
                     string packageSimpleName = FindPackageSimpleNameForFilename(libpath);
 
-#if netstandard
+#if NETSTANDARD2_0 || NETCOREAPP
                     // If we have found a simple package name for the assembly, lets make sure it is not *.resource.dll that
                     // an application may have packaged in its AppX. This is to enforce AppX apps to use PRI resources.
                     if (packageSimpleName != null)
@@ -376,7 +376,7 @@ namespace System.Resources
                             packageSimpleName = null;
                         }
                     }
-#endif //  netstandard
+#endif
                     if (packageSimpleName != null)
                     {
                         ResourceMap packageResourceMap = null;
@@ -463,7 +463,7 @@ namespace System.Resources
             {
                 if (!ReferenceEquals(s_globalResourceContextBestFitCultureInfo, ci))
                 {
-                    // We have same culture name but different reference, we'll need to update s_globalResourceContextBestFitCultureInfo only as ci can 
+                    // We have same culture name but different reference, we'll need to update s_globalResourceContextBestFitCultureInfo only as ci can
                     // be a customized subclassed culture which setting different values for NFI, DTFI...etc.
                     s_globalResourceContextBestFitCultureInfo = ci;
                 }

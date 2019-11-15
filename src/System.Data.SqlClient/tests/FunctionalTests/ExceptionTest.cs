@@ -139,25 +139,6 @@ namespace System.Data.SqlClient.Tests
             OpenBadConnection(builder.ConnectionString, invalidConnStringError);
         }
 
-        [Fact]
-        [SkipOnTargetFramework(~TargetFrameworkMonikers.Uap)]
-        public static void LocalDBNotSupportedOnUapTest()
-        {
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(@"server=(localdb)\MSSQLLocalDB")
-            {
-                IntegratedSecurity = true,
-                ConnectTimeout = 2
-            };
-
-            Assert.Throws<PlatformNotSupportedException>(() =>
-            {
-                using (SqlConnection conn = new SqlConnection(builder.ConnectionString))
-                {
-                    conn.Open();
-                }
-            });
-        }
-
         private void GenerateConnectionException(string connectionString)
         {
             using (SqlConnection sqlConnection = new SqlConnection(connectionString))
@@ -176,7 +157,7 @@ namespace System.Data.SqlClient.Tests
             TException ex = Assert.Throws<TException>(connectAction);
 
             // Some exception messages are different between Framework and Core
-            if(!PlatformDetection.IsFullFramework)
+            if (!PlatformDetection.IsFullFramework)
             {
                 Assert.Contains(expectedExceptionMessage, ex.Message);
             }

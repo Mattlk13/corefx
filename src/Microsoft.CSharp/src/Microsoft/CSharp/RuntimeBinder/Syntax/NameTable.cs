@@ -2,8 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Microsoft.CSharp.RuntimeBinder.Syntax
 {
@@ -65,7 +65,7 @@ namespace Microsoft.CSharp.RuntimeBinder.Syntax
         {
             int hashCode = ComputeHashCode(name.Text);
             // make sure it doesn't already exist
-            Debug.Assert(_entries.All(e => e?.Name.Text != name.Text));
+            Debug.Assert(Array.TrueForAll(_entries, e => e?.Name.Text != name.Text));
 
             AddEntry(name, hashCode);
         }
@@ -151,7 +151,7 @@ namespace Microsoft.CSharp.RuntimeBinder.Syntax
             Entry[] oldEntries = _entries;
             Entry[] newEntries = new Entry[newMask + 1];
 
-            // use oldEntries.Length to eliminate the range check            
+            // use oldEntries.Length to eliminate the range check
             for (int i = 0; i < oldEntries.Length; i++)
             {
                 Entry e = oldEntries[i];

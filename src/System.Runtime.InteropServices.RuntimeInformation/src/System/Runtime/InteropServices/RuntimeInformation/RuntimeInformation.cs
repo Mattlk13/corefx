@@ -3,14 +3,13 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Reflection;
-using System.Diagnostics;
 
 namespace System.Runtime.InteropServices
 {
     public static partial class RuntimeInformation
     {
         private const string FrameworkName = ".NET Core";
-        private static string s_frameworkDescription;
+        private static string? s_frameworkDescription;
 
         public static string FrameworkDescription
         {
@@ -18,7 +17,7 @@ namespace System.Runtime.InteropServices
             {
                 if (s_frameworkDescription == null)
                 {
-                    string versionString = (string)AppContext.GetData("FX_PRODUCT_VERSION");
+                    string? versionString = (string?)AppContext.GetData("FX_PRODUCT_VERSION");
 
                     if (versionString == null)
                     {
@@ -26,12 +25,17 @@ namespace System.Runtime.InteropServices
                         versionString = typeof(object).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
                         // Strip the git hash if there is one
-                        int plusIndex = versionString.IndexOf('+');
-                        if (plusIndex != -1)
-                            versionString = versionString.Substring(0, plusIndex);
+                        if (versionString != null)
+                        {
+                            int plusIndex = versionString.IndexOf('+');
+                            if (plusIndex != -1)
+                            {
+                                versionString = versionString.Substring(0, plusIndex);
+                            }
+                        }
                     }
 
-                    s_frameworkDescription = $"{FrameworkName} {versionString}";
+                    s_frameworkDescription = !string.IsNullOrWhiteSpace(versionString) ? $"{FrameworkName} {versionString}" : FrameworkName;
                 }
 
                 return s_frameworkDescription;

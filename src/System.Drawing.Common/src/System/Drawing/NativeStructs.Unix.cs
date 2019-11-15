@@ -3,7 +3,7 @@
 //
 // System.Drawing.NativeStructs.cs
 //
-// Author: 
+// Author:
 // Alexandre Pigolkine (pigolkine@gmx.de)
 // Jordi Mas (jordi@ximian.com)
 //
@@ -16,10 +16,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -34,26 +34,6 @@ using System.Runtime.InteropServices;
 
 namespace System.Drawing
 {
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct LOGFONT
-    {
-        internal int lfHeight;
-        internal uint lfWidth;
-        internal uint lfEscapement;
-        internal uint lfOrientation;
-        internal uint lfWeight;
-        internal byte lfItalic;
-        internal byte lfUnderline;
-        internal byte lfStrikeOut;
-        internal byte lfCharSet;
-        internal byte lfOutPrecision;
-        internal byte lfClipPrecision;
-        internal byte lfQuality;
-        internal byte lfPitchAndFamily;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        internal string lfFaceName;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct GdipImageCodecInfo
     {
@@ -68,8 +48,8 @@ namespace System.Drawing
         internal int Version;
         internal int SigCount;
         internal int SigSize;
-        IntPtr SigPattern;
-        IntPtr SigMask;
+        private IntPtr SigPattern;
+        private IntPtr SigMask;
 
         internal static void MarshalTo(GdipImageCodecInfo gdipcodec, ImageCodecInfo codec)
         {
@@ -119,7 +99,7 @@ namespace System.Drawing
     [StructLayout(LayoutKind.Sequential)]
     internal struct IconInfo
     {
-        int fIcon;
+        private int fIcon;
         public int xHotspot;
         public int yHotspot;
         public IntPtr hbmMask;
@@ -147,4 +127,3 @@ namespace System.Drawing
         internal int bits_per_rgb;
     }
 }
-

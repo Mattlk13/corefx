@@ -84,7 +84,7 @@ namespace System.Data.Common
                             prec = var / (dsum * dsum);
 
                             // we are dealing with the risk of a cancellation error
-                            // double is guaranteed only for 15 digits so a difference 
+                            // double is guaranteed only for 15 digits so a difference
                             // with a result less than 1e-15 should be considered as zero
 
                             if ((prec < 1e-15) || (var < 0))
@@ -139,7 +139,7 @@ namespace System.Data.Common
                         {
                             return _values[records[0]];
                         }
-                        return null;// no data => null
+                        return null; // no data => null
 
                     case AggregateType.Count:
                         count = 0;
@@ -203,14 +203,14 @@ namespace System.Data.Common
             SqlByte[] newValues = new SqlByte[capacity];
             if (null != _values)
             {
-                Array.Copy(_values, 0, newValues, 0, Math.Min(capacity, _values.Length));
+                Array.Copy(_values, newValues, Math.Min(capacity, _values.Length));
             }
             _values = newValues;
         }
 
         public override object ConvertXmlToObject(string s)
         {
-            SqlByte newValue = new SqlByte();
+            SqlByte newValue = default;
             string tempStr = string.Concat("<col>", s, "</col>"); // this is done since you can give fragmet to reader
             StringReader strReader = new StringReader(tempStr);
 

@@ -12,6 +12,7 @@ namespace System.Globalization.Tests
         private static CompareInfo s_invariantCompare = CultureInfo.InvariantCulture.CompareInfo;
         private static CompareInfo s_hungarianCompare = new CultureInfo("hu-HU").CompareInfo;
         private static CompareInfo s_turkishCompare = new CultureInfo("tr-TR").CompareInfo;
+        private static CompareInfo s_slovakCompare = new CultureInfo("sk-SK").CompareInfo;
 
         public static IEnumerable<object[]> LastIndexOf_TestData()
         {
@@ -47,6 +48,11 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "foobardzsdzs", "rddzs", 11, 12, CompareOptions.None, -1 };
             yield return new object[] { s_invariantCompare, "foobardzsdzs", "rddzs", 11, 12, CompareOptions.Ordinal, -1 };
 
+            // Slovak
+            yield return new object[] { s_slovakCompare, "ch", "h", 0, 1, CompareOptions.None, -1 };
+            yield return new object[] { s_slovakCompare, "hore chodit", "HO", 11, 12, CompareOptions.IgnoreCase, 0 };
+            yield return new object[] { s_slovakCompare, "chh", "h", 2, 2, CompareOptions.None, 2 };
+
             // Turkish
             yield return new object[] { s_turkishCompare, "Hi", "I", 1, 2, CompareOptions.None, -1 };
             yield return new object[] { s_turkishCompare, "Hi", "I", 1, 2, CompareOptions.IgnoreCase, -1 };
@@ -67,22 +73,23 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "Exhibit \u00C0", "a\u0300", 8, 9, CompareOptions.Ordinal, -1 };
             yield return new object[] { s_invariantCompare, "FooBar", "Foo\u0400Bar", 5, 6, CompareOptions.Ordinal, -1 };
             yield return new object[] { s_invariantCompare, "TestFooBA\u0300R", "FooB\u00C0R", 10, 11, CompareOptions.IgnoreNonSpace, 4 };
+            yield return new object[] { s_invariantCompare, "o\u0308", "o", 1, 2, CompareOptions.None, -1 };
 
             // Ignore symbols
             yield return new object[] { s_invariantCompare, "More Test's", "Tests", 10, 11, CompareOptions.IgnoreSymbols, 5 };
             yield return new object[] { s_invariantCompare, "More Test's", "Tests", 10, 11, CompareOptions.None, -1 };
             yield return new object[] { s_invariantCompare, "cbabababdbaba", "ab", 12, 13, CompareOptions.None, 10 };
-            
+
             // Platform differences
             yield return new object[] { s_hungarianCompare, "foobardzsdzs", "rddzs", 11, 12, CompareOptions.None, PlatformDetection.IsWindows ? 5 : -1 };
-            
+
         }
 
         public static IEnumerable<object[]> LastIndexOf_Aesc_Ligature_TestData()
         {
             bool isWindows = PlatformDetection.IsWindows;
-            
-            // Searches for the ligature Æ
+
+            // Searches for the ligature \u00C6
             string source = "Is AE or ae the same as \u00C6 or \u00E6?";
             yield return new object[] { s_invariantCompare, source, "AE", 25, 18, CompareOptions.None, isWindows ? 24 : -1 };
             yield return new object[] { s_invariantCompare, source, "ae", 25, 18, CompareOptions.None, 9 };
@@ -149,6 +156,30 @@ namespace System.Globalization.Tests
             }
             // Use LastIndexOf(string, string, int, int, CompareOptions)
             Assert.Equal(expected, compareInfo.LastIndexOf(source, value, startIndex, count, options));
+
+            if ((compareInfo == s_invariantCompare) && ((options == CompareOptions.None) || (options == CompareOptions.IgnoreCase)))
+            {
+                StringComparison stringComparison = (options == CompareOptions.IgnoreCase) ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture;
+
+                // Use int string.LastIndexOf(string, StringComparison)
+                Assert.Equal(expected, source.LastIndexOf(value, startIndex, count, stringComparison));
+
+                // Use int MemoryExtensions.LastIndexOf(this ReadOnlySpan<char>, ReadOnlySpan<char>, StringComparison)
+                // Filter differences betweeen string-based and Span-based LastIndexOf
+                // - Empty value handling - https://github.com/dotnet/coreclr/issues/26608
+                // - Negative count
+                if (value.Length == 0 || count < 0)
+                    return;
+
+                if (startIndex == source.Length)
+                {
+                    startIndex--;
+                    if (count > 0)
+                        count--;
+                }
+                int leftStartIndex = (startIndex - count + 1);
+                Assert.Equal((expected == -1) ? -1 : (expected - leftStartIndex), source.AsSpan(leftStartIndex, count).LastIndexOf(value.AsSpan(), stringComparison));
+            }
         }
 
         private static void LastIndexOf_Char(CompareInfo compareInfo, string source, char value, int startIndex, int count, CompareOptions options, int expected)

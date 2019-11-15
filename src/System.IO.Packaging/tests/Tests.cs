@@ -31,7 +31,7 @@ namespace System.IO.Packaging.Tests
         {
             return new FileInfo($"{GetTestFilePath(null, memberName, lineNumber)}.{extension}");
         }
-        
+
         [Fact]
         public void WriteRelationsTwice()
         {
@@ -1292,7 +1292,7 @@ namespace System.IO.Packaging.Tests
                                    Mime_MediaTypeNames_Image_Jpeg,
                                    CompressionOption.Normal);
 
-                // Copy the data to the Resource Part 
+                // Copy the data to the Resource Part
                 using (Stream partStream = packagePartResource.GetStream())
                 using (StreamWriter sw = new StreamWriter(partStream))
                 {
@@ -2218,7 +2218,7 @@ namespace System.IO.Packaging.Tests
                                    Mime_MediaTypeNames_Image_Jpeg,
                                    CompressionOption.Normal);
 
-                // Copy the data to the Resource Part 
+                // Copy the data to the Resource Part
                 using (Stream partStream = packagePartResource.GetStream())
                 using (StreamWriter sw = new StreamWriter(partStream))
                 {
@@ -2278,7 +2278,7 @@ namespace System.IO.Packaging.Tests
                                    Mime_MediaTypeNames_Image_Jpeg,
                                    CompressionOption.Normal);
 
-                // Copy the data to the Resource Part 
+                // Copy the data to the Resource Part
                 fiDocumentPath = GetTempFileInfoWithExtension(".xml");
                 File.WriteAllText(fiDocumentPath.FullName, s_DocumentXml);
                 using (FileStream fileStream = new FileStream(fiDocumentPath.FullName, FileMode.Open, FileAccess.Read))
@@ -3644,53 +3644,110 @@ namespace System.IO.Packaging.Tests
         [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Desktop doesn't support Package.Open with FileAccess.Write")]
         public void CreateWithFileAccessWrite()
         {
-            string[] fileNames = new [] { "file1.txt", "file2.txt", "file3.txt" };
-            const string RelationshipType = "http://schemas.microsoft.com/relationships/contains";
-            const string PartRelationshipType = "http://schemas.microsoft.com/relationships/self";
-
             using (Stream stream = new MemoryStream())
             {
                 using (Package package = Package.Open(stream, FileMode.Create, FileAccess.Write))
                 {
-                    foreach (string fileName in fileNames)
+                    ForEachPartWithFileName(package, (part, fileName) =>
                     {
-                        Uri partUri = PackUriHelper.CreatePartUri(new Uri(fileName, UriKind.Relative));
-                        PackagePart part = package.CreatePart(partUri,
-                                                              System.Net.Mime.MediaTypeNames.Text.Plain,
-                                                              CompressionOption.Fast);
                         using (StreamWriter writer = new StreamWriter(part.GetStream(), Encoding.ASCII))
                         {
                             // just write the filename as content
                             writer.Write(fileName);
                         }
-                        part.CreateRelationship(part.Uri, TargetMode.Internal, PartRelationshipType);
-                        package.CreateRelationship(part.Uri, TargetMode.Internal, RelationshipType);
-                    }
+                    });
                 }
 
                 // reopen for read and validate the content
                 stream.Seek(0, SeekOrigin.Begin);
                 using (Package readPackage = Package.Open(stream))
                 {
-                    PackageRelationshipCollection packageRelationships = readPackage.GetRelationships();
-                    Assert.All(packageRelationships, relationship => Assert.Equal(RelationshipType, relationship.RelationshipType));
-                    foreach (string fileName in fileNames)
+                    ForEachPartWithFileName(readPackage, (part, fileName) =>
                     {
-                        PackagePart part = readPackage.GetPart(PackUriHelper.CreatePartUri(new Uri(fileName, UriKind.Relative)));
-
                         using (Stream partStream = part.GetStream())
                         using (StreamReader reader = new StreamReader(partStream, Encoding.ASCII))
                         {
                             Assert.Equal(fileName.Length, partStream.Length);
                             Assert.Equal(fileName, reader.ReadToEnd());
                         }
-                        
-                        PackageRelationshipCollection partRelationships = part.GetRelationshipsByType(PartRelationshipType);
-                        Assert.Single(partRelationships);
-                        Assert.All(partRelationships, relationship => Assert.Equal(PartRelationshipType, relationship.RelationshipType));
+                    });
+                }
+            }
+        }
 
-                        Assert.Single(packageRelationships, relationship => relationship.TargetUri == part.Uri);
+        [Fact]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Desktop doesn't support Package.Open with FileAccess.Write")]
+        public void ZipPackage_CreateWithFileAccessWrite()
+        {
+            string packageName = "test.zip";
+
+            using (Package package = Package.Open(packageName, FileMode.Create, FileAccess.Write))
+            {
+                ForEachPartWithFileName(package, (part, fileName) =>
+                {
+                    using (StreamWriter writer = new StreamWriter(part.GetStream(FileMode.Create), Encoding.ASCII))
+                    {
+                        // just write the filename as content
+                        writer.Write(fileName);
                     }
+                });
+            }
+
+            // reopen for read and validate the content
+            using (Package readPackage = Package.Open(packageName))
+            {
+                ForEachPartWithFileName(readPackage, (part, fileName) =>
+                {
+                    using (Stream partStream = part.GetStream())
+                    using (StreamReader reader = new StreamReader(partStream, Encoding.ASCII))
+                    {
+                        Assert.Equal(fileName.Length, partStream.Length);
+                        Assert.Equal(fileName, reader.ReadToEnd());
+                    }
+
+                    using (Stream partStream = part.GetStream(FileMode.Create))
+                    {
+                        // Assert that the stream was reset because we opened the stream in Create mode
+                        Assert.Equal(0, partStream.Length);
+                    }
+                });
+            }
+        }
+
+        // Helper method for performing an action on every part in the package. All parts are simple
+        // text files. If the part didn't exist, it will be created before invoking the action,
+        // otherwise the existing part is retrieved and passed to the action.
+        private void ForEachPartWithFileName(Package package, Action<PackagePart, string> action)
+        {
+            string[] fileNames = new[] { "file1.txt", "file2.txt", "file3.txt" };
+
+            const string RelationshipType = "http://schemas.microsoft.com/relationships/contains";
+            const string PartRelationshipType = "http://schemas.microsoft.com/relationships/self";
+            foreach (string fileName in fileNames)
+            {
+                Uri partUri = PackUriHelper.CreatePartUri(new Uri(fileName, UriKind.Relative));
+                PackagePart part = package.PartExists(partUri) ?
+                    package.GetPart(partUri) :
+                    package.CreatePart(partUri, System.Net.Mime.MediaTypeNames.Text.Plain);
+                action(part, fileName);
+
+                // Part didn't exist previously so create relationships
+                if (package.FileOpenAccess == FileAccess.Write)
+                {
+                    part.CreateRelationship(part.Uri, TargetMode.Internal, PartRelationshipType);
+                    package.CreateRelationship(part.Uri, TargetMode.Internal, RelationshipType);
+                }
+                else
+                {
+                    // Validate the relationship
+                    PackageRelationshipCollection packageRelationships = package.GetRelationships();
+                    Assert.All(packageRelationships, relationship => Assert.Equal(RelationshipType, relationship.RelationshipType));
+
+                    PackageRelationshipCollection partRelationships = part.GetRelationshipsByType(PartRelationshipType);
+                    Assert.Single(partRelationships);
+                    Assert.All(partRelationships, relationship => Assert.Equal(PartRelationshipType, relationship.RelationshipType));
+
+                    Assert.Single(packageRelationships, relationship => relationship.TargetUri == part.Uri);
                 }
             }
         }
@@ -3700,10 +3757,10 @@ namespace System.IO.Packaging.Tests
         [OuterLoop]
         public void VeryLargePart()
         {
-            // FileAccess.Write is important, this tells ZipPackage to open the underlying ZipArchive in 
+            // FileAccess.Write is important, this tells ZipPackage to open the underlying ZipArchive in
             // ZipArchiveMode.Create mode as opposed to ZipArchiveMode.Update
             // When ZipArchive is opened in Create it will write entries directly to the zip stream
-            // When ZipArchive is opened in Update it will write uncompressed data to memory until 
+            // When ZipArchive is opened in Update it will write uncompressed data to memory until
             // the archive is closed.
             using (Stream stream = new MemoryStream())
             {
@@ -3715,7 +3772,7 @@ namespace System.IO.Packaging.Tests
                 {
                     buffer[i] = (byte)(i % 2);
                 }
-                
+
                 const long SizeInMb = 6 * 1024; // 6GB
                 long totalLength = SizeInMb * buffer.Length;
 
@@ -3776,7 +3833,7 @@ namespace System.IO.Packaging.Tests
             // Validate we get the same object back if we call GetPart again
             Assert.Same(part, mockPackage.GetPart(partUri));
         }
-        
+
         [Fact]
         public void ComparePackUriSamePackSamePart()
         {
@@ -3892,7 +3949,7 @@ namespace System.IO.Packaging.Tests
         }
 
         [Fact]
-        void CreatePackUriWithFragment()
+        public void CreatePackUriWithFragment()
         {
             Uri partUri = new Uri("/idontexist.xml", UriKind.Relative);
             Uri packageUri = new Uri("application://");

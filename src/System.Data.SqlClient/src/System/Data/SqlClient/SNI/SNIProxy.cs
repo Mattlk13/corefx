@@ -3,7 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
-#if !netcoreapp
+#if NETCOREAPP2_1 || !NETCOREAPP
 using System.Linq;
 #endif
 using System.Net;
@@ -358,7 +358,7 @@ namespace System.Data.SqlClient.SNI
         /// <returns>SNITCPHandle</returns>
         private SNITCPHandle CreateTcpHandle(DataSource details, long timerExpire, object callbackObject, bool parallel)
         {
-            // TCP Format: 
+            // TCP Format:
             // tcp:<host name>\<instance name>
             // tcp:<host name>,<TCP/IP port number>
 
@@ -467,7 +467,7 @@ namespace System.Data.SqlClient.SNI
         }
 
         /// <summary>
-        /// Gets the Local db Named pipe data source if the input is a localDB server. 
+        /// Gets the Local db Named pipe data source if the input is a localDB server.
         /// </summary>
         /// <param name="fullServerName">The data source</param>
         /// <param name="error">Set true when an error occurred while getting LocalDB up</param>
@@ -518,7 +518,7 @@ namespace System.Data.SqlClient.SNI
         internal Protocol ConnectionProtocol = Protocol.None;
 
         /// <summary>
-        /// Provides the HostName of the server to connect to for TCP protocol. 
+        /// Provides the HostName of the server to connect to for TCP protocol.
         /// This information is also used for finding the SPN of SqlServer
         /// </summary>
         internal string ServerName { get; private set; }
@@ -543,8 +543,8 @@ namespace System.Data.SqlClient.SNI
         /// </summary>
         public string PipeHostName { get; internal set; }
 
-        private string _workingDataSource;
-        private string _dataSourceAfterTrimmingProtocol;
+        private readonly string _workingDataSource;
+        private readonly string _dataSourceAfterTrimmingProtocol;
         internal bool IsBadDataSource { get; private set; } = false;
 
         internal bool IsSsrpRequired { get; private set; } = false;
@@ -562,7 +562,7 @@ namespace System.Data.SqlClient.SNI
                 ? _workingDataSource.Substring(firstIndexOfColon + 1).Trim() : _workingDataSource;
 
             // Pipe paths only allow back slashes
-#if netcoreapp
+#if NETCOREAPP
             if (_dataSourceAfterTrimmingProtocol.Contains('/')) // string.Contains(char) is .NetCore2.1+ specific
 #else
             if (_dataSourceAfterTrimmingProtocol.Contains("/"))
@@ -588,22 +588,13 @@ namespace System.Data.SqlClient.SNI
             else
             {
                 // We trim before switching because " tcp : server , 1433 " is a valid data source
-                switch (splitByColon[0].Trim())
+                ConnectionProtocol = splitByColon[0].Trim() switch
                 {
-                    case TdsEnums.TCP:
-                        ConnectionProtocol = DataSource.Protocol.TCP;
-                        break;
-                    case TdsEnums.NP:
-                        ConnectionProtocol = DataSource.Protocol.NP;
-                        break;
-                    case TdsEnums.ADMIN:
-                        ConnectionProtocol = DataSource.Protocol.Admin;
-                        break;
-                    default:
-                        // None of the supported protocols were found. This may be a IPv6 address
-                        ConnectionProtocol = DataSource.Protocol.None;
-                        break;
-                }
+                    TdsEnums.TCP => DataSource.Protocol.TCP,
+                    TdsEnums.NP => DataSource.Protocol.NP,
+                    TdsEnums.ADMIN => DataSource.Protocol.Admin,
+                    _ => DataSource.Protocol.None, // None of the supported protocols were found. This may be an IPv6 address.
+                };
             }
         }
 
@@ -727,7 +718,7 @@ namespace System.Data.SqlClient.SNI
             // Instance Name Handling. Only if we found a '\' and we did not find a port in the Data Source
             else if (backSlashIndex > -1)
             {
-                // This means that there will not be any part separated by comma. 
+                // This means that there will not be any part separated by comma.
                 InstanceName = tokensByCommaAndSlash[1].Trim();
 
                 if (string.IsNullOrWhiteSpace(InstanceName))
@@ -775,7 +766,7 @@ namespace System.Data.SqlClient.SNI
                     string[] tokensByBackSlash = _dataSourceAfterTrimmingProtocol.Split(BackSlashSeparator);
 
                     // The datasource is of the format \\host\pipe\sql\query [0]\[1]\[2]\[3]\[4]\[5]
-                    // It would at least have 6 parts. 
+                    // It would at least have 6 parts.
                     // Another valid Sql named pipe for an named instance is \\.\pipe\MSSQL$MYINSTANCE\sql\query
                     if (tokensByBackSlash.Length < 6)
                     {

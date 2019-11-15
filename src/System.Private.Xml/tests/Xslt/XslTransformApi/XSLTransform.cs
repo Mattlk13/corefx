@@ -84,8 +84,8 @@ namespace System.Xml.Tests
 
         static XsltApiTestCaseBase()
         {
-            // On uap access is denied to full path and the code below and related tests cannot run
-            if (!PlatformDetection.IsUap)
+            // In AppContainer access is denied to full path and the code below and related tests cannot run
+            if (!PlatformDetection.IsInAppContainer)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(s_temporaryResolverDocumentFullName));
 
@@ -493,13 +493,13 @@ namespace System.Xml.Tests
             {
                 XmlDiff.XmlDiff xmldiff = new XmlDiff.XmlDiff();
                 xmldiff.Option = XmlDiffOption.InfosetComparison | XmlDiffOption.IgnoreEmptyElement | XmlDiffOption.NormalizeNewline;
-                
+
                 string actualValue = File.ReadAllText(_strOutFile);
-                
+
                 //Output the expected and actual values
                 _output.WriteLine("Expected : " + expectedValue);
                 _output.WriteLine("Actual : " + actualValue);
-                
+
                 bool result;
 
                 //Load into XmlTextReaders
@@ -843,7 +843,7 @@ namespace System.Xml.Tests
                             {
                                 tw = new StreamWriter(outFile, Encoding.UTF8);
                                 xslt.Transform(xd, null, tw, xr);
-                            } 
+                            }
                         }
                         catch (Exception ex)
                         {

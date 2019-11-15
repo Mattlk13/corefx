@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+#pragma warning disable SA1028 // ignore whitespace warnings for generated code
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -40,7 +41,12 @@ namespace System.Security.Cryptography.Asn1
                 writer.WriteInteger(Cofactor.Value.Span);
             }
 
-            writer.WriteObjectIdentifier(Hash);
+
+            if (Hash != null)
+            {
+                writer.WriteObjectIdentifier(Hash);
+            }
+
             writer.PopSequence(tag);
         }
 
@@ -99,7 +105,12 @@ namespace System.Security.Cryptography.Asn1
                 decoded.Cofactor = sequenceReader.ReadIntegerBytes();
             }
 
-            decoded.Hash = sequenceReader.ReadObjectIdentifier();
+
+            if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(Asn1Tag.ObjectIdentifier))
+            {
+                decoded.Hash = sequenceReader.ReadObjectIdentifier();
+            }
+
 
             sequenceReader.ThrowIfNotEmpty();
         }

@@ -19,7 +19,7 @@ namespace System.ComponentModel
     /// For a property named XXX of type YYY, the associated component class is
     /// required to implement two methods of the following
     /// form:
-    /// 
+    ///
     /// <code>
     /// public YYY GetXXX();
     /// public void SetXXX(YYY value);
@@ -243,7 +243,7 @@ namespace System.ComponentModel
                     {
                         _realIPropChangedEvent = TypeDescriptor.GetEvents(typeof(INotifyPropertyChanged))["PropertyChanged"];
                     }
-    
+
                     _state[s_bitIPropChangedQueried] = true;
                 }
 
@@ -547,7 +547,6 @@ namespace System.ComponentModel
                 if (site != null)
                 {
                     changeService = (IComponentChangeService)site.GetService(typeof(IComponentChangeService));
-                    Debug.Assert(!ComponentModelSwitches.CommonDesignerServices.Enabled || changeService != null, "IComponentChangeService not found");
                 }
 
                 // Make sure that it is ok to send the onchange events
@@ -595,7 +594,6 @@ namespace System.ComponentModel
                 if (site != null)
                 {
                     changeService = (IComponentChangeService)site.GetService(typeof(IComponentChangeService));
-                    Debug.Assert(!ComponentModelSwitches.CommonDesignerServices.Enabled || changeService != null, "IComponentChangeService not found");
                 }
 
                 // Make sure that it is ok to send the onchange events
@@ -841,7 +839,7 @@ namespace System.ComponentModel
             // property, so we want to add them last.
             base.FillAttributes(attributes);
 
-            // Finally, override any form of ReadOnlyAttribute. 
+            // Finally, override any form of ReadOnlyAttribute.
             if (SetMethodValue == null)
             {
                 attributes.Add(ReadOnlyAttribute.Yes);
@@ -997,7 +995,6 @@ namespace System.ComponentModel
                 if (site != null)
                 {
                     changeService = (IComponentChangeService)site.GetService(typeof(IComponentChangeService));
-                    Debug.Assert(!ComponentModelSwitches.CommonDesignerServices.Enabled || changeService != null, "IComponentChangeService not found");
                 }
 
                 // Make sure that it is ok to send the onchange events
@@ -1060,7 +1057,6 @@ namespace System.ComponentModel
                     if (site != null)
                     {
                         changeService = (IComponentChangeService)site.GetService(typeof(IComponentChangeService));
-                        Debug.Assert(!ComponentModelSwitches.CommonDesignerServices.Enabled || changeService != null, "IComponentChangeService not found");
                     }
 
                     // Make sure that it is ok to send the onchange events

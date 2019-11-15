@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -50,7 +50,7 @@ namespace System.Collections.Tests
             linkedList.Remove(tailItems[tailItems.Length - 2]);
             linkedList.RemoveFirst();
             linkedList.RemoveLast();
-            //With the above remove we should have removed the first and last 3 items 
+            //With the above remove we should have removed the first and last 3 items
             tempItems = new T[tailItems.Length - 6];
             Array.Copy(tailItems, 3, tempItems, 0, tailItems.Length - 6);
 
@@ -61,7 +61,7 @@ namespace System.Collections.Tests
                 linkedList.AddLast(headItems[i]);
 
             T[] tempItems2 = new T[tempItems.Length + headItems.Length];
-            Array.Copy(tempItems, 0, tempItems2, 0, tempItems.Length);
+            Array.Copy(tempItems, tempItems2, tempItems.Length);
             Array.Copy(headItems, 0, tempItems2, tempItems.Length, headItems.Length);
             InitialItems_Tests(linkedList, tempItems2);
 
@@ -94,7 +94,7 @@ namespace System.Collections.Tests
             }
 
             tempItems2 = new T[tempItems.Length + tailItems.Length];
-            Array.Copy(tempItems, 0, tempItems2, 0, tempItems.Length);
+            Array.Copy(tempItems, tempItems2, tempItems.Length);
             Array.Copy(tailItems, 0, tempItems2, tempItems.Length, tailItems.Length);
             InitialItems_Tests(linkedList, tempItems2);
         }
@@ -144,7 +144,7 @@ namespace System.Collections.Tests
             linkedList.RemoveFirst();
             linkedList.RemoveLast();
 
-            //With the above remove we should have removed the first and last 3 items 
+            //With the above remove we should have removed the first and last 3 items
             tempItems = new T[tailItems.Length - 6];
             Array.Copy(tailItems, 3, tempItems, 0, tailItems.Length - 6);
             InitialItems_Tests(linkedList, tempItems);
@@ -153,7 +153,7 @@ namespace System.Collections.Tests
                 linkedList.AddLast(new LinkedListNode<T>(headItems[i]));
 
             T[] tempItems2 = new T[tempItems.Length + headItems.Length];
-            Array.Copy(tempItems, 0, tempItems2, 0, tempItems.Length);
+            Array.Copy(tempItems, tempItems2, tempItems.Length);
             Array.Copy(headItems, 0, tempItems2, tempItems.Length, headItems.Length);
 
             InitialItems_Tests(linkedList, tempItems2);
@@ -179,7 +179,7 @@ namespace System.Collections.Tests
             }
 
             tempItems = new T[headItemsReverse.Length + tailItems.Length];
-            Array.Copy(headItemsReverse, 0, tempItems, 0, headItemsReverse.Length);
+            Array.Copy(headItemsReverse, tempItems, headItemsReverse.Length);
             Array.Copy(tailItems, 0, tempItems, headItemsReverse.Length, tailItems.Length);
             InitialItems_Tests(linkedList, tempItems);
         }

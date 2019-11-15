@@ -37,7 +37,7 @@ namespace System.ComponentModel.Composition.Hosting
             InitializeCompositionScopeDefinition(catalog, children, null);
         }
 
-/// <summary>
+        /// <summary>
         /// Initializes a new instance of the <see cref="CompositionScopeDefinition"/> class.
         /// </summary>
         /// <param name="catalog">The catalog.</param>
@@ -52,7 +52,7 @@ namespace System.ComponentModel.Composition.Hosting
             InitializeCompositionScopeDefinition(catalog, children, publicSurface);
         }
 
-/// <summary>
+        /// <summary>
         /// Initializes a new instance of the <see cref="CompositionScopeDefinition"/> class.
         /// </summary>
         /// <param name="catalog">The catalog.</param>
@@ -64,7 +64,7 @@ namespace System.ComponentModel.Composition.Hosting
             {
                 _children = children.ToArray();
             }
-            if(publicSurface != null)
+            if (publicSurface != null)
             {
                 _publicSurface = publicSurface;
             }
@@ -135,14 +135,14 @@ namespace System.ComponentModel.Composition.Hosting
             get
             {
                 ThrowIfDisposed();
-                if(_publicSurface == null)
+                if (_publicSurface == null)
                 {
-                    return this.SelectMany( (p) => p.ExportDefinitions );
+                    return this.SelectMany((p) => p.ExportDefinitions);
                 }
 
                 return _publicSurface;
             }
-        } 
+        }
 
         /// <summary>
         /// Gets an Enumerator for the ComposablePartDefinitions
@@ -193,13 +193,13 @@ namespace System.ComponentModel.Composition.Hosting
 
             var exports = new List<Tuple<ComposablePartDefinition, ExportDefinition>>();
 
-            foreach(var exportDefinition in PublicSurface)
+            foreach (var exportDefinition in PublicSurface)
             {
                 if (definition.IsConstraintSatisfiedBy(exportDefinition))
                 {
                     foreach (var export in GetExports(definition))
                     {
-                        if(export.Item2 == exportDefinition)
+                        if (export.Item2 == exportDefinition)
                         {
                             exports.Add(export);
                             break;

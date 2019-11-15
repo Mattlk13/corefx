@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -113,7 +112,7 @@ namespace System.Net.Test.Common
                     new Uri(BaseUri, $"/{EchoHandler}?auth=basic&user={userName}&password={password}");
 
                 public Uri RedirectUriForDestinationUri(int statusCode, Uri destinationUri, int hops, bool relative = false)
-                { 
+                {
                     string destination = Uri.EscapeDataString(relative ? destinationUri.PathAndQuery : destinationUri.AbsoluteUri);
 
                     if (hops > 1)

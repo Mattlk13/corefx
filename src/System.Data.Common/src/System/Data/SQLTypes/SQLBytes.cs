@@ -31,7 +31,7 @@ namespace System.Data.SqlTypes
         // SqlBytes has five possible states
         // 1) SqlBytes is Null
         //      - m_stream must be null, m_lCuLen must be x_lNull.
-        // 2) SqlBytes contains a valid buffer, 
+        // 2) SqlBytes contains a valid buffer,
         //      - m_rgbBuf must not be null,m_stream must be null
         // 3) SqlBytes contains a valid pointer
         //      - m_rgbBuf could be null or not,
@@ -137,17 +137,12 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Null:
-                        throw new SqlNullValueException();
-
-                    case SqlBytesCharsState.Stream:
-                        return _stream.Length;
-
-                    default:
-                        return _lCurLen;
-                }
+                    SqlBytesCharsState.Null => throw new SqlNullValueException(),
+                    SqlBytesCharsState.Stream => _stream.Length,
+                    _ => _lCurLen,
+                };
             }
         }
 
@@ -159,14 +154,11 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Stream:
-                        return -1L;
-
-                    default:
-                        return (_rgbBuf == null) ? -1L : _rgbBuf.Length;
-                }
+                    SqlBytesCharsState.Stream => -1L,
+                    _ => (_rgbBuf == null) ? -1L : _rgbBuf.Length,
+                };
             }
         }
 
@@ -193,7 +185,7 @@ namespace System.Data.SqlTypes
 
                     default:
                         buffer = new byte[_lCurLen];
-                        Array.Copy(_rgbBuf, 0, buffer, 0, (int)_lCurLen);
+                        Array.Copy(_rgbBuf, buffer, (int)_lCurLen);
                         break;
                 }
 
@@ -228,19 +220,13 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Null:
-                        throw new SqlNullValueException();
-                    case SqlBytesCharsState.Stream:
-                        return StorageState.Stream;
-
-                    case SqlBytesCharsState.Buffer:
-                        return StorageState.Buffer;
-
-                    default:
-                        return StorageState.UnmanagedBuffer;
-                }
+                    SqlBytesCharsState.Null => throw new SqlNullValueException(),
+                    SqlBytesCharsState.Stream => StorageState.Stream,
+                    SqlBytesCharsState.Buffer => StorageState.Buffer,
+                    _ => StorageState.UnmanagedBuffer,
+                };
             }
         }
 
@@ -381,7 +367,7 @@ namespace System.Data.SqlTypes
 
                 if (IsNull)
                 {
-                    // If NULL and there is buffer inside, we only allow writing from 
+                    // If NULL and there is buffer inside, we only allow writing from
                     // offset zero.
                     //
                     if (offset != 0)
@@ -575,7 +561,7 @@ namespace System.Data.SqlTypes
         //      Static fields, properties
         // --------------------------------------------------------------
 
-        // Get a Null instance. 
+        // Get a Null instance.
         // Since SqlBytes is mutable, have to be property and create a new one each time.
         public static SqlBytes Null
         {
@@ -597,7 +583,7 @@ namespace System.Data.SqlTypes
         //      Data members
         // --------------------------------------------------------------
 
-        private SqlBytes _sb;      // the SqlBytes object 
+        private SqlBytes _sb;      // the SqlBytes object
         private long _lPosition;
 
         // --------------------------------------------------------------
@@ -614,7 +600,7 @@ namespace System.Data.SqlTypes
         //      Public properties
         // --------------------------------------------------------------
 
-        // Always can read/write/seek, unless sb is null, 
+        // Always can read/write/seek, unless sb is null,
         // which means the stream has been closed.
 
         public override bool CanRead

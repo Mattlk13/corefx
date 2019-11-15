@@ -1,6 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{A2ECDEDB-12B7-402C-9230-152B7601179F}</ProjectGuid>
     <NoWarn>$(NoWarn);0436</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <StringResourcesPath>../../src/Resources/Strings.resx</StringResourcesPath>
@@ -40,8 +39,8 @@
     <Compile Include="$(CommonPath)\System\StringExtensions.cs">
       <Link>Common\System\StringExtensions.cs</Link>
     </Compile>
-    <Compile Include="$(CommonPath)\CoreLib\System\IO\StreamHelpers.CopyValidation.cs">
-      <Link>Common\CoreLib\System\IO\StreamHelpers.CopyValidation.cs</Link>
+    <Compile Include="$(CoreLibDir)System\IO\StreamHelpers.CopyValidation.cs">
+      <Link>System\IO\StreamHelpers.CopyValidation.cs</Link>
     </Compile>
     <Compile Include="$(CommonPath)\System\Net\HttpKnownHeaderNames.cs">
       <Link>Common\System\Net\HttpKnownHeaderNames.cs</Link>
@@ -76,11 +75,14 @@
     <Compile Include="$(CommonPath)\System\Runtime\ExceptionServices\ExceptionStackTrace.cs">
       <Link>Common\System\Runtime\ExceptionServices\ExceptionStackTrace.cs</Link>
     </Compile>
+    <Compile Include="$(CommonPath)\System\Text\SimpleRegex.cs">
+      <Link>Common\System\Text\SimpleRegex.cs</Link>
+    </Compile>
     <Compile Include="$(CommonPath)\System\Threading\Tasks\RendezvousAwaitable.cs">
       <Link>Common\System\Threading\Tasks\RendezvousAwaitable.cs</Link>
     </Compile>
-    <Compile Include="$(CommonPath)\CoreLib\System\Threading\Tasks\TaskToApm.cs">
-      <Link>Common\CoreLib\System\Threading\Tasks\TaskToApm.cs</Link>
+    <Compile Include="$(CoreLibDir)System\Threading\Tasks\TaskToApm.cs">
+      <Link>System\Threading\Tasks\TaskToApm.cs</Link>
     </Compile>
     <Compile Include="..\..\src\System\Net\Http\WinHttpAuthHelper.cs">
       <Link>ProductionCode\WinHttpAuthHelper.cs</Link>
@@ -129,6 +131,15 @@
     </Compile>
     <Compile Include="..\..\..\System.Net.Http\src\System\Net\Http\SocketsHttpHandler\HttpWindowsProxy.cs">
       <Link>ProductionCode\HttpWindowsProxy.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\System.Net.Http\src\System\Net\Http\SocketsHttpHandler\FailedProxyCache.cs">
+      <Link>ProductionCode\FailedProxyCache.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\System.Net.Http\src\System\Net\Http\SocketsHttpHandler\IMultiWebProxy.cs">
+      <Link>ProductionCode\IMultiWebProxy.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\System.Net.Http\src\System\Net\Http\SocketsHttpHandler\MultiProxy.cs">
+      <Link>ProductionCode\MultiProxy.cs</Link>
     </Compile>
     <Compile Include="APICallHistory.cs" />
     <Compile Include="ClientCertificateHelper.cs" />

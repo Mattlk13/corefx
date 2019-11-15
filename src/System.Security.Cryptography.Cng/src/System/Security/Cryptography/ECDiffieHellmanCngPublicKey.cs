@@ -9,8 +9,8 @@ namespace System.Security.Cryptography
     /// </summary>
     public sealed partial class ECDiffieHellmanCngPublicKey : ECDiffieHellmanPublicKey
     {
-        private CngKeyBlobFormat _format;
-        private string _curveName;
+        private readonly CngKeyBlobFormat _format;
+        private readonly string _curveName;
         private bool _disposed;
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace System.Security.Cryptography
         {
             using (CngKey key = Import())
             {
-                ECParameters ecparams = new ECParameters();
+                ECParameters ecparams = default;
                 byte[] blob = ECCng.ExportFullKeyBlob(key, includePrivateParameters: false);
                 ECCng.ExportPrimeCurveParameters(ref ecparams, blob, includePrivateParameters: false);
                 return ecparams;
@@ -132,7 +132,7 @@ namespace System.Security.Cryptography
         {
             using (CngKey key = Import())
             {
-                ECParameters ecparams = new ECParameters();
+                ECParameters ecparams = default;
                 string curveName = key.GetCurveName(out _);
 
                 if (string.IsNullOrEmpty(curveName))

@@ -9,7 +9,7 @@ namespace System.Drawing.Imaging
     /// <summary>
     /// Specifies the format of the image.
     /// </summary>
-#if netcoreapp
+#if NETCOREAPP
     [TypeConverter("System.Drawing.ImageFormatConverter, System.Windows.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51")]
 #endif
     public sealed class ImageFormat
@@ -145,7 +145,7 @@ namespace System.Drawing.Imaging
             return _guid.GetHashCode();
         }
 
-#if !FEATURE_PAL        
+#if !FEATURE_PAL
         // Find any random encoder which supports this format
         internal ImageCodecInfo FindEncoder()
         {

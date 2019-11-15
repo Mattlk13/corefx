@@ -20,9 +20,9 @@ namespace System.Linq.Parallel
     /// <typeparam name="T"></typeparam>
     internal struct WrapperEqualityComparer<T> : IEqualityComparer<Wrapper<T>>
     {
-        private IEqualityComparer<T> _comparer;
+        private readonly IEqualityComparer<T> _comparer;
 
-        internal WrapperEqualityComparer(IEqualityComparer<T> comparer)
+        internal WrapperEqualityComparer(IEqualityComparer<T>? comparer)
         {
             if (comparer == null)
             {

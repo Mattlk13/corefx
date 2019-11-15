@@ -12,7 +12,7 @@ namespace System.Net.Http
     internal static class WinHttpCertificateHelper
     {
         private static readonly Oid s_serverAuthOid = new Oid("1.3.6.1.5.5.7.3.1", "1.3.6.1.5.5.7.3.1");
-        
+
         // TODO: Issue #2165. Merge with similar code used in System.Net.Security move to Common/src//System/Net.
         public static void BuildChain(
             X509Certificate2 certificate,
@@ -54,24 +54,24 @@ namespace System.Net.Http
             // Verify the hostName matches the certificate.
             unsafe
             {
-                var cppStruct = new Interop.Crypt32.CERT_CHAIN_POLICY_PARA();
+                Interop.Crypt32.CERT_CHAIN_POLICY_PARA cppStruct = default;
                 cppStruct.cbSize = (uint)sizeof(Interop.Crypt32.CERT_CHAIN_POLICY_PARA);
                 cppStruct.dwFlags = 0;
 
-                var eppStruct = new Interop.Crypt32.SSL_EXTRA_CERT_CHAIN_POLICY_PARA();
+                Interop.Crypt32.SSL_EXTRA_CERT_CHAIN_POLICY_PARA eppStruct = default;
                 eppStruct.cbSize = (uint)sizeof(Interop.Crypt32.SSL_EXTRA_CERT_CHAIN_POLICY_PARA);
                 eppStruct.dwAuthType = Interop.Crypt32.AuthType.AUTHTYPE_SERVER;
-                
+
                 cppStruct.pvExtraPolicyPara = &eppStruct;
 
                 fixed (char* namePtr = hostName)
                 {
                     eppStruct.pwszServerName = namePtr;
-                    cppStruct.dwFlags = 
+                    cppStruct.dwFlags =
                         Interop.Crypt32.CertChainPolicyIgnoreFlags.CERT_CHAIN_POLICY_IGNORE_ALL &
                         ~Interop.Crypt32.CertChainPolicyIgnoreFlags.CERT_CHAIN_POLICY_IGNORE_INVALID_NAME_FLAG;
-                        
-                    var status = new Interop.Crypt32.CERT_CHAIN_POLICY_STATUS();
+
+                    Interop.Crypt32.CERT_CHAIN_POLICY_STATUS status = default;
                     status.cbSize = (uint)sizeof(Interop.Crypt32.CERT_CHAIN_POLICY_STATUS);
                     if (Interop.Crypt32.CertVerifyCertificateChainPolicy(
                             (IntPtr)Interop.Crypt32.CertChainPolicy.CERT_CHAIN_POLICY_SSL,
@@ -89,7 +89,7 @@ namespace System.Net.Http
                     {
                         // Failure checking the policy. This is a rare error. We will assume the name check failed.
                         // TODO: Issue #2165. Log this error or perhaps throw an exception instead.
-                        if (NetEventSource.IsEnabled) NetEventSource.Error(certificate, "Failure calling {nameof(Interop.Crypt32.CertVerifyCertificateChainPolicy)}");
+                        if (NetEventSource.IsEnabled) NetEventSource.Error(certificate, $"Failure calling {nameof(Interop.Crypt32.CertVerifyCertificateChainPolicy)}");
                         sslPolicyErrors |= SslPolicyErrors.RemoteCertificateNameMismatch;
                     }
                 }

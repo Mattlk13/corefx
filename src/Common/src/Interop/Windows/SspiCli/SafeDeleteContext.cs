@@ -5,6 +5,7 @@
 using Microsoft.Win32.SafeHandles;
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Authentication.ExtendedProtection;
 
@@ -28,11 +29,12 @@ namespace System.Net.Security
 
         protected SafeDeleteContext() : base(IntPtr.Zero, true)
         {
-            _handle = new Interop.SspiCli.CredHandle();
+            _handle = default;
         }
 
         public override bool IsInvalid
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return IsClosed || _handle.IsZero;

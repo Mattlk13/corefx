@@ -17,7 +17,6 @@ using Xunit.Abstractions;
 
 namespace System.Net.Http.WinHttpHandlerFunctional.Tests
 {
-    [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "WinHttpHandler not supported on UAP")]
     public class ServerCertificateTest
     {
         private readonly ITestOutputHelper _output;
@@ -67,7 +66,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
             {
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(_validationCallbackHistory.WasCalled);
-                
+
                 ConfirmValidCertificate(System.Net.Test.Common.Configuration.Http.Host);
             }
         }
@@ -85,7 +84,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
             {
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(_validationCallbackHistory.WasCalled);
-                
+
                 ConfirmValidCertificate(System.Net.Test.Common.Configuration.Http.Host);
             }
         }
@@ -131,7 +130,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
                 _output.WriteLine("Certificate.Subject: {0}", _validationCallbackHistory.CertificateSubject);
                 _output.WriteLine("Expected HostName: {0}", expectedHostName);
         }
-        
+
         private bool CustomServerCertificateValidationCallback(
             HttpRequestMessage sender,
             X509Certificate2 certificate,
@@ -166,7 +165,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
             {
             }
         }
-        
+
         public class ValidationCallbackHistory
         {
             public bool ThrowException;

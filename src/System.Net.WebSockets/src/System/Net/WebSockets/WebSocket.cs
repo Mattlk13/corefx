@@ -55,11 +55,11 @@ namespace System.Net.WebSockets
         }
 
         public virtual ValueTask SendAsync(ReadOnlyMemory<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken) =>
-            new ValueTask(MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> arraySegment) ?
-                SendAsync(arraySegment, messageType, endOfMessage, cancellationToken) :
-                SendWithArrayPoolAsync(buffer, messageType, endOfMessage, cancellationToken));
+            MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> arraySegment) ?
+                new ValueTask(SendAsync(arraySegment, messageType, endOfMessage, cancellationToken)) :
+                SendWithArrayPoolAsync(buffer, messageType, endOfMessage, cancellationToken);
 
-        private async Task SendWithArrayPoolAsync(
+        private async ValueTask SendWithArrayPoolAsync(
             ReadOnlyMemory<byte> buffer,
             WebSocketMessageType messageType,
             bool endOfMessage,
@@ -103,7 +103,7 @@ namespace System.Net.WebSockets
             throw new WebSocketException(WebSocketError.InvalidState, SR.Format(SR.net_WebSockets_InvalidState, state, validStatesText));
         }
 
-        protected static bool IsStateTerminal(WebSocketState state) => 
+        protected static bool IsStateTerminal(WebSocketState state) =>
             state == WebSocketState.Closed || state == WebSocketState.Aborted;
 
         public static ArraySegment<byte> CreateClientBuffer(int receiveBufferSize, int sendBufferSize)

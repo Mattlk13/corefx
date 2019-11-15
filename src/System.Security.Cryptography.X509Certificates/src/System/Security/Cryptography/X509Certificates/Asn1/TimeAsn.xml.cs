@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+#pragma warning disable SA1028 // ignore whitespace warnings for generated code
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -52,7 +53,7 @@ namespace System.Security.Cryptography.X509Certificates.Asn1
                 if (wroteValue)
                     throw new CryptographicException();
                 
-                writer.WriteGeneralizedTime(GeneralTime.Value);
+                writer.WriteGeneralizedTime(GeneralTime.Value, omitFractionalSeconds: true);
                 wroteValue = true;
             }
 
@@ -85,7 +86,7 @@ namespace System.Security.Cryptography.X509Certificates.Asn1
             }
             else if (tag.HasSameClassAndValue(Asn1Tag.GeneralizedTime))
             {
-                decoded.GeneralTime = reader.ReadGeneralizedTime();
+                decoded.GeneralTime = reader.ReadGeneralizedTime(disallowFractions: true);
             }
             else
             {

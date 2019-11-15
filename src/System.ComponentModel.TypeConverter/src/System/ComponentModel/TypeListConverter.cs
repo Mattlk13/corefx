@@ -99,7 +99,7 @@ namespace System.ComponentModel
                 if (_types != null)
                 {
                     objTypes = new object[_types.Length];
-                    Array.Copy(_types, 0, objTypes, 0, _types.Length);
+                    Array.Copy(_types, objTypes, _types.Length);
                 }
                 else
                 {
@@ -113,7 +113,7 @@ namespace System.ComponentModel
 
         /// <summary>
         /// Gets a value indicating whether the list of standard values returned from
-        /// <see cref='System.ComponentModel.TypeListConverter.GetStandardValues'/> is an exclusive list. 
+        /// <see cref='System.ComponentModel.TypeListConverter.GetStandardValues'/> is an exclusive list.
         /// </summary>
         public override bool GetStandardValuesExclusive(ITypeDescriptorContext context) => true;
 

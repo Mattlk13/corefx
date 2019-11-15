@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -15,7 +15,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
     /// </summary>
     public abstract class ECDsaTestsBase : EccTestBase
     {
-#if netcoreapp
+#if NETCOREAPP
         internal static void Verify256(ECDsa e, bool expected)
         {
             byte[] sig = ("998791331eb2e1f4259297f5d9cb82fa20dec98e1cb0900e6b8f014a406c3d02cbdbf5238bde471c3155fc25565524301429"
@@ -24,8 +24,8 @@ namespace System.Security.Cryptography.EcDsa.Tests
             Assert.Equal(expected, verified);
         }
 
-        // On CentOS, secp224r1 (also called nistP224) appears to be disabled. To prevent test failures on that platform, 
-        // probe for this capability before depending on it. 
+        // On CentOS, secp224r1 (also called nistP224) appears to be disabled. To prevent test failures on that platform,
+        // probe for this capability before depending on it.
         internal static bool ECDsa224Available
         {
             get
@@ -41,7 +41,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
                 return ECDsaFactory.ExplicitCurvesSupported;
             }
         }
-#endif // netcoreapp
+#endif
     }
 
     internal static class EcDsaTestExtensions

@@ -2,18 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
-using Microsoft.Win32;
 
 namespace System.Security.Cryptography.Xml
 {
@@ -415,7 +409,11 @@ namespace System.Security.Cryptography.Xml
             HashAlgorithm hashAlg = signatureDescription.CreateDigest();
             if (hashAlg == null)
                 throw new CryptographicException(SR.Cryptography_Xml_CreateHashAlgorithmFailed);
-            byte[] hashvalue = GetC14NDigest(hashAlg);
+
+            // Updates the HashAlgorithm's state for signing with the signature formatter below.
+            // The return value is not needed.
+            GetC14NDigest(hashAlg);
+
             AsymmetricSignatureFormatter asymmetricSignatureFormatter = signatureDescription.CreateFormatter(key);
 
             SignedXmlDebugLog.LogSigning(this, key, signatureDescription, hashAlg, asymmetricSignatureFormatter);
@@ -443,30 +441,16 @@ namespace System.Security.Cryptography.Xml
                 throw new CryptographicException(SR.Cryptography_Xml_InvalidSignatureLength2);
 
             BuildDigestedReferences();
-            switch (hash.HashName)
+            SignedInfo.SignatureMethod = hash.HashName switch
             {
-                case "SHA1":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigHMACSHA1Url;
-                    break;
-                case "SHA256":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigMoreHMACSHA256Url;
-                    break;
-                case "SHA384":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigMoreHMACSHA384Url;
-                    break;
-                case "SHA512":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigMoreHMACSHA512Url;
-                    break;
-                case "MD5":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigMoreHMACMD5Url;
-                    break;
-                case "RIPEMD160":
-                    SignedInfo.SignatureMethod = SignedXml.XmlDsigMoreHMACRIPEMD160Url;
-                    break;
-                default:
-                    throw new CryptographicException(SR.Cryptography_Xml_SignatureMethodKeyMismatch);
-            }
-
+                "SHA1" => SignedXml.XmlDsigHMACSHA1Url,
+                "SHA256" => SignedXml.XmlDsigMoreHMACSHA256Url,
+                "SHA384" => SignedXml.XmlDsigMoreHMACSHA384Url,
+                "SHA512" => SignedXml.XmlDsigMoreHMACSHA512Url,
+                "MD5" => SignedXml.XmlDsigMoreHMACMD5Url,
+                "RIPEMD160" => SignedXml.XmlDsigMoreHMACRIPEMD160Url,
+                _ => throw new CryptographicException(SR.Cryptography_Xml_SignatureMethodKeyMismatch),
+            };
             byte[] hashValue = GetC14NDigest(hash);
 
             SignedXmlDebugLog.LogSigning(this, hash);
@@ -958,8 +942,8 @@ namespace System.Security.Cryptography.Xml
 
         // Methods _must_ be marked both No Inlining and No Optimization to be fully opted out of optimization.
         // This is because if a candidate method is inlined, its method level attributes, including the NoOptimization
-        // attribute, are lost. 
-        // This method makes no attempt to disguise the length of either of its inputs. It is assumed the attacker has 
+        // attribute, are lost.
+        // This method makes no attempt to disguise the length of either of its inputs. It is assumed the attacker has
         // knowledge of the algorithms used, and thus the output length. Length is difficult to properly blind in modern CPUs.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private static bool CryptographicEquals(byte[] a, byte[] b)
@@ -1020,7 +1004,7 @@ namespace System.Security.Cryptography.Xml
             if (signatureDescription == null)
                 throw new CryptographicException(SR.Cryptography_Xml_SignatureDescriptionNotCreated);
 
-            // Let's see if the key corresponds with the SignatureMethod 
+            // Let's see if the key corresponds with the SignatureMethod
             Type ta = Type.GetType(signatureDescription.KeyAlgorithm);
             if (!IsKeyTheCorrectAlgorithm(key, ta))
                 return false;
@@ -1117,7 +1101,7 @@ namespace System.Security.Cryptography.Xml
                 return true;
 
             //
-            // "expectedType" comes from the KeyAlgorithm property of a SignatureDescription. The BCL SignatureDescription classes have historically 
+            // "expectedType" comes from the KeyAlgorithm property of a SignatureDescription. The BCL SignatureDescription classes have historically
             // denoted provider-specific implementations ("RSACryptoServiceProvider") rather than the base class for the algorithm ("RSA"). We could
             // change those (at the risk of creating other compat problems) but we have no control over third party SignatureDescriptions.
             //

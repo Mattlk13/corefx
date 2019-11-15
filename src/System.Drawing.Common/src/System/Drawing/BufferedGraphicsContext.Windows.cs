@@ -34,8 +34,8 @@ namespace System.Drawing
         {
             int oldBusy = Interlocked.CompareExchange(ref _busy, BufferBusyPainting, BufferFree);
 
-            // In the case were we have contention on the buffer - i.e. two threads 
-            // trying to use the buffer at the same time, we just create a temp 
+            // In the case were we have contention on the buffer - i.e. two threads
+            // trying to use the buffer at the same time, we just create a temp
             // buffermanager and have the buffer dispose of it when it is done.
             //
             if (oldBusy != BufferFree)
@@ -80,7 +80,7 @@ namespace System.Drawing
         /// <summary>
         /// Fills in the fields of a BITMAPINFO so that we can create a bitmap
         /// that matches the format of the display.
-        /// 
+        ///
         /// This is done by creating a compatible bitmap and calling GetDIBits
         /// to return the color masks. This is done with two calls. The first
         /// call passes in biBitCount = 0 to GetDIBits which will fill in the
@@ -106,7 +106,7 @@ namespace System.Drawing
 
                 pbmi.bmiHeader_biSize = Marshal.SizeOf(typeof(NativeMethods.BITMAPINFOHEADER));
                 pbmi.bmiColors = new byte[NativeMethods.BITMAPINFO_MAX_COLORSIZE * 4];
-                
+
                 // Call first time to fill in BITMAPINFO header.
                 SafeNativeMethods.GetDIBits(new HandleRef(null, hdc),
                                                     new HandleRef(null, hbm),
@@ -140,7 +140,7 @@ namespace System.Drawing
             {
                 if (hbm != IntPtr.Zero)
                 {
-                    SafeNativeMethods.DeleteObject(new HandleRef(null, hbm));
+                    Interop.Gdi32.DeleteObject(hbm);
                     hbm = IntPtr.Zero;
                 }
             }
@@ -209,7 +209,7 @@ namespace System.Drawing
             _busy = BufferBusyDisposing;
             DisposeDC();
             _busy = BufferBusyPainting;
-            _compatDC = UnsafeNativeMethods.CreateCompatibleDC(new HandleRef(null, src));
+            _compatDC = Interop.Gdi32.CreateCompatibleDC(src);
 
             // Recreate the bitmap if necessary.
             if (width > _bufferSize.Width || height > _bufferSize.Height)
@@ -251,7 +251,6 @@ namespace System.Drawing
         ///       the identity palette mapping between the DIB and the display.
         /// </summary>
         /// <returns>A valid bitmap handle if successful, IntPtr.Zero otherwise.</returns>
-        [SuppressMessage("Microsoft.Interoperability", "CA1404:CallGetLastErrorImmediatelyAfterPInvoke")]
         private IntPtr CreateCompatibleDIB(IntPtr hdc, IntPtr hpal, int ulWidth, int ulHeight, ref IntPtr ppvBits)
         {
             if (hdc == IntPtr.Zero)
@@ -260,17 +259,16 @@ namespace System.Drawing
             }
 
             IntPtr hbmRet = IntPtr.Zero;
-            var pbmi = new NativeMethods.BITMAPINFO_FLAT();
+            NativeMethods.BITMAPINFO_FLAT pbmi = default;
 
             // Validate hdc.
-            int objType = UnsafeNativeMethods.GetObjectType(new HandleRef(null, hdc));
-
+            Interop.Gdi32.ObjectType objType = Interop.Gdi32.GetObjectType(hdc);
             switch (objType)
             {
-                case NativeMethods.OBJ_DC:
-                case NativeMethods.OBJ_METADC:
-                case NativeMethods.OBJ_MEMDC:
-                case NativeMethods.OBJ_ENHMETADC:
+                case Interop.Gdi32.ObjectType.OBJ_DC:
+                case Interop.Gdi32.ObjectType.OBJ_METADC:
+                case Interop.Gdi32.ObjectType.OBJ_MEMDC:
+                case Interop.Gdi32.ObjectType.OBJ_ENHMETADC:
                     break;
                 default:
                     throw new ArgumentException(SR.DCTypeInvalid);
@@ -334,7 +332,7 @@ namespace System.Drawing
 
             if (_compatDC != IntPtr.Zero)
             {
-                UnsafeNativeMethods.DeleteDC(new HandleRef(this, _compatDC));
+                Interop.Gdi32.DeleteDC(new HandleRef(this, _compatDC));
                 _compatDC = IntPtr.Zero;
             }
         }
@@ -348,7 +346,7 @@ namespace System.Drawing
             {
                 Debug.Assert(_oldBitmap == IntPtr.Zero);
 
-                SafeNativeMethods.DeleteObject(new HandleRef(this, _dib));
+                Interop.Gdi32.DeleteObject(new HandleRef(this, _dib));
                 _dib = IntPtr.Zero;
             }
         }

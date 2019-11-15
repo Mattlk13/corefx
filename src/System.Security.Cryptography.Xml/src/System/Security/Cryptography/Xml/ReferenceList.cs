@@ -2,17 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace System.Security.Cryptography.Xml
 {
     public sealed class ReferenceList : IList
     {
-        private ArrayList _references;
+        private readonly ArrayList _references;
 
         public ReferenceList()
         {

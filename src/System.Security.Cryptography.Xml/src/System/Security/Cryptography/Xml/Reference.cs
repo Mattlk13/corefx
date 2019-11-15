@@ -2,14 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Xml;
-using System.Globalization;
-using System.Runtime.Versioning;
 
 namespace System.Security.Cryptography.Xml
 {
@@ -24,8 +19,8 @@ namespace System.Security.Cryptography.Xml
         private string _digestMethod;
         private byte[] _digestValue;
         private HashAlgorithm _hashAlgorithm;
-        private object _refTarget;
-        private ReferenceTargetType _refTargetType;
+        private readonly object _refTarget;
+        private readonly ReferenceTargetType _refTargetType;
         private XmlElement _cachedXml;
         private SignedXml _signedXml = null;
         internal CanonicalXmlNodeList _namespaces = null;
@@ -334,7 +329,7 @@ namespace System.Security.Cryptography.Xml
             DigestValue = CalculateHashValue(document, refList);
         }
 
-        // What we want to do is pump the input throug the TransformChain and then 
+        // What we want to do is pump the input throug the TransformChain and then
         // hash the output of the chain document is the document context for resolving relative references
         internal byte[] CalculateHashValue(XmlDocument document, CanonicalXmlNodeList refList)
         {

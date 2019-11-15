@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
@@ -106,7 +106,7 @@ namespace System.Drawing.Tests
             yield return new object[] { FontFamily.GenericSerif, 16, (FontStyle)int.MinValue };
             yield return new object[] { FontFamily.GenericSerif, 16, (FontStyle)int.MaxValue };
         }
-        
+
         [ConditionalTheory(Helpers.IsDrawingSupported)]
         [MemberData(nameof(Ctor_Family_Size_Style_TestData))]
         public void Ctor_Family_Size_Style(FontFamily fontFamily, float emSize, FontStyle style)
@@ -711,6 +711,56 @@ namespace System.Drawing.Tests
             }
         }
 
+        [ActiveIssue(20884, TestPlatforms.AnyUnix)]
+        [ConditionalFact(Helpers.IsDrawingSupported)]
+        public void FromLogFont_UnblittableStruct()
+        {
+            const byte OUT_TT_ONLY_PRECIS = 7;
+            using (var image = new Bitmap(10, 10))
+            using (Graphics graphics = Graphics.FromImage(image))
+            {
+                IntPtr hdc = graphics.GetHdc();
+                try
+                {
+                    var logFont = new UnblittableLOGFONT
+                    {
+                        lfOutPrecision = OUT_TT_ONLY_PRECIS
+                    };
+
+                    using (Font font = Font.FromLogFont(logFont))
+                    {
+                        Assert.NotNull(font);
+                        Assert.NotEmpty(font.Name);
+                    }
+                }
+                finally
+                {
+                    graphics.ReleaseHdc();
+                }
+            }
+        }
+
+        [Serializable()]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct UnblittableLOGFONT
+        {
+            public int lfHeight;
+            public int lfWidth;
+            public int lfEscapement;
+            public int lfOrientation;
+            public int lfWeight;
+            public byte lfItalic;
+            public byte lfUnderline;
+            public byte lfStrikeOut;
+            public byte lfCharSet;
+            public byte lfOutPrecision;
+            public byte lfClipPrecision;
+            public byte lfQuality;
+            public byte lfPitchAndFamily;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string lfFaceName;
+        }
+
         [ConditionalTheory(Helpers.IsDrawingSupported)]
         [InlineData(GraphicsUnit.Document)]
         [InlineData(GraphicsUnit.Inch)]
@@ -767,13 +817,13 @@ namespace System.Drawing.Tests
 
         [ActiveIssue(20884, TestPlatforms.AnyUnix)]
         [ConditionalTheory(Helpers.IsDrawingSupported)]
-        [InlineData(TextRenderingHint.SystemDefault, 0)]
-        [InlineData(TextRenderingHint.AntiAlias, 3)]
-        [InlineData(TextRenderingHint.AntiAliasGridFit, 3)]
-        [InlineData(TextRenderingHint.SingleBitPerPixel, 3)]
-        [InlineData(TextRenderingHint.SingleBitPerPixelGridFit, 3)]
-        [InlineData(TextRenderingHint.ClearTypeGridFit, 5)]
-        public void ToLogFont_InvokeGraphics_ReturnsExpected(TextRenderingHint textRenderingHint, int expectedQuality)
+        [InlineData(TextRenderingHint.SystemDefault)]
+        [InlineData(TextRenderingHint.AntiAlias)]
+        [InlineData(TextRenderingHint.AntiAliasGridFit)]
+        [InlineData(TextRenderingHint.SingleBitPerPixel)]
+        [InlineData(TextRenderingHint.SingleBitPerPixelGridFit)]
+        [InlineData(TextRenderingHint.ClearTypeGridFit)]
+        public void ToLogFont_InvokeGraphics_ReturnsExpected(TextRenderingHint textRenderingHint)
         {
             using (FontFamily family = FontFamily.GenericMonospace)
             using (var font = new Font(family, 10))

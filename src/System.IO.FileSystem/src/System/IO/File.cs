@@ -7,6 +7,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -77,8 +78,8 @@ namespace System.IO
         }
 
         // Creates a file in a particular path.  If the file exists, it is replaced.
-        // The file is opened with ReadWrite access and cannot be opened by another 
-        // application until it has been closed.  An IOException is thrown if the 
+        // The file is opened with ReadWrite access and cannot be opened by another
+        // application until it has been closed.  An IOException is thrown if the
         // directory specified doesn't exist.
         public static FileStream Create(string path)
         {
@@ -86,19 +87,19 @@ namespace System.IO
         }
 
         // Creates a file in a particular path.  If the file exists, it is replaced.
-        // The file is opened with ReadWrite access and cannot be opened by another 
-        // application until it has been closed.  An IOException is thrown if the 
+        // The file is opened with ReadWrite access and cannot be opened by another
+        // application until it has been closed.  An IOException is thrown if the
         // directory specified doesn't exist.
         public static FileStream Create(string path, int bufferSize)
             => new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize);
 
         public static FileStream Create(string path, int bufferSize, FileOptions options)
             => new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize, options);
- 
+
         // Deletes a file. The file specified by the designated path is deleted.
         // If the file does not exist, Delete succeeds without throwing
         // an exception.
-        // 
+        //
         // On Windows, Delete will fail for a file that is open for normal I/O
         // or a file that is memory mapped.
         public static void Delete(string path)
@@ -159,7 +160,7 @@ namespace System.IO
 
         internal static DateTimeOffset GetUtcDateTimeOffset(DateTime dateTime)
         {
-            // File and Directory UTC APIs treat a DateTimeKind.Unspecified as UTC whereas 
+            // File and Directory UTC APIs treat a DateTimeKind.Unspecified as UTC whereas
             // ToUniversalTime treats this as local.
             if (dateTime.Kind == DateTimeKind.Unspecified)
             {
@@ -604,7 +605,7 @@ namespace System.IO
                 throw new ArgumentNullException(nameof(destinationFileName));
 
             FileSystem.ReplaceFile(
-                Path.GetFullPath(sourceFileName), 
+                Path.GetFullPath(sourceFileName),
                 Path.GetFullPath(destinationFileName),
                 destinationBackupFileName != null ? Path.GetFullPath(destinationBackupFileName) : null,
                 ignoreMetadataErrors);
@@ -614,10 +615,10 @@ namespace System.IO
         // This method does work across volumes.
         //
         // The caller must have certain FileIOPermissions.  The caller must
-        // have Read and Write permission to 
-        // sourceFileName and Write 
+        // have Read and Write permission to
+        // sourceFileName and Write
         // permissions to destFileName.
-        // 
+        //
         public static void Move(string sourceFileName, string destFileName)
         {
             Move(sourceFileName, destFileName, false);
@@ -707,7 +708,7 @@ namespace System.IO
                 cancellationToken.ThrowIfCancellationRequested();
                 buffer = ArrayPool<char>.Shared.Rent(sr.CurrentEncoding.GetMaxCharCount(DefaultBufferSize));
                 StringBuilder sb = new StringBuilder();
-                for (;;)
+                while (true)
                 {
 #if MS_IO_REDIST
                     int read = await sr.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
@@ -775,7 +776,11 @@ namespace System.IO
                 long fileLength = fs.Length;
                 if (fileLength > int.MaxValue)
                 {
-                    return Task.FromException<byte[]>(new IOException(SR.IO_FileTooLong2GB));
+                    var e = new IOException(SR.IO_FileTooLong2GB);
+#if !MS_IO_REDIST
+                    ExceptionDispatchInfo.SetCurrentStackTrace(e);
+#endif
+                    return Task.FromException<byte[]>(e);
                 }
 
                 returningInternalTask = true;

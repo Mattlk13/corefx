@@ -38,7 +38,7 @@ namespace System.Configuration
             // The conversion is true -> OverrideMode.Inherit
             // The conversion is false -> OverrideMode.Deny
             // This is consistent with Whidbey where true means true unless there is a false somewhere above
-            OverrideModeSetting result = new OverrideModeSetting();
+            OverrideModeSetting result = default;
 
             result.SetMode(allowOverride ? OverrideMode.Inherit : OverrideMode.Deny);
             result._mode |= XmlDefinedLegacy;
@@ -48,7 +48,7 @@ namespace System.Configuration
 
         internal static OverrideModeSetting CreateFromXmlReadValue(OverrideMode mode)
         {
-            OverrideModeSetting result = new OverrideModeSetting();
+            OverrideModeSetting result = default;
 
             result.SetMode(mode);
             result._mode |= XmlDefinedNewMode;
@@ -56,28 +56,18 @@ namespace System.Configuration
             return result;
         }
 
-        internal static OverrideMode ParseOverrideModeXmlValue(string value, XmlUtil xmlUtil)
-        {
+        internal static OverrideMode ParseOverrideModeXmlValue(string value, XmlUtil xmlUtil) =>
             // 'value' is the string representation of OverrideMode enum
             // Try to parse the string to the enum and generate errors if not possible
-
-            switch (value)
+            value switch
             {
-                case BaseConfigurationRecord.OverrideModeInherit:
-                    return OverrideMode.Inherit;
-
-                case BaseConfigurationRecord.OverrideModeAllow:
-                    return OverrideMode.Allow;
-
-                case BaseConfigurationRecord.OverrideModeDeny:
-                    return OverrideMode.Deny;
-
-                default:
-                    throw new ConfigurationErrorsException(
+                BaseConfigurationRecord.OverrideModeInherit => OverrideMode.Inherit,
+                BaseConfigurationRecord.OverrideModeAllow => OverrideMode.Allow,
+                BaseConfigurationRecord.OverrideModeDeny => OverrideMode.Deny,
+                _ => throw new ConfigurationErrorsException(
                         SR.Config_section_override_mode_attribute_invalid,
-                        xmlUtil);
-            }
-        }
+                        xmlUtil),
+            };
 
         internal static bool CanUseSameLocationTag(OverrideModeSetting x, OverrideModeSetting y)
         {
@@ -109,7 +99,7 @@ namespace System.Configuration
                         ((y._mode & XmlDefinedAny) != 0))
                         result = (x._mode & XmlDefinedAny) == (y._mode & XmlDefinedAny);
 
-                    // Neither "x" nor "y" was XML defined - they are a match since they can both go 
+                    // Neither "x" nor "y" was XML defined - they are a match since they can both go
                     // to a default <location> with no explicit mode setting written out
                 }
             }

@@ -18,7 +18,7 @@ namespace Internal.Cryptography.Pal
             // The numeric values of X509KeyUsageFlags mean that if we interpret it as a little-endian
             // ushort it will line up with the flags in the spec. We flip bit order of each byte to get
             // the KeyUsageFlagsAsn order expected by AsnWriter.
-            KeyUsageFlagsAsn keyUsagesAsn = 
+            KeyUsageFlagsAsn keyUsagesAsn =
                 (KeyUsageFlagsAsn)ReverseBitOrder((byte)keyUsages) |
                 (KeyUsageFlagsAsn)(ReverseBitOrder((byte)(((ushort)keyUsages >> 8))) << 8);
 
@@ -59,7 +59,7 @@ namespace Internal.Cryptography.Pal
             // ended up being little-endian for BIT_STRING values.  Untwist the bytes, and now the bits all
             // line up with the existing X509KeyUsageFlags.
 
-            keyUsages = 
+            keyUsages =
                 (X509KeyUsageFlags)ReverseBitOrder((byte)keyUsagesAsn) |
                 (X509KeyUsageFlags)(ReverseBitOrder((byte)(((ushort)keyUsagesAsn >> 8))) << 8);
         }
@@ -69,7 +69,7 @@ namespace Internal.Cryptography.Pal
             bool hasPathLengthConstraint,
             int pathLengthConstraint)
         {
-            BasicConstraintsAsn constraints = new BasicConstraintsAsn();
+            BasicConstraintsAsn constraints = default;
 
             constraints.CA = certificateAuthority;
             if (hasPathLengthConstraint)
@@ -180,7 +180,7 @@ namespace Internal.Cryptography.Pal
         {
             AsnReader reader = new AsnReader(encoded, AsnEncodingRules.BER);
             ReadOnlyMemory<byte> contents;
-            if (!reader.TryReadPrimitiveOctetStringBytes(out contents))
+            if (!reader.TryReadPrimitiveOctetStringBytes(out contents))
             {
                 throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
             }
@@ -194,7 +194,7 @@ namespace Internal.Cryptography.Pal
             // The CapiSha1 value is the SHA-1 of the SubjectPublicKeyInfo field, inclusive
             // of the DER structural bytes.
 
-            SubjectPublicKeyInfoAsn spki = new SubjectPublicKeyInfoAsn();
+            SubjectPublicKeyInfoAsn spki = default;
             spki.Algorithm = new AlgorithmIdentifierAsn { Algorithm = key.Oid, Parameters = key.EncodedParameters.RawData };
             spki.SubjectPublicKey = key.EncodedKeyValue.RawData;
 

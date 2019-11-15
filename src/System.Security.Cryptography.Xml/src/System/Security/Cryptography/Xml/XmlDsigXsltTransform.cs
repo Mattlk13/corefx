@@ -2,12 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
@@ -16,12 +11,12 @@ namespace System.Security.Cryptography.Xml
 {
     public class XmlDsigXsltTransform : Transform
     {
-        private Type[] _inputTypes = { typeof(Stream), typeof(XmlDocument), typeof(XmlNodeList) };
-        private Type[] _outputTypes = { typeof(Stream) };
+        private readonly Type[] _inputTypes = { typeof(Stream), typeof(XmlDocument), typeof(XmlNodeList) };
+        private readonly Type[] _outputTypes = { typeof(Stream) };
         private XmlNodeList _xslNodes;
         private string _xslFragment;
         private Stream _inputStream;
-        private bool _includeComments = false;
+        private readonly bool _includeComments = false;
 
         public XmlDsigXsltTransform()
         {

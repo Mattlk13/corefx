@@ -2,7 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 // Copyright (c) 2004 Mainsoft Co.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -10,10 +10,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -469,20 +469,10 @@ namespace System.Data.Tests
             ds.Tables.Add("table", "namespace2");
             Assert.Equal(2, ds.Tables.Count);
 
-            try
-            {
-                ds.Tables.Add("table", "namespace1");
-                Assert.False(true);
-            }
-            catch (DuplicateNameException e) { }
+            Assert.Throws<DuplicateNameException>(() => ds.Tables.Add("table", "namespace1"));
 
             ds.Tables.Add("table");
-            try
-            {
-                ds.Tables.Add("table", null);
-                Assert.False(true);
-            }
-            catch (DuplicateNameException e) { }
+            Assert.Throws<DuplicateNameException>(() => ds.Tables.Add("table", null));
         }
 
         [Fact]
@@ -498,12 +488,7 @@ namespace System.Data.Tests
             // Should fail if it cannot be resolved to a single table
             Assert.False(ds.Tables.Contains("table"));
 
-            try
-            {
-                ds.Tables.Contains("table", null);
-                Assert.False(true);
-            }
-            catch (ArgumentNullException e) { }
+            Assert.Throws<ArgumentNullException>(() => ds.Tables.Contains("table", null));
 
             Assert.True(ds.Tables.Contains("table", "namespace1"));
             Assert.False(ds.Tables.Contains("table", "namespace3"));
@@ -530,23 +515,13 @@ namespace System.Data.Tests
             ds.Tables.Add("table", "namespace1");
             ds.Tables.Add("table", "namespace2");
 
-            try
-            {
-                ds.Tables.Remove("table");
-                Assert.False(true);
-            }
-            catch (ArgumentException e) { }
+            Assert.Throws<ArgumentException>(() => ds.Tables.Remove("table"));
 
             ds.Tables.Remove("table", "namespace2");
             Assert.Equal(2, ds.Tables.Count);
             Assert.Equal("namespace1", ds.Tables[1].Namespace);
 
-            try
-            {
-                ds.Tables.Remove("table", "namespace2");
-                Assert.False(true);
-            }
-            catch (ArgumentException e) { }
+            Assert.Throws<ArgumentException>(() => ds.Tables.Remove("table", "namespace2"));
         }
     }
 }

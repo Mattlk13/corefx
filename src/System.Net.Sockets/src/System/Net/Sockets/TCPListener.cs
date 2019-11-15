@@ -11,7 +11,7 @@ namespace System.Net.Sockets
     // host process that listens for connections from TCP clients.
     public class TcpListener
     {
-        private IPEndPoint _serverSocketEP;
+        private readonly IPEndPoint _serverSocketEP;
         private Socket _serverSocket;
         private bool _active;
         private bool _exclusiveAddressUse;
@@ -60,12 +60,13 @@ namespace System.Net.Sockets
             _serverSocketEP = new IPEndPoint(IPAddress.Any, port);
             _serverSocket = new Socket(_serverSocketEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
-        
+
         // Used by the class to provide the underlying network socket.
         public Socket Server
         {
             get
             {
+                CreateNewSocketIfNeeded();
                 return _serverSocket;
             }
         }
@@ -93,7 +94,7 @@ namespace System.Net.Sockets
         {
             get
             {
-                return _serverSocket.ExclusiveAddressUse;
+                return _serverSocket != null ? _serverSocket.ExclusiveAddressUse : _exclusiveAddressUse;
             }
             set
             {
@@ -102,7 +103,10 @@ namespace System.Net.Sockets
                     throw new InvalidOperationException(SR.net_tcplistener_mustbestopped);
                 }
 
-                _serverSocket.ExclusiveAddressUse = value;
+                if (_serverSocket != null)
+                {
+                    _serverSocket.ExclusiveAddressUse = value;
+                }
                 _exclusiveAddressUse = value;
             }
         }
@@ -139,6 +143,8 @@ namespace System.Net.Sockets
                 return;
             }
 
+            CreateNewSocketIfNeeded();
+
             _serverSocket.Bind(_serverSocketEP);
             try
             {
@@ -160,14 +166,9 @@ namespace System.Net.Sockets
         {
             if (NetEventSource.IsEnabled) NetEventSource.Enter(this);
 
-            _serverSocket.Dispose();
+            _serverSocket?.Dispose();
             _active = false;
-            _serverSocket = new Socket(_serverSocketEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            if (_exclusiveAddressUse)
-            {
-                _serverSocket.ExclusiveAddressUse = true;
-            }
+            _serverSocket = null;
 
             if (NetEventSource.IsEnabled) NetEventSource.Exit(this);
         }
@@ -326,12 +327,22 @@ namespace System.Net.Sockets
             else
             {
                 // If not, fall-back to old IPv4.
-                listener = new TcpListener(IPAddress.Any , port);
+                listener = new TcpListener(IPAddress.Any, port);
             }
 
             if (NetEventSource.IsEnabled) NetEventSource.Exit(null, port);
 
             return listener;
+        }
+
+        private void CreateNewSocketIfNeeded()
+        {
+            _serverSocket ??= new Socket(_serverSocketEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            if (_exclusiveAddressUse)
+            {
+                _serverSocket.ExclusiveAddressUse = true;
+            }
         }
     }
 }

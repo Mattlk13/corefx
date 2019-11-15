@@ -46,7 +46,7 @@ namespace System.Collections.Immutable
             /// The number of elements contained by this subtree starting at this node.
             /// </summary>
             /// <remarks>
-            /// If this node would benefit from saving 4 bytes, we could have only a few nodes 
+            /// If this node would benefit from saving 4 bytes, we could have only a few nodes
             /// scattered throughout the graph actually record the count of nodes beneath them.
             /// Those without the count could query their descendants, which would often short-circuit
             /// when they hit a node that *does* include a count field.
@@ -187,7 +187,7 @@ namespace System.Collections.Immutable
                 }
             }
 
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
             /// <summary>
             /// Gets a read-only reference to the element of the set at the given index.
             /// </summary>
@@ -384,7 +384,7 @@ namespace System.Collections.Immutable
                 Node result = this;
                 if (index == _left._count)
                 {
-                    // We have a match. If this is a leaf, just remove it 
+                    // We have a match. If this is a leaf, just remove it
                     // by returning Empty.  If we have only one child,
                     // replace the node with the child.
                     if (_right.IsEmpty && _left.IsEmpty)
@@ -484,7 +484,7 @@ namespace System.Collections.Immutable
                 Node result = this;
                 if (index == _left._count)
                 {
-                    // We have a match. 
+                    // We have a match.
                     result = this.MutateKey(value);
                 }
                 else if (index < _left._count)
@@ -511,7 +511,7 @@ namespace System.Collections.Immutable
             /// Reverses the order of the elements in the specified range.
             /// </summary>
             /// <param name="index">The zero-based starting index of the range to reverse.</param>
-            /// <param name="count">The number of elements in the range to reverse.</param> 
+            /// <param name="count">The number of elements in the range to reverse.</param>
             /// <returns>The reversed list.</returns>
             internal Node Reverse(int index, int count)
             {
@@ -524,7 +524,7 @@ namespace System.Collections.Immutable
                 int end = index + count - 1;
                 while (start < end)
                 {
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
                     T a = result.ItemRef(start);
                     T b = result.ItemRef(end);
 #else
@@ -658,7 +658,7 @@ namespace System.Collections.Immutable
                     return result < 0 ? result - offset : result + offset;
                 }
 
-                // We're definitely in the caller's designated range now. 
+                // We're definitely in the caller's designated range now.
                 // Any possible match will be a descendant of this node (or this immediate one).
                 // Some descendants may not be in range, but if we hit any it means no match was found,
                 // and a negative response would come back from the above code to the below code.
@@ -703,6 +703,22 @@ namespace System.Collections.Immutable
             /// </returns>
             [Pure]
             internal int IndexOf(T item, IEqualityComparer<T> equalityComparer) => this.IndexOf(item, 0, this.Count, equalityComparer);
+
+            /// <summary>
+            /// Searches for the specified object and returns <c>true</c> if it is found, <c>false</c> otherwise.
+            /// </summary>
+            /// <param name="item">
+            /// The object to locate in the <see cref="ImmutableList{T}"/>. The value
+            /// can be null for reference types.
+            /// </param>
+            /// <param name="equalityComparer">
+            /// The equality comparer to use for testing the match of two elements.
+            /// </param>
+            /// <returns>
+            /// <c>true</c> if it is found, <c>false</c> otherwise.
+            /// </returns>
+            [Pure]
+            internal bool Contains(T item, IEqualityComparer<T> equalityComparer) => Contains(this, item, equalityComparer);
 
             /// <summary>
             /// Searches for the specified object and returns the zero-based index of the
@@ -1542,6 +1558,22 @@ namespace System.Collections.Immutable
             /// <param name="key">The leaf node's key.</param>
             /// <returns>The leaf node.</returns>
             private static Node CreateLeaf(T key) => new Node(key, left: EmptyNode, right: EmptyNode);
+
+            /// <summary>
+            /// Traverses the node tree looking for a node with the provided value. The provided node will be checked
+            /// then we will recursively check it's left and right nodes.
+            /// </summary>
+            /// <param name="node">
+            /// The node to check.
+            /// </param>
+            /// <param name="value">
+            /// The value to check for.
+            /// </param>
+            /// <param name="equalityComparer">
+            /// The equality comparer to use for testing the node and value.
+            /// </param>
+            /// <returns></returns>
+            private static bool Contains(Node node, T value, IEqualityComparer<T> equalityComparer) => !node.IsEmpty && (equalityComparer.Equals(value, node._key) || Contains(node._left, value, equalityComparer) || Contains(node._right, value, equalityComparer));
         }
     }
 }

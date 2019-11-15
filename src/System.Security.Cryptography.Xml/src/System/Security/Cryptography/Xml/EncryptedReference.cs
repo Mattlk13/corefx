@@ -2,8 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections;
 using System.Xml;
 
 namespace System.Security.Cryptography.Xml
@@ -112,7 +110,7 @@ namespace System.Security.Cryptography.Xml
                 throw new ArgumentNullException(nameof(value));
 
             ReferenceType = value.LocalName;
-            
+
             string uri = Utils.GetAttribute(value, "URI", EncryptedXml.XmlEncNamespaceUrl);
             if (uri == null)
                 throw new ArgumentNullException(SR.Cryptography_Xml_UriRequired);

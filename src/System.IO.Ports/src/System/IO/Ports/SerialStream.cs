@@ -17,13 +17,11 @@ namespace System.IO.Ports
         private const int MinDataBits = 5;
 
         // members supporting properties exposed to SerialPort
-        private string _portName;
+        private readonly string _portName;
         private bool _inBreak = false;
         private Handshake _handshake;
 
 #pragma warning disable CS0067 // Events shared by Windows and Linux, on Linux we currently never call them
-        // called when any of the pin/ring-related triggers occurs
-        internal event SerialPinChangedEventHandler PinChanged;
         // called when any runtime error occurs on the port (frame, overrun, parity, etc.)
         internal event SerialErrorReceivedEventHandler ErrorReceived;
 #pragma warning restore CS0067

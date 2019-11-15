@@ -35,7 +35,7 @@ namespace System.Linq.Parallel
         // to change the default DOP.
         internal static int DefaultDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MAX_SUPPORTED_DOP);
 
-        // The size to use for bounded buffers. 
+        // The size to use for bounded buffers.
         internal const int DEFAULT_BOUNDED_BUFFER_CAPACITY = 512;
 
         // The number of bytes we want "chunks" to be, when partitioning, etc. We choose 4 cache
@@ -78,7 +78,7 @@ namespace System.Linq.Parallel
             // Because of the lack of typeof(T).IsValueType we need two pieces of information
             // to determine this. default(T) will return a non null for Value Types, except those
             // using Nullable<>, that is why we need a second condition.
-            if (default(T) != null || Nullable.GetUnderlyingType(typeof(T)) != null)
+            if (default(T)! != null || Nullable.GetUnderlyingType(typeof(T)) != null)
             {
                 // Marshal.SizeOf fails for value types that don't have explicit layouts. We
                 // just fall back to some arbitrary constant in that case. Is there a better way?

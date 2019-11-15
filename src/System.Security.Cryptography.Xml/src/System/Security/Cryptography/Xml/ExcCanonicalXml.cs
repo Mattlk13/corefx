@@ -5,16 +5,13 @@
 using System.Xml;
 using System.IO;
 using System.Text;
-using System.Collections;
-using System.Security.Cryptography;
-using System;
 
 namespace System.Security.Cryptography.Xml
 {
     internal class ExcCanonicalXml
     {
-        private CanonicalXmlDocument _c14nDoc;
-        private ExcAncestralNamespaceContextManager _ancMgr;
+        private readonly CanonicalXmlDocument _c14nDoc;
+        private readonly ExcAncestralNamespaceContextManager _ancMgr;
 
         internal ExcCanonicalXml(Stream inputStream, bool includeComments, string inclusiveNamespacesPrefixList, XmlResolver resolver, string strBaseUri)
         {

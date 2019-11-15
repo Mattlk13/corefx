@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -31,11 +31,11 @@ namespace System.Net.Http
                     // Don't write if nothing was given, especially since we don't want to accidentally send a 0 chunk,
                     // which would indicate end of body.  Instead, just ensure no content is stuck in the buffer.
                     connection.FlushAsync() :
-                    new ValueTask(WriteChunkAsync(connection, buffer));
+                    WriteChunkAsync(connection, buffer);
 
                 return task;
 
-                static async Task WriteChunkAsync(HttpConnection connection, ReadOnlyMemory<byte> buffer)
+                static async ValueTask WriteChunkAsync(HttpConnection connection, ReadOnlyMemory<byte> buffer)
                 {
                     // Write chunk length in hex followed by \r\n
                     await connection.WriteHexInt32Async(buffer.Length).ConfigureAwait(false);
@@ -46,8 +46,8 @@ namespace System.Net.Http
                     await connection.WriteTwoBytesAsync((byte)'\r', (byte)'\n').ConfigureAwait(false);
                 }
             }
-            
-            public override async Task FinishAsync()
+
+            public override async ValueTask FinishAsync()
             {
                 // Send 0 byte chunk to indicate end, then final CrLf
                 HttpConnection connection = GetConnectionOrThrow();

@@ -17,7 +17,7 @@ namespace System.Reflection.TypeLoading
             Debug.Assert(types != null);
 
             QueryResult<ConstructorInfo> queryResult = Query<ConstructorInfo>(bindingAttr);
-            ListBuilder<ConstructorInfo> candidates = new ListBuilder<ConstructorInfo>();
+            ListBuilder<ConstructorInfo> candidates = default;
             foreach (ConstructorInfo candidate in queryResult)
             {
                 if (candidate.QualifiesBasedOnParameterCount(bindingAttr, callConvention, types))
@@ -70,7 +70,7 @@ namespace System.Reflection.TypeLoading
             // GetMethodImpl() is a funnel for two groups of api. We can distinguish by comparing "types" to null.
             if (types == null)
             {
-                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints. 
+                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints.
                 Debug.Assert(genericParameterCount == GenericParameterCountAny);
                 Debug.Assert(binder == null);
                 Debug.Assert(callConvention == CallingConventions.Any);
@@ -79,9 +79,9 @@ namespace System.Reflection.TypeLoading
             }
             else
             {
-                // Group #2: This group of api takes a set of parameter types and an optional binder. 
+                // Group #2: This group of api takes a set of parameter types and an optional binder.
                 QueryResult<MethodInfo> queryResult = Query<MethodInfo>(name, bindingAttr);
-                ListBuilder<MethodInfo> candidates = new ListBuilder<MethodInfo>();
+                ListBuilder<MethodInfo> candidates = default;
                 foreach (MethodInfo candidate in queryResult)
                 {
                     if (genericParameterCount != GenericParameterCountAny && genericParameterCount != candidate.GetGenericParameterCount())
@@ -115,16 +115,16 @@ namespace System.Reflection.TypeLoading
             // GetPropertyImpl() is a funnel for two groups of api. We can distinguish by comparing "types" to null.
             if (types == null && returnType == null)
             {
-                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints. 
+                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints.
                 Debug.Assert(binder == null);
                 Debug.Assert(modifiers == null);
                 return Query<PropertyInfo>(name, bindingAttr).Disambiguate();
             }
             else
             {
-                // Group #2: This group of api takes a set of parameter types, a return type (both cannot be null) and an optional binder. 
+                // Group #2: This group of api takes a set of parameter types, a return type (both cannot be null) and an optional binder.
                 QueryResult<PropertyInfo> queryResult = Query<PropertyInfo>(name, bindingAttr);
-                ListBuilder<PropertyInfo> candidates = new ListBuilder<PropertyInfo>();
+                ListBuilder<PropertyInfo> candidates = default;
                 foreach (PropertyInfo candidate in queryResult)
                 {
                     if (types == null || (candidate.GetIndexParameters().Length == types.Length))

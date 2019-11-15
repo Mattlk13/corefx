@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -16,23 +16,23 @@ namespace System.IO.Pipelines
 
         private readonly int _bufferSize;
         private readonly int _minimumReadThreshold;
-        private readonly MemoryPool<byte> _pool;
+        private readonly MemoryPool<byte>? _pool;
 
-        private CancellationTokenSource _internalTokenSource;
+        private CancellationTokenSource? _internalTokenSource;
         private bool _isReaderCompleted;
         private bool _isStreamCompleted;
 
-        private BufferSegment _readHead;
+        private BufferSegment? _readHead;
         private int _readIndex;
 
-        private BufferSegment _readTail;
+        private BufferSegment? _readTail;
         private long _bufferedBytes;
         private bool _examinedEverything;
-        private object _lock = new object();
+        private readonly object _lock = new object();
 
         // Mutable struct! Don't make this readonly
         private BufferSegmentStack _bufferSegmentPool;
-        private bool _leaveOpen;
+        private readonly bool _leaveOpen;
 
         /// <summary>
         /// Creates a new StreamPipeReader.
@@ -86,10 +86,10 @@ namespace System.IO.Pipelines
         {
             ThrowIfCompleted();
 
-            AdvanceTo((BufferSegment)consumed.GetObject(), consumed.GetInteger(), (BufferSegment)examined.GetObject(), examined.GetInteger());
+            AdvanceTo((BufferSegment?)consumed.GetObject(), consumed.GetInteger(), (BufferSegment?)examined.GetObject(), examined.GetInteger());
         }
 
-        private void AdvanceTo(BufferSegment consumedSegment, int consumedIndex, BufferSegment examinedSegment, int examinedIndex)
+        private void AdvanceTo(BufferSegment? consumedSegment, int consumedIndex, BufferSegment? examinedSegment, int examinedIndex)
         {
             if (consumedSegment == null || examinedSegment == null)
             {
@@ -102,7 +102,7 @@ namespace System.IO.Pipelines
             }
 
             BufferSegment returnStart = _readHead;
-            BufferSegment returnEnd = consumedSegment;
+            BufferSegment? returnEnd = consumedSegment;
 
             long consumedBytes = BufferSegment.GetLength(returnStart, _readIndex, consumedSegment, consumedIndex);
 
@@ -120,7 +120,7 @@ namespace System.IO.Pipelines
             }
 
             // Two cases here:
-            // 1. All data is consumed. If so, we empty clear everything so we don't hold onto any 
+            // 1. All data is consumed. If so, we empty clear everything so we don't hold onto any
             // excess memory.
             // 2. A segment is entirely consumed but there is still more data in nextSegments
             //  We are allowed to remove an extra segment. by setting returnEnd to be the next block.
@@ -135,7 +135,7 @@ namespace System.IO.Pipelines
             }
             else if (consumedIndex == returnEnd.Length)
             {
-                BufferSegment nextBlock = returnEnd.NextSegment;
+                BufferSegment? nextBlock = returnEnd.NextSegment;
                 _readHead = nextBlock;
                 _readIndex = 0;
                 returnEnd = nextBlock;
@@ -149,7 +149,7 @@ namespace System.IO.Pipelines
             // Remove all blocks that are freed (except the last one)
             while (returnStart != returnEnd)
             {
-                BufferSegment next = returnStart.NextSegment;
+                BufferSegment next = returnStart.NextSegment!;
                 returnStart.ResetMemory();
                 ReturnSegmentUnsynchronized(returnStart);
                 returnStart = next;
@@ -163,7 +163,7 @@ namespace System.IO.Pipelines
         }
 
         /// <inheritdoc />
-        public override void Complete(Exception exception = null)
+        public override void Complete(Exception? exception = null)
         {
             if (_isReaderCompleted)
             {
@@ -172,7 +172,7 @@ namespace System.IO.Pipelines
 
             _isReaderCompleted = true;
 
-            BufferSegment segment = _readHead;
+            BufferSegment? segment = _readHead;
             while (segment != null)
             {
                 BufferSegment returnSegment = segment;
@@ -205,10 +205,10 @@ namespace System.IO.Pipelines
                 return new ReadResult(buffer: default, isCanceled: false, isCompleted: true);
             }
 
-            var reg = new CancellationTokenRegistration();
+            CancellationTokenRegistration reg = default;
             if (cancellationToken.CanBeCanceled)
             {
-                reg = cancellationToken.UnsafeRegister(state => ((StreamPipeReader)state).Cancel(), this);
+                reg = cancellationToken.UnsafeRegister(state => ((StreamPipeReader)state!).Cancel(), this);
             }
 
             using (reg)
@@ -218,7 +218,7 @@ namespace System.IO.Pipelines
                 {
                     AllocateReadTail();
 
-                    Memory<byte> buffer = _readTail.AvailableMemory.Slice(_readTail.End);
+                    Memory<byte> buffer = _readTail!.AvailableMemory.Slice(_readTail.End);
 
                     int length = await InnerStream.ReadAsync(buffer, tokenSource.Token).ConfigureAwait(false);
 
@@ -291,12 +291,13 @@ namespace System.IO.Pipelines
                 return true;
             }
 
-            result = new ReadResult();
+            result = default;
             return false;
         }
 
         private ReadOnlySequence<byte> GetCurrentReadOnlySequence()
         {
+            Debug.Assert(_readHead != null &&_readTail != null);
             return new ReadOnlySequence<byte>(_readHead, _readIndex, _readTail, _readTail.End);
         }
 
@@ -308,11 +309,15 @@ namespace System.IO.Pipelines
                 _readHead = AllocateSegment();
                 _readTail = _readHead;
             }
-            else if (_readTail.WritableBytes < _minimumReadThreshold)
+            else
             {
-                BufferSegment nextSegment = AllocateSegment();
-                _readTail.SetNext(nextSegment);
-                _readTail = nextSegment;
+                Debug.Assert(_readTail != null);
+                if (_readTail.WritableBytes < _minimumReadThreshold)
+                {
+                    BufferSegment nextSegment = AllocateSegment();
+                    _readTail.SetNext(nextSegment);
+                    _readTail = nextSegment;
+                }
             }
         }
 
@@ -334,7 +339,7 @@ namespace System.IO.Pipelines
 
         private BufferSegment CreateSegmentUnsynchronized()
         {
-            if (_bufferSegmentPool.TryPop(out BufferSegment segment))
+            if (_bufferSegmentPool.TryPop(out BufferSegment? segment))
             {
                 return segment;
             }

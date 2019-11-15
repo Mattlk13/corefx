@@ -47,7 +47,7 @@ namespace System.Net.NetworkInformation
         {
             get
             {
-                // The IPv6 equivalent was never available on down-level platforms. 
+                // The IPv6 equivalent was never available on down-level platforms.
                 // We've kept this behavior for legacy reasons. For IPv6 use PrefixLength instead.
                 if (Address.AddressFamily != AddressFamily.InterNetwork)
                 {
@@ -148,34 +148,6 @@ namespace System.Net.NetworkInformation
             }
 
             return addressList;
-        }
-
-        // Convert a CIDR prefix length to a subnet mask "255.255.255.0" format.
-        private static IPAddress PrefixLengthToSubnetMask(byte prefixLength, AddressFamily family)
-        {
-            Debug.Assert((0 <= prefixLength) && (prefixLength <= 126));
-            Debug.Assert((family == AddressFamily.InterNetwork) || (family == AddressFamily.InterNetworkV6));
-
-            byte[] addressBytes;
-            if (family == AddressFamily.InterNetwork)
-            {
-                addressBytes = new byte[4];
-            }
-            else
-            {
-                Debug.Assert(family == AddressFamily.InterNetworkV6);
-                addressBytes = new byte[16];
-            }
-
-            Debug.Assert(prefixLength <= (addressBytes.Length * 8));
-
-            // Enable bits one at a time from left/high to right/low.
-            for (int bit = 0; bit < prefixLength; bit++)
-            {
-                addressBytes[bit / 8] |= (byte)(0x80 >> (bit % 8));
-            }
-
-            return new IPAddress(addressBytes);
         }
     }
 }

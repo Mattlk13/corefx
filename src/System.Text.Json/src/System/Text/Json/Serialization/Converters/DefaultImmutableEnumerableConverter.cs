@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections;
+using System.Diagnostics;
 
 namespace System.Text.Json.Serialization.Converters
 {
@@ -101,16 +102,43 @@ namespace System.Text.Json.Serialization.Converters
             options.TryAddCreateRangeDelegate(delegateKey, createRangeDelegate);
         }
 
+        public static bool IsImmutableEnumerable(Type type)
+        {
+            if (!type.IsGenericType)
+            {
+                return false;
+            }
+
+            switch (type.GetGenericTypeDefinition().FullName)
+            {
+                case ImmutableArrayGenericTypeName:
+                case ImmutableListGenericTypeName:
+                case ImmutableListGenericInterfaceTypeName:
+                case ImmutableStackGenericTypeName:
+                case ImmutableStackGenericInterfaceTypeName:
+                case ImmutableQueueGenericTypeName:
+                case ImmutableQueueGenericInterfaceTypeName:
+                case ImmutableSortedSetGenericTypeName:
+                case ImmutableHashSetGenericTypeName:
+                case ImmutableSetGenericInterfaceTypeName:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public override IEnumerable CreateFromList(ref ReadStack state, IList sourceList, JsonSerializerOptions options)
         {
             Type immutableCollectionType = state.Current.JsonPropertyInfo.RuntimePropertyType;
-            Type elementType = state.Current.GetElementType();
+
+            JsonClassInfo elementClassInfo = state.Current.JsonPropertyInfo.ElementClassInfo;
+            Type elementType = elementClassInfo.Type;
 
             string delegateKey = GetDelegateKey(immutableCollectionType, elementType, out _, out _);
 
-            JsonClassInfo elementClassInfo = state.Current.JsonPropertyInfo.ElementClassInfo;
-            JsonPropertyInfo propertyInfo = options.GetJsonPropertyInfoFromClassInfo(elementClassInfo, options);
-            return propertyInfo.CreateImmutableCollectionInstance(immutableCollectionType, delegateKey, sourceList, state.JsonPath, options);
+            JsonPropertyInfo propertyInfo = elementClassInfo.PolicyProperty ?? elementClassInfo.CreateRootProperty(options);
+            Debug.Assert(propertyInfo != null);
+            return propertyInfo.CreateImmutableCollectionInstance(ref state, immutableCollectionType, delegateKey, sourceList, options);
         }
     }
 }

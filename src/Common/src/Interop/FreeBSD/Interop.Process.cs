@@ -42,7 +42,7 @@ internal static partial class Interop
         private const int KERN_PROC = 14;
         private const int KERN_PROC_PATHNAME = 12;
         private const int KERN_PROC_PROC = 8;
-        private const int KERN_PROC_ALL = 0; 
+        private const int KERN_PROC_ALL = 0;
         private const int KERN_PROC_PID  = 1;
         private const int KERN_PROC_INC_THREAD = 16;
 
@@ -86,7 +86,7 @@ internal static partial class Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct vnode
+        private struct vnode
         {
             public long tv_sec;
             public long tv_usec;
@@ -213,15 +213,13 @@ internal static partial class Interop
         /// <returns>Returns a list of PIDs corresponding to all running processes</returns>
         internal static unsafe int[] ListAllPids()
         {
-            int numProcesses = 0;
             int[] pids;
-            kinfo_proc * entries = null;
+            kinfo_proc * entries = GetProcInfo(0, false, out int numProcesses);
             int idx;
 
             try
             {
-                entries = GetProcInfo(0, false, out numProcesses);
-                if (entries == null || numProcesses <= 0)
+                if (numProcesses <= 0)
                 {
                     throw new Win32Exception(SR.CantGetAllPids);
                 }
@@ -273,7 +271,7 @@ internal static partial class Interop
             if (ret  != 0 ) {
                 return null;
             }
-            return System.Text.Encoding.UTF8.GetString(pBuffer,(int)bytesLength-1);
+            return System.Text.Encoding.UTF8.GetString(pBuffer, (int)bytesLength-1);
         }
 
         /// <summary>
@@ -315,7 +313,7 @@ internal static partial class Interop
                 kinfo = (kinfo_proc*)pBuffer;
                 if (kinfo->ki_structsize != sizeof(kinfo_proc))
                 {
-                    // failed consistency check 
+                    // failed consistency check
                     throw new ArgumentOutOfRangeException(nameof(pid));
                 }
 
@@ -340,20 +338,18 @@ internal static partial class Interop
         /// </returns>
         public static unsafe ProcessInfo GetProcessInfoById(int pid)
         {
-            kinfo_proc* kinfo = null;
-            int count;
-            ProcessInfo info;
-
             // Negative PIDs are invalid
             if (pid < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pid));
             }
 
+            kinfo_proc* kinfo = GetProcInfo(pid, true, out int count);
+            ProcessInfo info;
+
             try
             {
-                kinfo = GetProcInfo(pid, true, out count);
-                if (kinfo == null || count < 1)
+                if (count < 1)
                 {
                     throw new ArgumentOutOfRangeException(nameof(pid));
                 }
@@ -367,9 +363,9 @@ internal static partial class Interop
                 info.BasePriority = kinfo->ki_nice;
                 info.VirtualBytes = (long)kinfo->ki_size;
                 info.WorkingSet = kinfo->ki_rssize;
-                info.SessionId = kinfo ->ki_sid;
+                info.SessionId = kinfo->ki_sid;
 
-                for(int i = 0; i < process.Length; i++)
+                for (int i = 0; i < process.Length; i++)
                 {
                     var ti = new ThreadInfo()
                     {
@@ -400,7 +396,7 @@ internal static partial class Interop
         /// </returns>
         public static unsafe proc_stats GetThreadInfo(int pid, int tid)
         {
-            proc_stats ret = new proc_stats();
+            proc_stats ret = default;
             kinfo_proc* info = null;
             int count;
 
@@ -419,7 +415,7 @@ internal static partial class Interop
                     else
                     {
                         var list = new ReadOnlySpan<kinfo_proc>(info, count);
-                        for(int i = 0; i < list.Length; i++)
+                        for (int i = 0; i < list.Length; i++)
                         {
                             if (list[i].ki_tid == tid)
                             {

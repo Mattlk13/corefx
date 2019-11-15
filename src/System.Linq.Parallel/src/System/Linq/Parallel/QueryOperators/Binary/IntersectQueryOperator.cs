@@ -10,24 +10,25 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// Operator that yields the intersection of two data sources. 
+    /// Operator that yields the intersection of two data sources.
     /// </summary>
     /// <typeparam name="TInputOutput"></typeparam>
     internal sealed class IntersectQueryOperator<TInputOutput> :
         BinaryQueryOperator<TInputOutput, TInputOutput, TInputOutput>
     {
-        private readonly IEqualityComparer<TInputOutput> _comparer; // An equality comparer.
+        private readonly IEqualityComparer<TInputOutput>? _comparer; // An equality comparer.
 
         //---------------------------------------------------------------------------------------
         // Constructs a new intersection operator.
         //
 
-        internal IntersectQueryOperator(ParallelQuery<TInputOutput> left, ParallelQuery<TInputOutput> right, IEqualityComparer<TInputOutput> comparer)
+        internal IntersectQueryOperator(ParallelQuery<TInputOutput> left, ParallelQuery<TInputOutput> right, IEqualityComparer<TInputOutput>? comparer)
             : base(left, right)
         {
             Debug.Assert(left != null && right != null, "child data sources cannot be null");
@@ -42,7 +43,7 @@ namespace System.Linq.Parallel
         internal override QueryResults<TInputOutput> Open(
             QuerySettings settings, bool preferStriping)
         {
-            // We just open our child operators, left and then right.  Do not propagate the preferStriping value, but 
+            // We just open our child operators, left and then right.  Do not propagate the preferStriping value, but
             // instead explicitly set it to false. Regardless of whether the parent prefers striping or range
             // partitioning, the output will be hash-partitioned.
             QueryResults<TInputOutput> leftChildResults = LeftChild.Open(settings, false);
@@ -123,14 +124,14 @@ namespace System.Linq.Parallel
         // only returns elements that are seen twice (returning each one only once).
         //
 
-        class IntersectQueryOperatorEnumerator<TLeftKey> : QueryOperatorEnumerator<TInputOutput, int>
+        private class IntersectQueryOperatorEnumerator<TLeftKey> : QueryOperatorEnumerator<TInputOutput, int>
         {
-            private QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> _leftSource; // Left data source.
-            private QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> _rightSource; // Right data source.
-            private IEqualityComparer<TInputOutput> _comparer; // Comparer to use for equality/hash-coding.
-            private Set<TInputOutput> _hashLookup; // The hash lookup, used to produce the intersection.
-            private CancellationToken _cancellationToken;
-            private Shared<int> _outputLoopCount;
+            private readonly QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> _leftSource; // Left data source.
+            private readonly QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> _rightSource; // Right data source.
+            private readonly IEqualityComparer<TInputOutput>? _comparer; // Comparer to use for equality/hash-coding.
+            private Set<TInputOutput>? _hashLookup; // The hash lookup, used to produce the intersection.
+            private readonly CancellationToken _cancellationToken;
+            private Shared<int>? _outputLoopCount;
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new intersection operator.
@@ -139,7 +140,7 @@ namespace System.Linq.Parallel
             internal IntersectQueryOperatorEnumerator(
                 QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> leftSource,
                 QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> rightSource,
-                IEqualityComparer<TInputOutput> comparer, CancellationToken cancellationToken)
+                IEqualityComparer<TInputOutput>? comparer, CancellationToken cancellationToken)
             {
                 Debug.Assert(leftSource != null);
                 Debug.Assert(rightSource != null);
@@ -154,7 +155,7 @@ namespace System.Linq.Parallel
             // Walks the two data sources, left and then right, to produce the intersection.
             //
 
-            internal override bool MoveNext(ref TInputOutput currentElement, ref int currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TInputOutput currentElement, ref int currentKey)
             {
                 Debug.Assert(_leftSource != null);
                 Debug.Assert(_rightSource != null);
@@ -181,10 +182,11 @@ namespace System.Linq.Parallel
 
                 // Now iterate over the left data source, looking for matches.
                 Pair<TInputOutput, NoKeyMemoizationRequired> leftElement = default(Pair<TInputOutput, NoKeyMemoizationRequired>);
-                TLeftKey keyUnused = default(TLeftKey);
+                TLeftKey keyUnused = default(TLeftKey)!;
 
                 while (_leftSource.MoveNext(ref leftElement, ref keyUnused))
                 {
+                    Debug.Assert(_outputLoopCount != null);
                     if ((_outputLoopCount.Value++ & CancellationState.POLL_INTERVAL) == 0)
                         CancellationState.ThrowIfCanceled(_cancellationToken);
 
@@ -224,14 +226,14 @@ namespace System.Linq.Parallel
         }
 
 
-        class OrderedIntersectQueryOperatorEnumerator<TLeftKey> : QueryOperatorEnumerator<TInputOutput, TLeftKey>
+        private class OrderedIntersectQueryOperatorEnumerator<TLeftKey> : QueryOperatorEnumerator<TInputOutput, TLeftKey>
         {
-            private QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> _leftSource; // Left data source.
-            private QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> _rightSource; // Right data source.
-            private IEqualityComparer<Wrapper<TInputOutput>> _comparer; // Comparer to use for equality/hash-coding.
-            private IComparer<TLeftKey> _leftKeyComparer; // Comparer to use to determine ordering of order keys.
-            private Dictionary<Wrapper<TInputOutput>, Pair<TInputOutput, TLeftKey>> _hashLookup; // The hash lookup, used to produce the intersection.
-            private CancellationToken _cancellationToken;
+            private readonly QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> _leftSource; // Left data source.
+            private readonly QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> _rightSource; // Right data source.
+            private readonly IEqualityComparer<Wrapper<TInputOutput>> _comparer; // Comparer to use for equality/hash-coding.
+            private readonly IComparer<TLeftKey> _leftKeyComparer; // Comparer to use to determine ordering of order keys.
+            private Dictionary<Wrapper<TInputOutput>, Pair<TInputOutput, TLeftKey>>? _hashLookup; // The hash lookup, used to produce the intersection.
+            private readonly CancellationToken _cancellationToken;
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new intersection operator.
@@ -240,7 +242,7 @@ namespace System.Linq.Parallel
             internal OrderedIntersectQueryOperatorEnumerator(
                 QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, TLeftKey> leftSource,
                 QueryOperatorEnumerator<Pair<TInputOutput, NoKeyMemoizationRequired>, int> rightSource,
-                IEqualityComparer<TInputOutput> comparer, IComparer<TLeftKey> leftKeyComparer,
+                IEqualityComparer<TInputOutput>? comparer, IComparer<TLeftKey> leftKeyComparer,
                 CancellationToken cancellationToken)
             {
                 Debug.Assert(leftSource != null);
@@ -257,7 +259,7 @@ namespace System.Linq.Parallel
             // Walks the two data sources, left and then right, to produce the intersection.
             //
 
-            internal override bool MoveNext(ref TInputOutput currentElement, ref TLeftKey currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TInputOutput currentElement, ref TLeftKey currentKey)
             {
                 Debug.Assert(_leftSource != null);
                 Debug.Assert(_rightSource != null);
@@ -269,7 +271,7 @@ namespace System.Linq.Parallel
                     _hashLookup = new Dictionary<Wrapper<TInputOutput>, Pair<TInputOutput, TLeftKey>>(_comparer);
 
                     Pair<TInputOutput, NoKeyMemoizationRequired> leftElement = default(Pair<TInputOutput, NoKeyMemoizationRequired>);
-                    TLeftKey leftKey = default(TLeftKey);
+                    TLeftKey leftKey = default(TLeftKey)!;
                     while (_leftSource.MoveNext(ref leftElement, ref leftKey))
                     {
                         if ((i++ & CancellationState.POLL_INTERVAL) == 0)

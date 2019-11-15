@@ -51,7 +51,7 @@ namespace System.IO.Tests
             {
                 DisposeMethod = disposeMethod;
             }
-            
+
             public Action<bool> DisposeMethod { get; set; }
 
             protected override void Dispose(bool disposing)
@@ -108,7 +108,6 @@ namespace System.IO.Tests
                     }
                     Assert.False(writeDisposeInvoked, "Expected finalizer to have been suppressed");
                 }
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -136,7 +135,7 @@ namespace System.IO.Tests
                         fswrite.WriteByte(0);
                     };
                     act();
-                    
+
                     // Dispose is not getting called here.
                     // instead, make sure finalizer gets called and doesnt throw exception
                     for (int i = 0; i < 2; i++)
@@ -146,11 +145,10 @@ namespace System.IO.Tests
                     }
                     Assert.True(writeDisposeInvoked, "Expected finalizer to be invoked but not throw exception");
                 }
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
-        [Fact]
+        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsPreciseGcSupported))]
         public void Dispose_CallsVirtualDispose_TrueArg()
         {
             bool disposeInvoked = false;

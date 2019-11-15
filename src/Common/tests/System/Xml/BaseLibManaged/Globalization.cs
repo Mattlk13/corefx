@@ -4,8 +4,6 @@
 
 using System;
 
-[assembly: System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAssembly]
-
 namespace WebData.BaseLib
 {
     public class WebDataBaseLibException : System.Exception
@@ -117,7 +115,7 @@ namespace WebData.BaseLib
             int iSum = 0;
             for (i = 0; i < cBaseCharMap.Length; i += 2)
             {
-                //special processing for 0 
+                //special processing for 0
                 if (i == 0)
                 {
                     iSum += cBaseCharMap[i] - 1;

@@ -306,8 +306,11 @@ namespace Microsoft.VisualBasic
         internal ErrObject() { }
         public string Description { get { throw null; } set { } }
         public int Erl { get { throw null; } }
+        public int HelpContext { get { throw null; } set { } }
+        public string HelpFile { get { throw null; } set { } }
         public int LastDllError { get { throw null; } }
         public int Number { get { throw null; } set { } }
+        public string Source { get { throw null; } set { } }
         public void Clear() { }
         public System.Exception GetException() { throw null; }
         public void Raise(int Number, object Source = null, object Description = null, object HelpFile = null, object HelpContext = null) { }
@@ -458,6 +461,7 @@ namespace Microsoft.VisualBasic
     public sealed partial class Information
     {
         internal Information() { }
+        public static int Erl() { throw null; }
         public static Microsoft.VisualBasic.ErrObject Err() { throw null; }
         public static bool IsArray(object VarName) { throw null; }
         public static bool IsDate(object Expression) { throw null; }
@@ -479,12 +483,25 @@ namespace Microsoft.VisualBasic
     public sealed partial class Interaction
     {
         internal Interaction() { }
+        public static void AppActivate(int ProcessId) { }
+        public static void AppActivate(string Title) { }
         public static void Beep() { }
         public static object CallByName(object ObjectRef, string ProcName, Microsoft.VisualBasic.CallType UseCallType, params object[] Args) { throw null; }
         public static object Choose(double Index, params object[] Choice) { throw null; }
+        public static string Command() { throw null; }
         public static object CreateObject(string ProgId, string ServerName = "") { throw null; }
+        public static void DeleteSetting(string AppName, string Section = null, string Key = null) { }
+        public static string Environ(string Expression) { throw null; }
+        public static string Environ(int Expression) { throw null; }
+        public static string[,] GetAllSettings(string AppName, string Section) { throw null; }
+        public static object GetObject(string PathName = null, string Class = null) { throw null; }
+        public static string GetSetting(string AppName, string Section, string Key, string Default = "") { throw null; }
         public static object IIf(bool Expression, object TruePart, object FalsePart) { throw null; }
+        public static string InputBox(string Prompt, string Title = "", string DefaultResponse = "", int XPos = -1, int YPos = -1) { throw null; }
+        public static MsgBoxResult MsgBox(object Prompt, MsgBoxStyle Buttons = MsgBoxStyle.ApplicationModal, object Title = null) { throw null; }
         public static string Partition(long Number, long Start, long Stop, long Interval) { throw null; }
+        public static void SaveSetting(string AppName, string Section, string Key, string Setting) { }
+        public static int Shell(string PathName, AppWinStyle Style = AppWinStyle.MinimizedFocus, bool Wait = false, int Timeout = -1) { throw null; }
         public static object Switch(params object[] VarExpr) { throw null; }
     }
     public enum MsgBoxResult
@@ -695,70 +712,6 @@ namespace Microsoft.VisualBasic
         SimplifiedChinese = 256,
         TraditionalChinese = 512,
         LinguisticCasing = 1024,
-    }
-}
-namespace Microsoft.VisualBasic.ApplicationServices
-{
-    public partial class ApplicationBase
-    {
-        public ApplicationBase() { }
-        public System.Globalization.CultureInfo Culture { get { throw null; } }
-        public Microsoft.VisualBasic.ApplicationServices.AssemblyInfo Info { get { throw null; } }
-        public System.Globalization.CultureInfo UICulture { get { throw null; } }
-        public void ChangeCulture(string cultureName) { }
-        public void ChangeUICulture(string cultureName) { }
-        public string GetEnvironmentVariable(string name) { throw null; }
-    }
-    public partial class AssemblyInfo
-    {
-        public AssemblyInfo(System.Reflection.Assembly currentAssembly) { }
-        public string AssemblyName { get { throw null; } }
-        public string CompanyName { get { throw null; } }
-        public string Copyright { get { throw null; } }
-        public string Description { get { throw null; } }
-        public string DirectoryPath { get { throw null; } }
-        public System.Collections.ObjectModel.ReadOnlyCollection<System.Reflection.Assembly> LoadedAssemblies { get { throw null; } }
-        public string ProductName { get { throw null; } }
-        public string StackTrace { get { throw null; } }
-        public string Title { get { throw null; } }
-        public string Trademark { get { throw null; } }
-        public System.Version Version { get { throw null; } }
-        public long WorkingSet { get { throw null; } }
-    }
-    public partial class ConsoleApplicationBase : Microsoft.VisualBasic.ApplicationServices.ApplicationBase
-    {
-        public ConsoleApplicationBase() { }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> CommandLineArgs { get { throw null; } }
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        protected System.Collections.ObjectModel.ReadOnlyCollection<string> InternalCommandLine { set { } }
-    }
-    public partial class StartupEventArgs : System.ComponentModel.CancelEventArgs
-    {
-        public StartupEventArgs(System.Collections.ObjectModel.ReadOnlyCollection<string> args) { }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> CommandLine { get { throw null; } }
-    }
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    public partial class StartupNextInstanceEventArgs : System.EventArgs
-    {
-        public StartupNextInstanceEventArgs(System.Collections.ObjectModel.ReadOnlyCollection<string> args, bool bringToForegroundFlag) { }
-        public bool BringToForeground { get { throw null; } set { } }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> CommandLine { get { throw null; } }
-    }
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    public partial class UnhandledExceptionEventArgs : System.Threading.ThreadExceptionEventArgs
-    {
-        public UnhandledExceptionEventArgs(bool exitApplication, System.Exception exception) : base (default(System.Exception)) { }
-        public bool ExitApplication { get { throw null; } set { } }
-    }
-    public partial class User
-    {
-        public User() { }
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        public System.Security.Principal.IPrincipal CurrentPrincipal { get { throw null; } set { } }
-        protected virtual System.Security.Principal.IPrincipal InternalPrincipal { get { throw null; } set { } }
-        public bool IsAuthenticated { get { throw null; } }
-        public string Name { get { throw null; } }
-        public bool IsInRole(string role) { throw null; }
     }
 }
 namespace Microsoft.VisualBasic.CompilerServices
@@ -1157,75 +1110,6 @@ namespace Microsoft.VisualBasic.CompilerServices
         public static string VbTypeName(string SystemName) { throw null; }
     }
 }
-namespace Microsoft.VisualBasic.Devices
-{
-    public partial class Audio
-    {
-        public Audio() { }
-    }
-    public partial class Clock
-    {
-        public Clock() { }
-        public System.DateTime GmtTime { get { throw null; } }
-        public System.DateTime LocalTime { get { throw null; } }
-        public int TickCount { get { throw null; } }
-    }
-    public partial class Computer : Microsoft.VisualBasic.Devices.ServerComputer
-    {
-        public Computer() { }
-        public Microsoft.VisualBasic.Devices.Audio Audio { get { throw null; } }
-        public Microsoft.VisualBasic.MyServices.ClipboardProxy Clipboard { get { throw null; } }
-        public Microsoft.VisualBasic.Devices.Keyboard Keyboard { get { throw null; } }
-        public Microsoft.VisualBasic.Devices.Mouse Mouse { get { throw null; } }
-        public Microsoft.VisualBasic.Devices.Ports Ports { get { throw null; } }
-    }
-    public partial class ComputerInfo
-    {
-        public ComputerInfo() { }
-        [System.CLSCompliantAttribute(false)]
-        public ulong AvailablePhysicalMemory { get { throw null; } }
-        [System.CLSCompliantAttribute(false)]
-        public ulong AvailableVirtualMemory { get { throw null; } }
-        public System.Globalization.CultureInfo InstalledUICulture { get { throw null; } }
-        public string OSPlatform { get { throw null; } }
-        public string OSVersion { get { throw null; } }
-        [System.CLSCompliantAttribute(false)]
-        public ulong TotalPhysicalMemory { get { throw null; } }
-        [System.CLSCompliantAttribute(false)]
-        public ulong TotalVirtualMemory { get { throw null; } }
-    }
-    public partial class Keyboard
-    {
-        public Keyboard() { }
-    }
-    public partial class Mouse
-    {
-        public Mouse() { }
-    }
-    public partial class Network
-    {
-        public Network() { }
-    }
-    public partial class NetworkAvailableEventArgs : System.EventArgs
-    {
-        public NetworkAvailableEventArgs(bool networkAvailable) { }
-        public bool IsNetworkAvailable { get { throw null; } }
-    }
-    public partial class Ports
-    {
-        public Ports() { }
-    }
-    public partial class ServerComputer
-    {
-        public ServerComputer() { }
-        public Microsoft.VisualBasic.Devices.Clock Clock { get { throw null; } }
-        public Microsoft.VisualBasic.MyServices.FileSystemProxy FileSystem { get { throw null; } }
-        public Microsoft.VisualBasic.Devices.ComputerInfo Info { get { throw null; } }
-        public string Name { get { throw null; } }
-        public Microsoft.VisualBasic.Devices.Network Network { get { throw null; } }
-        public Microsoft.VisualBasic.MyServices.RegistryProxy Registry { get { throw null; } }
-    }
-}
 namespace Microsoft.VisualBasic.FileIO
 {
     public enum DeleteDirectoryOption
@@ -1380,93 +1264,5 @@ namespace Microsoft.VisualBasic.FileIO
     {
         OnlyErrorDialogs = 2,
         AllDialogs = 3,
-    }
-}
-namespace Microsoft.VisualBasic.MyServices
-{
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
-    public partial class ClipboardProxy
-    {
-        internal ClipboardProxy() { }
-    }
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
-    public partial class FileSystemProxy
-    {
-        internal FileSystemProxy() { }
-        public string CurrentDirectory { get { throw null; } set { } }
-        public System.Collections.ObjectModel.ReadOnlyCollection<System.IO.DriveInfo> Drives { get { throw null; } }
-        public Microsoft.VisualBasic.MyServices.SpecialDirectoriesProxy SpecialDirectories { get { throw null; } }
-        public string CombinePath(string baseDirectory, string relativePath) { throw null; }
-        public void CopyDirectory(string sourceDirectoryName, string destinationDirectoryName) { }
-        public void CopyDirectory(string sourceDirectoryName, string destinationDirectoryName, Microsoft.VisualBasic.FileIO.UIOption showUI) { }
-        public void CopyDirectory(string sourceDirectoryName, string destinationDirectoryName, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public void CopyDirectory(string sourceDirectoryName, string destinationDirectoryName, bool overwrite) { }
-        public void CopyFile(string sourceFileName, string destinationFileName) { }
-        public void CopyFile(string sourceFileName, string destinationFileName, Microsoft.VisualBasic.FileIO.UIOption showUI) { }
-        public void CopyFile(string sourceFileName, string destinationFileName, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public void CopyFile(string sourceFileName, string destinationFileName, bool overwrite) { }
-        public void CreateDirectory(string directory) { }
-        public void DeleteDirectory(string directory, Microsoft.VisualBasic.FileIO.DeleteDirectoryOption onDirectoryNotEmpty) { }
-        public void DeleteDirectory(string directory, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.RecycleOption recycle) { }
-        public void DeleteDirectory(string directory, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.RecycleOption recycle, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public void DeleteFile(string file) { }
-        public void DeleteFile(string file, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.RecycleOption recycle) { }
-        public void DeleteFile(string file, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.RecycleOption recycle, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public bool DirectoryExists(string directory) { throw null; }
-        public bool FileExists(string file) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> FindInFiles(string directory, string containsText, bool ignoreCase, Microsoft.VisualBasic.FileIO.SearchOption searchType) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> FindInFiles(string directory, string containsText, bool ignoreCase, Microsoft.VisualBasic.FileIO.SearchOption searchType, params string[] fileWildcards) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> GetDirectories(string directory) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> GetDirectories(string directory, Microsoft.VisualBasic.FileIO.SearchOption searchType, params string[] wildcards) { throw null; }
-        public System.IO.DirectoryInfo GetDirectoryInfo(string directory) { throw null; }
-        public System.IO.DriveInfo GetDriveInfo(string drive) { throw null; }
-        public System.IO.FileInfo GetFileInfo(string file) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> GetFiles(string directory) { throw null; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<string> GetFiles(string directory, Microsoft.VisualBasic.FileIO.SearchOption searchType, params string[] wildcards) { throw null; }
-        public string GetName(string path) { throw null; }
-        public string GetParentPath(string path) { throw null; }
-        public string GetTempFileName() { throw null; }
-        public void MoveDirectory(string sourceDirectoryName, string destinationDirectoryName) { }
-        public void MoveDirectory(string sourceDirectoryName, string destinationDirectoryName, Microsoft.VisualBasic.FileIO.UIOption showUI) { }
-        public void MoveDirectory(string sourceDirectoryName, string destinationDirectoryName, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public void MoveDirectory(string sourceDirectoryName, string destinationDirectoryName, bool overwrite) { }
-        public void MoveFile(string sourceFileName, string destinationFileName) { }
-        public void MoveFile(string sourceFileName, string destinationFileName, Microsoft.VisualBasic.FileIO.UIOption showUI) { }
-        public void MoveFile(string sourceFileName, string destinationFileName, Microsoft.VisualBasic.FileIO.UIOption showUI, Microsoft.VisualBasic.FileIO.UICancelOption onUserCancel) { }
-        public void MoveFile(string sourceFileName, string destinationFileName, bool overwrite) { }
-        public Microsoft.VisualBasic.FileIO.TextFieldParser OpenTextFieldParser(string file) { throw null; }
-        public Microsoft.VisualBasic.FileIO.TextFieldParser OpenTextFieldParser(string file, params int[] fieldWidths) { throw null; }
-        public Microsoft.VisualBasic.FileIO.TextFieldParser OpenTextFieldParser(string file, params string[] delimiters) { throw null; }
-        public System.IO.StreamReader OpenTextFileReader(string file) { throw null; }
-        public System.IO.StreamReader OpenTextFileReader(string file, System.Text.Encoding encoding) { throw null; }
-        public System.IO.StreamWriter OpenTextFileWriter(string file, bool append) { throw null; }
-        public System.IO.StreamWriter OpenTextFileWriter(string file, bool append, System.Text.Encoding encoding) { throw null; }
-        public byte[] ReadAllBytes(string file) { throw null; }
-        public string ReadAllText(string file) { throw null; }
-        public string ReadAllText(string file, System.Text.Encoding encoding) { throw null; }
-        public void RenameDirectory(string directory, string newName) { }
-        public void RenameFile(string file, string newName) { }
-        public void WriteAllBytes(string file, byte[] data, bool append) { }
-        public void WriteAllText(string file, string text, bool append) { }
-        public void WriteAllText(string file, string text, bool append, System.Text.Encoding encoding) { }
-    }
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
-    public partial class RegistryProxy
-    {
-        internal RegistryProxy() { }
-    }
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
-    public partial class SpecialDirectoriesProxy
-    {
-        internal SpecialDirectoriesProxy() { }
-        public string AllUsersApplicationData { get { throw null; } }
-        public string CurrentUserApplicationData { get { throw null; } }
-        public string Desktop { get { throw null; } }
-        public string MyDocuments { get { throw null; } }
-        public string MyMusic { get { throw null; } }
-        public string MyPictures { get { throw null; } }
-        public string ProgramFiles { get { throw null; } }
-        public string Programs { get { throw null; } }
-        public string Temp { get { throw null; } }
     }
 }

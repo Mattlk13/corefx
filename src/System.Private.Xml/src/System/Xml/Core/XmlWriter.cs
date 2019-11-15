@@ -39,7 +39,7 @@ namespace System.Xml
         Error,
     };
 
-    // Represents a writer that provides fast non-cached forward-only way of generating XML streams containing XML documents 
+    // Represents a writer that provides fast non-cached forward-only way of generating XML streams containing XML documents
     // that conform to the W3C Extensible Markup Language (XML) 1.0 specification and the Namespaces in XML specification.
     public abstract partial class XmlWriter : IDisposable
     {
@@ -230,7 +230,7 @@ namespace System.Xml
 
         // Scalar Value Methods
 
-        // Writes out the specified name, ensuring it is a valid NmToken according to the XML specification 
+        // Writes out the specified name, ensuring it is a valid NmToken according to the XML specification
         // (http://www.w3.org/TR/1998/REC-xml-19980210#NT-Name).
         public virtual void WriteNmToken(string name)
         {
@@ -368,7 +368,7 @@ namespace System.Xml
             {
                 do
                 {
-                    // we need to check both XmlReader.IsDefault and XmlReader.SchemaInfo.IsDefault. 
+                    // we need to check both XmlReader.IsDefault and XmlReader.SchemaInfo.IsDefault.
                     // If either of these is true and defattr=false, we should not write the attribute out
                     if (defattr || !reader.IsDefaultInternal)
                     {
@@ -391,7 +391,7 @@ namespace System.Xml
             }
         }
 
-        // Copies the current node from the given reader to the writer (including child nodes), and if called on an element moves the XmlReader 
+        // Copies the current node from the given reader to the writer (including child nodes), and if called on an element moves the XmlReader
         // to the corresponding end element.
         public virtual void WriteNode(XmlReader reader, bool defattr)
         {
@@ -631,7 +631,7 @@ namespace System.Xml
             }
         }
 
-        // Copy local namespaces on the navigator's current node to the raw writer. The namespaces are returned by the navigator in reversed order. 
+        // Copy local namespaces on the navigator's current node to the raw writer. The namespaces are returned by the navigator in reversed order.
         // The recursive call reverses them back.
         private void WriteLocalNamespaces(XPathNavigator nsNav)
         {
@@ -659,68 +659,100 @@ namespace System.Xml
         // Creates an XmlWriter for writing into the provided file.
         public static XmlWriter Create(string outputFileName)
         {
-            return Create(outputFileName, null);
+            if (outputFileName == null)
+            {
+                throw new ArgumentNullException(nameof(outputFileName));
+            }
+
+            // Avoid using XmlWriter.Create(string, XmlReaderSettings), as it references a lot of types
+            // that then can't be trimmed away.
+            var fs = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.Read);
+            try
+            {
+                var settings = new XmlWriterSettings() { CloseOutput = true };
+                XmlWriter writer = new XmlEncodedRawTextWriter(fs, settings);
+                return new XmlWellFormedWriter(writer, settings);
+            }
+            catch
+            {
+                fs.Dispose();
+                throw;
+            }
         }
 
         // Creates an XmlWriter for writing into the provided file with the specified settings.
         public static XmlWriter Create(string outputFileName, XmlWriterSettings settings)
         {
-            if (settings == null)
-            {
-                settings = new XmlWriterSettings();
-            }
+            settings ??= XmlWriterSettings.s_defaultWriterSettings;
             return settings.CreateWriter(outputFileName);
         }
 
         // Creates an XmlWriter for writing into the provided stream.
         public static XmlWriter Create(Stream output)
         {
-            return Create(output, null);
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            // Avoid using XmlWriter.Create(Stream, XmlReaderSettings), as it references a lot of types
+            // that then can't be trimmed away.
+            XmlWriterSettings settings = XmlWriterSettings.s_defaultWriterSettings;
+            XmlWriter writer = new XmlUtf8RawTextWriter(output, settings);
+            return new XmlWellFormedWriter(writer, settings);
         }
 
         // Creates an XmlWriter for writing into the provided stream with the specified settings.
         public static XmlWriter Create(Stream output, XmlWriterSettings settings)
         {
-            if (settings == null)
-            {
-                settings = new XmlWriterSettings();
-            }
+            settings ??= XmlWriterSettings.s_defaultWriterSettings;
             return settings.CreateWriter(output);
         }
 
         // Creates an XmlWriter for writing into the provided TextWriter.
         public static XmlWriter Create(TextWriter output)
         {
-            return Create(output, null);
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            // Avoid using XmlWriter.Create(TextWriter, XmlReaderSettings), as it references a lot of types
+            // that then can't be trimmed away.
+            XmlWriterSettings settings = XmlWriterSettings.s_defaultWriterSettings;
+            XmlWriter writer = new XmlEncodedRawTextWriter(output, settings);
+            return new XmlWellFormedWriter(writer, settings);
         }
 
         // Creates an XmlWriter for writing into the provided TextWriter with the specified settings.
         public static XmlWriter Create(TextWriter output, XmlWriterSettings settings)
         {
-            if (settings == null)
-            {
-                settings = new XmlWriterSettings();
-            }
+            settings ??= XmlWriterSettings.s_defaultWriterSettings;
             return settings.CreateWriter(output);
         }
 
         // Creates an XmlWriter for writing into the provided StringBuilder.
         public static XmlWriter Create(StringBuilder output)
         {
-            return Create(output, null);
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            // Avoid using XmlWriter.Create(StringBuilder, XmlReaderSettings), as it references a lot of types
+            // that then can't be trimmed away.
+            return Create(new StringWriter(output, CultureInfo.InvariantCulture));
         }
 
         // Creates an XmlWriter for writing into the provided StringBuilder with the specified settings.
         public static XmlWriter Create(StringBuilder output, XmlWriterSettings settings)
         {
-            if (settings == null)
-            {
-                settings = new XmlWriterSettings();
-            }
             if (output == null)
             {
                 throw new ArgumentNullException(nameof(output));
             }
+
+            settings ??= XmlWriterSettings.s_defaultWriterSettings;
             return settings.CreateWriter(new StringWriter(output, CultureInfo.InvariantCulture));
         }
 
@@ -733,12 +765,8 @@ namespace System.Xml
         // Creates an XmlWriter wrapped around the provided XmlWriter with the specified settings.
         public static XmlWriter Create(XmlWriter output, XmlWriterSettings settings)
         {
-            if (settings == null)
-            {
-                settings = new XmlWriterSettings();
-            }
+            settings ??= XmlWriterSettings.s_defaultWriterSettings;
             return settings.CreateWriter(output);
         }
     }
 }
-

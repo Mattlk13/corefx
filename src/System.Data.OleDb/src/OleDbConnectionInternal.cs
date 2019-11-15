@@ -17,7 +17,7 @@ namespace System.Data.OleDb
     internal sealed class OleDbConnectionInternal : DbConnectionInternal, IDisposable
     {
         private static volatile OleDbServicesWrapper idataInitialize;
-        private static object dataInitializeLock = new object();
+        private static readonly object dataInitializeLock = new object();
 
         internal readonly OleDbConnectionString ConnectionString; // parsed connection string attributes
 
@@ -321,7 +321,6 @@ namespace System.Data.OleDb
 
         public override void EnlistTransaction(SysTx.Transaction transaction)
         {
-            OleDbConnection outerConnection = Connection;
             if (null != LocalTransaction)
             {
                 throw ADP.LocalTransactionPresent();
@@ -821,8 +820,6 @@ namespace System.Data.OleDb
 
         internal Dictionary<string, OleDbPropertyInfo> GetPropertyInfo(Guid[] propertySets)
         {
-            bool isopen = HasSession;
-            OleDbConnectionString constr = ConnectionString;
             Dictionary<string, OleDbPropertyInfo> properties = null;
 
             if (null == propertySets)

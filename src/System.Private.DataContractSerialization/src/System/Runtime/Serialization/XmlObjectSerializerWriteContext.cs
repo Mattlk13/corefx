@@ -24,7 +24,7 @@ namespace System.Runtime.Serialization
     internal class XmlObjectSerializerWriteContext : XmlObjectSerializerContext
 #endif
     {
-        private ObjectReferenceStack _byValObjectsInScope = new ObjectReferenceStack();
+        private ObjectReferenceStack _byValObjectsInScope;
         private XmlSerializableWriter _xmlSerializableWriter;
         private const int depthToCheckCyclicReference = 512;
         private ObjectToIdCache _serializedObjects;
@@ -769,7 +769,7 @@ namespace System.Runtime.Serialization
 
                 if (dataType == Globals.TypeOfObject)
                 {
-                    // NOTE: serialize value in DataNode<object> since it may contain non-primitive 
+                    // NOTE: serialize value in DataNode<object> since it may contain non-primitive
                     // deserialized object (ex. empty class)
                     object o = dataNode.Value;
                     if (o != null)

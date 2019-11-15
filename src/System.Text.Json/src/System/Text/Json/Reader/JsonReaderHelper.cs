@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -250,18 +250,6 @@ namespace System.Text.Json
                                                0x02ul << 40 |
                                                0x01ul << 48) + 1;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsValidDateTimeOffsetParseLength(int length)
-        {
-            return JsonHelpers.IsInRangeInclusive(length, JsonConstants.MinimumDateTimeParseLength, JsonConstants.MaximumEscapedDateTimeOffsetParseLength);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsValidDateTimeOffsetParseLength(long length)
-        {
-            return JsonHelpers.IsInRangeInclusive(length, JsonConstants.MinimumDateTimeParseLength, JsonConstants.MaximumEscapedDateTimeOffsetParseLength);
-        }
-
         public static bool TryGetEscapedDateTime(ReadOnlySpan<byte> source, out DateTime value)
         {
             int backslash = source.IndexOf(JsonConstants.BackSlash);
@@ -327,7 +315,7 @@ namespace System.Text.Json
             utf8Unescaped = utf8Unescaped.Slice(0, written);
             Debug.Assert(!utf8Unescaped.IsEmpty);
 
-            if (utf8Unescaped.Length == JsonConstants.MaximumFormatGuidLength 
+            if (utf8Unescaped.Length == JsonConstants.MaximumFormatGuidLength
                 && Utf8Parser.TryParse(utf8Unescaped, out Guid tmp, out _, 'D'))
             {
                 value = tmp;

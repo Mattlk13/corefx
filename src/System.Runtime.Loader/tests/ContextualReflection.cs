@@ -175,8 +175,6 @@ namespace System.Runtime.Loader.Tests
             RemoteExecutor.Invoke(() =>
             {
                 Assert.Null(AssemblyLoadContext.CurrentContextualReflectionContext);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -1031,4 +1029,3 @@ namespace System.Runtime.Loader.Tests
 
     }
 }
-

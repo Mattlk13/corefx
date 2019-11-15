@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections;
+using System.Diagnostics;
 
 namespace System.Text.Json.Serialization.Converters
 {
@@ -58,13 +59,15 @@ namespace System.Text.Json.Serialization.Converters
         public override object CreateFromDictionary(ref ReadStack state, IDictionary sourceDictionary, JsonSerializerOptions options)
         {
             Type immutableCollectionType = state.Current.JsonPropertyInfo.RuntimePropertyType;
-            Type elementType = state.Current.GetElementType();
+
+            JsonClassInfo elementClassInfo = state.Current.JsonPropertyInfo.ElementClassInfo;
+            Type elementType = elementClassInfo.Type;
 
             string delegateKey = DefaultImmutableEnumerableConverter.GetDelegateKey(immutableCollectionType, elementType, out _, out _);
 
-            JsonClassInfo elementClassInfo = state.Current.JsonPropertyInfo.ElementClassInfo;
-            JsonPropertyInfo propertyInfo = options.GetJsonPropertyInfoFromClassInfo(elementClassInfo, options);
-            return propertyInfo.CreateImmutableDictionaryInstance(immutableCollectionType, delegateKey, sourceDictionary, state.JsonPath, options);
+            JsonPropertyInfo propertyInfo = elementClassInfo.PolicyProperty ?? elementClassInfo.CreateRootProperty(options);
+            Debug.Assert(propertyInfo != null);
+            return propertyInfo.CreateImmutableDictionaryInstance(ref state, immutableCollectionType, delegateKey, sourceDictionary, options);
         }
     }
 }

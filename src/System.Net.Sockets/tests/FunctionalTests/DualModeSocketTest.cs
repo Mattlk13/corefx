@@ -595,6 +595,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [ConditionalTheory(nameof(LocalhostIsBothIPv4AndIPv6))]
+        [ActiveIssue(20893)]
         [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
         public void DualModeConnectAsync_Static_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
@@ -860,7 +861,6 @@ namespace System.Net.Sockets.Tests
                     {
                         Assert.Equal(connectTo.MapToIPv6(), ((IPEndPoint)clientSocket.LocalEndPoint).Address);
                     }
-                    Assert.Equal(connectTo.MapToIPv6(), ((IPEndPoint)clientSocket.LocalEndPoint).Address);
                 }
                 catch (ObjectDisposedException) { }
                 catch (SocketException) { }
@@ -2418,6 +2418,11 @@ namespace System.Net.Sockets.Tests
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.True(socket.DualMode);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+            {
+                // This is not valid check on FreeBSD.
+                // Accepted socket is never DualMode and cannot be changed.
             }
             else
             {

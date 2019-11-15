@@ -27,13 +27,13 @@ namespace System.Net.Security
         {
         }
 
-        public static SecurityStatusPal AcceptSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteContext context,
+        public static SecurityStatusPal AcceptSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteSslContext context,
             ArraySegment<byte> inputBuffer, ref byte[] outputBuffer, SslAuthenticationOptions sslAuthenticationOptions)
         {
             return HandshakeInternal(credential, ref context, inputBuffer, ref outputBuffer, sslAuthenticationOptions);
         }
 
-        public static SecurityStatusPal InitializeSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteContext context, string targetName,
+        public static SecurityStatusPal InitializeSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteSslContext context, string targetName,
             ArraySegment<byte> inputBuffer, ref byte[] outputBuffer, SslAuthenticationOptions sslAuthenticationOptions)
         {
             return HandshakeInternal(credential, ref context, inputBuffer, ref outputBuffer, sslAuthenticationOptions);
@@ -99,10 +99,13 @@ namespace System.Net.Security
             return Interop.Ssl.ConvertAlpnProtocolListToByteArray(applicationProtocols);
         }
 
-        private static SecurityStatusPal HandshakeInternal(SafeFreeCredentials credential, ref SafeDeleteContext context,
+        private static SecurityStatusPal HandshakeInternal(SafeFreeCredentials credential, ref SafeDeleteSslContext context,
             ArraySegment<byte> inputBuffer, ref byte[] outputBuffer, SslAuthenticationOptions sslAuthenticationOptions)
         {
             Debug.Assert(!credential.IsInvalid);
+
+            byte[] output = null;
+            int outputSize = 0;
 
             try
             {
@@ -111,8 +114,6 @@ namespace System.Net.Security
                     context = new SafeDeleteSslContext(credential as SafeFreeSslCredentials, sslAuthenticationOptions);
                 }
 
-                byte[] output = null;
-                int outputSize;
                 bool done;
 
                 if (inputBuffer.Array == null)
@@ -143,6 +144,12 @@ namespace System.Net.Security
             }
             catch (Exception exc)
             {
+                // Even if handshake failed we may have Alert to sent.
+                if (outputSize > 0)
+                {
+                    outputBuffer = outputSize == output.Length ? output : new Span<byte>(output, 0, outputSize).ToArray();
+                }
+
                 return new SecurityStatusPal(SecurityStatusPalErrorCode.InternalError, exc);
             }
         }

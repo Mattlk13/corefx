@@ -15,7 +15,7 @@ using System.Threading;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// An inlined average aggregation operator and its enumerator, for floats. 
+    /// An inlined average aggregation operator and its enumerator, for floats.
     /// </summary>
     internal sealed class FloatAverageAggregationOperator : InlinedAggregationOperator<float, Pair<double, long>, float>
     {
@@ -35,9 +35,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override float InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override float InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -72,7 +72,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<Pair<double, long>, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<float, TKey> source, object sharedData,
+            int index, int count, QueryOperatorEnumerator<float, TKey> source, object? sharedData,
             CancellationToken cancellationToken)
         {
             return new FloatAverageAggregationOperatorEnumerator<TKey>(source, index, cancellationToken);
@@ -85,7 +85,7 @@ namespace System.Linq.Parallel
 
         private class FloatAverageAggregationOperatorEnumerator<TKey> : InlinedAggregationOperatorEnumerator<Pair<double, long>>
         {
-            private QueryOperatorEnumerator<float, TKey> _source; // The source data.
+            private readonly QueryOperatorEnumerator<float, TKey> _source; // The source data.
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new aggregation operator.
@@ -112,7 +112,7 @@ namespace System.Linq.Parallel
 
                 QueryOperatorEnumerator<float, TKey> source = _source;
                 float current = default(float);
-                TKey keyUnused = default(TKey);
+                TKey keyUnused = default(TKey)!;
 
                 if (source.MoveNext(ref current, ref keyUnused))
                 {

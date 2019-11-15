@@ -22,7 +22,7 @@ namespace System.Net.WebSockets
         private static readonly Action<object> s_OnCancel = new Action<object>(OnCancel);
         private readonly HttpRequestStream _inputStream;
         private readonly HttpResponseStream _outputStream;
-        private HttpListenerContext _context;
+        private readonly HttpListenerContext _context;
         private bool _inOpaqueMode;
         private WebSocketBase _webSocket;
         private HttpListenerAsyncEventArgs _writeEventArgs;
@@ -133,7 +133,7 @@ namespace System.Net.WebSockets
                 NetEventSource.Enter(this, HttpWebSocket.GetTraceMsgForParameters(offset, count, cancellationToken));
             }
 
-            CancellationTokenRegistration cancellationTokenRegistration = new CancellationTokenRegistration();
+            CancellationTokenRegistration cancellationTokenRegistration = default;
 
             int bytesRead = 0;
             try
@@ -275,7 +275,7 @@ namespace System.Net.WebSockets
                 else if (statusCode == Interop.HttpApi.ERROR_SUCCESS &&
                     HttpListener.SkipIOCPCallbackOnSuccess)
                 {
-                    // IO operation completed synchronously. No IO completion port callback is used because 
+                    // IO operation completed synchronously. No IO completion port callback is used because
                     // it was disabled in SwitchToOpaqueMode()
                     eventArgs.FinishOperationSuccess((int)bytesReturned, true);
                     completedAsynchronouslyOrWithError = false;
@@ -357,7 +357,7 @@ namespace System.Net.WebSockets
                 NetEventSource.Enter(this);
             }
 
-            CancellationTokenRegistration cancellationTokenRegistration = new CancellationTokenRegistration();
+            CancellationTokenRegistration cancellationTokenRegistration = default;
 
             try
             {
@@ -419,7 +419,7 @@ namespace System.Net.WebSockets
                 NetEventSource.Enter(this, HttpWebSocket.GetTraceMsgForParameters(offset, count, cancellationToken));
             }
 
-            CancellationTokenRegistration cancellationTokenRegistration = new CancellationTokenRegistration();
+            CancellationTokenRegistration cancellationTokenRegistration = default;
 
             try
             {
@@ -608,7 +608,7 @@ namespace System.Net.WebSockets
                 NetEventSource.Enter(this);
             }
 
-            CancellationTokenRegistration cancellationTokenRegistration = new CancellationTokenRegistration();
+            CancellationTokenRegistration cancellationTokenRegistration = default;
 
             try
             {
@@ -887,7 +887,7 @@ namespace System.Net.WebSockets
 
             // BufferList property.
             // Mutually exclusive with Buffer.
-            // Setting this property with an existing non-null Buffer will cause an assert.    
+            // Setting this property with an existing non-null Buffer will cause an assert.
             public IList<ArraySegment<byte>> BufferList
             {
                 get { return _bufferList; }
@@ -1097,16 +1097,16 @@ namespace System.Net.WebSockets
                 {
                     _dataChunks = new Interop.HttpApi.HTTP_DATA_CHUNK[2];
                     _dataChunksGCHandle = GCHandle.Alloc(_dataChunks, GCHandleType.Pinned);
-                    _dataChunks[0] = new Interop.HttpApi.HTTP_DATA_CHUNK();
+                    _dataChunks[0] = default;
                     _dataChunks[0].DataChunkType = Interop.HttpApi.HTTP_DATA_CHUNK_TYPE.HttpDataChunkFromMemory;
-                    _dataChunks[1] = new Interop.HttpApi.HTTP_DATA_CHUNK();
+                    _dataChunks[1] = default;
                     _dataChunks[1].DataChunkType = Interop.HttpApi.HTTP_DATA_CHUNK_TYPE.HttpDataChunkFromMemory;
                 }
 
                 Debug.Assert(_buffer == null || _bufferList == null, "Either 'm_Buffer' or 'm_BufferList' MUST be NULL.");
                 Debug.Assert(_shouldCloseOutput || _buffer != null || _bufferList != null, "Either 'm_Buffer' or 'm_BufferList' MUST NOT be NULL.");
 
-                // The underlying byte[] m_Buffer or each m_BufferList[].Array are pinned already 
+                // The underlying byte[] m_Buffer or each m_BufferList[].Array are pinned already
                 if (_buffer != null)
                 {
                     UpdateDataChunk(0, _buffer, _offset, _count);
@@ -1151,7 +1151,7 @@ namespace System.Net.WebSockets
             }
 
             // Method to mark this object as no longer "in-use".
-            // Will also execute a Dispose deferred because I/O was in progress.  
+            // Will also execute a Dispose deferred because I/O was in progress.
             internal void Complete()
             {
                 FreeOverlapped(false);
@@ -1159,7 +1159,7 @@ namespace System.Net.WebSockets
                 Interlocked.Exchange(ref _operating, Free);
 
                 // Check for deferred Dispose().
-                // The deferred Dispose is not guaranteed if Dispose is called while an operation is in progress. 
+                // The deferred Dispose is not guaranteed if Dispose is called while an operation is in progress.
                 // The m_DisposeCalled variable is not managed in a thread-safe manner on purpose for performance.
                 if (_disposeCalled)
                 {

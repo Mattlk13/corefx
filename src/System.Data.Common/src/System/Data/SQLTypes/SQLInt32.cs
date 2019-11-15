@@ -64,7 +64,7 @@ namespace System.Data.SqlTypes
         }
 
         // Explicit conversion from SqlInt32 to int. Throw exception if x is Null.
-        public static explicit operator int (SqlInt32 x)
+        public static explicit operator int(SqlInt32 x)
         {
             return x.Value;
         }
@@ -552,4 +552,3 @@ namespace System.Data.SqlTypes
         public static readonly SqlInt32 MaxValue = new SqlInt32(int.MaxValue);
     } // SqlInt32
 } // namespace System.Data.SqlTypes
-

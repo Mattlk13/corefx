@@ -37,7 +37,7 @@ namespace System.Xml
         // Static fields with implicit initialization
         //
         private static XmlCharType s_xmlCharType = XmlCharType.Instance;
-        private static CultureInfo s_invariantCultureInfo = CultureInfo.InvariantCulture;
+        private static readonly CultureInfo s_invariantCultureInfo = CultureInfo.InvariantCulture;
 
         internal static char[] crt = new char[] { '\n', '\r', '\t' };
 
@@ -572,8 +572,8 @@ namespace System.Xml
 
         //
         // Verification methods for single characters and surrogates
-        // 
-        // In cases where the direct call into XmlCharType would not get automatically inlined (because of the use of byte* field), 
+        //
+        // In cases where the direct call into XmlCharType would not get automatically inlined (because of the use of byte* field),
         // direct access to the XmlCharType.charProperties is used instead (= manual inlining).
         //
 
@@ -605,7 +605,7 @@ namespace System.Xml
         }
 #endif
 
-        // Valid XML character – as defined in XML 1.0 spec (fifth edition) production [2] Char
+        // Valid XML character - as defined in XML 1.0 spec (fifth edition) production [2] Char
         public static unsafe bool IsXmlChar(char ch)
         {
             return s_xmlCharType.IsCharData(ch);
@@ -616,13 +616,13 @@ namespace System.Xml
             return XmlCharType.IsHighSurrogate(highChar) && XmlCharType.IsLowSurrogate(lowChar);
         }
 
-        // Valid PUBLIC ID character – as defined in XML 1.0 spec (fifth edition) production [13] PublidChar
+        // Valid PUBLIC ID character - as defined in XML 1.0 spec (fifth edition) production [13] PublidChar
         public static bool IsPublicIdChar(char ch)
         {
             return s_xmlCharType.IsPubidChar(ch);
         }
 
-        // Valid Xml whitespace – as defined in XML 1.0 spec (fifth edition) production [3] S
+        // Valid Xml whitespace - as defined in XML 1.0 spec (fifth edition) production [3] S
         public static unsafe bool IsWhitespaceChar(char ch)
         {
             return s_xmlCharType.IsWhiteSpace(ch);
@@ -1187,7 +1187,7 @@ namespace System.Xml
                     "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzzzzz", //dateTime
                     "yyyy-MM-ddTHH:mm:ss.FFFFFFF",
                     "yyyy-MM-ddTHH:mm:ss.FFFFFFFZ",
-                    "HH:mm:ss.FFFFFFF",                  //time 
+                    "HH:mm:ss.FFFFFFF",                  //time
                     "HH:mm:ss.FFFFFFFZ",
                     "HH:mm:ss.FFFFFFFzzzzzz",
                     "yyyy-MM-dd",                   // date
@@ -1311,37 +1311,23 @@ namespace System.Xml
             return exception;
         }
 
-        private static DateTime SwitchToLocalTime(DateTime value)
-        {
-            switch (value.Kind)
+        private static DateTime SwitchToLocalTime(DateTime value) =>
+            value.Kind switch
             {
-                case DateTimeKind.Local:
-                    return value;
+                DateTimeKind.Local => value,
+                DateTimeKind.Unspecified => new DateTime(value.Ticks, DateTimeKind.Local),
+                DateTimeKind.Utc => value.ToLocalTime(),
+                _ => value,
+            };
 
-                case DateTimeKind.Unspecified:
-                    return new DateTime(value.Ticks, DateTimeKind.Local);
-
-                case DateTimeKind.Utc:
-                    return value.ToLocalTime();
-            }
-            return value;
-        }
-
-        private static DateTime SwitchToUtcTime(DateTime value)
-        {
-            switch (value.Kind)
+        private static DateTime SwitchToUtcTime(DateTime value) =>
+            value.Kind switch
             {
-                case DateTimeKind.Utc:
-                    return value;
-
-                case DateTimeKind.Unspecified:
-                    return new DateTime(value.Ticks, DateTimeKind.Utc);
-
-                case DateTimeKind.Local:
-                    return value.ToUniversalTime();
-            }
-            return value;
-        }
+                DateTimeKind.Utc => value,
+                DateTimeKind.Unspecified => new DateTime(value.Ticks, DateTimeKind.Utc),
+                DateTimeKind.Local => value.ToUniversalTime(),
+                _ => value,
+            };
 
         internal static Uri ToUri(string s)
         {
@@ -1458,7 +1444,7 @@ namespace System.Xml
 
             int i = 0;
             int len = data.Length;
-            for (;;)
+            while (true)
             {
                 while (i < len && s_xmlCharType.IsCharData(data[i]))
                 {
@@ -1500,7 +1486,7 @@ namespace System.Xml
 
             int i = offset;
             int endPos = offset + len;
-            for (;;)
+            while (true)
             {
                 while (i < endPos && s_xmlCharType.IsCharData(data[i]))
                 {

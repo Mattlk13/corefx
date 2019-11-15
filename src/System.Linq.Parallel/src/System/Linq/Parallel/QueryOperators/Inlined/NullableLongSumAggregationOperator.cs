@@ -15,7 +15,7 @@ using System.Threading;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// An inlined sum aggregation and its enumerator, for Nullable longs. 
+    /// An inlined sum aggregation and its enumerator, for Nullable longs.
     /// </summary>
     internal sealed class NullableLongSumAggregationOperator : InlinedAggregationOperator<long?, long?, long?>
     {
@@ -35,9 +35,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override long? InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override long? InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -62,7 +62,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<long?, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<long?, TKey> source, object sharedData,
+            int index, int count, QueryOperatorEnumerator<long?, TKey> source, object? sharedData,
             CancellationToken cancellationToken)
         {
             return new NullableLongSumAggregationOperatorEnumerator<TKey>(source, index, cancellationToken);
@@ -97,7 +97,7 @@ namespace System.Linq.Parallel
             protected override bool MoveNextCore(ref long? currentElement)
             {
                 long? element = default(long?);
-                TKey keyUnused = default(TKey);
+                TKey keyUnused = default(TKey)!;
 
                 QueryOperatorEnumerator<long?, TKey> source = _source;
                 if (source.MoveNext(ref element, ref keyUnused))

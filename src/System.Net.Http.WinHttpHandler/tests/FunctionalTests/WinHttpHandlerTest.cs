@@ -20,7 +20,6 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
 
     // Note:  Disposing the HttpClient object automatically disposes the handler within. So, it is not necessary
     // to separately Dispose (or have a 'using' statement) for the handler.
-    [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "WinHttpHandler not supported on UAP")]
     public class WinHttpHandlerTest
     {
         // TODO: This is a placeholder until GitHub Issue #2383 gets resolved.
@@ -77,7 +76,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
                     _output.WriteLine(responseText);
                     Assert.True(JsonMessageContainsKeyValue(responseText, cookieName, cookieValue));
                 }
-            }            
+            }
         }
 
         [OuterLoop] // TODO: Issue #11345
@@ -93,12 +92,12 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
 
                 await Task.Delay(500);
                 cts.Cancel();
-                
+
                 AggregateException ag = Assert.Throws<AggregateException>(() => t.Wait());
                 Assert.IsType<TaskCanceledException>(ag.InnerException);
             }
-        }        
-        
+        }
+
         [ActiveIssue(17234)]
         [OuterLoop] // TODO: Issue #11345
         [Fact]
@@ -109,7 +108,7 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
             using (var client = new HttpClient(handler))
             {
                 Task<HttpResponseMessage> t = client.GetAsync(SlowServer);
-                
+
                 AggregateException ag = Assert.Throws<AggregateException>(() => t.Wait());
                 Assert.IsType<HttpRequestException>(ag.InnerException);
             }
@@ -139,6 +138,6 @@ namespace System.Net.Http.WinHttpHandlerFunctional.Tests
             // TODO: Merge with System.Net.Http TestHelper class as part of GitHub Issue #4989.
             string pattern = string.Format(@"""{0}"": ""{1}""", key, value);
             return message.Contains(pattern);
-        }      
+        }
     }
 }

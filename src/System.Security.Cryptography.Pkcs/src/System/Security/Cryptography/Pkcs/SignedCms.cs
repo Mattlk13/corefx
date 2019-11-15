@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.Asn1;
+using System.Security.Cryptography.Asn1.Pkcs7;
 using System.Security.Cryptography.Pkcs.Asn1;
 using System.Security.Cryptography.X509Certificates;
 using Internal.Cryptography;
@@ -17,7 +18,7 @@ namespace System.Security.Cryptography.Pkcs
     {
         private SignedDataAsn _signedData;
         private bool _hasData;
-        private SubjectIdentifierType _signerIdentifierType;
+        private readonly SubjectIdentifierType _signerIdentifierType;
 
         // A defensive copy of the relevant portions of the data to Decode
         private Memory<byte> _heldData;
@@ -163,7 +164,7 @@ namespace System.Security.Cryptography.Pkcs
         }
 
         internal void Decode(ReadOnlyMemory<byte> encodedMessage)
-        { 
+        {
             // Windows (and thus NetFx) reads the leading data and ignores extra.
             // So use the Decode overload which doesn't throw on extra data.
             ContentInfoAsn.Decode(
@@ -287,7 +288,7 @@ namespace System.Security.Cryptography.Pkcs
             {
                 throw new CryptographicException(SR.Cryptography_Cms_Sign_Empty_Content);
             }
-            
+
             if (_hasData && signer.SignerIdentifierType == SubjectIdentifierType.NoSignature)
             {
                 // Even if all signers have been removed, throw if doing a NoSignature signature

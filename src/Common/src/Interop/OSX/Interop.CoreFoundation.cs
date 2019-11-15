@@ -10,7 +10,7 @@ using Microsoft.Win32.SafeHandles;
 
 using CFStringRef = System.IntPtr;
 using CFArrayRef = System.IntPtr;
-
+using CFIndex = System.IntPtr;
 
 internal static partial class Interop
 {
@@ -39,6 +39,24 @@ internal static partial class Interop
         }
 
         /// <summary>
+        /// Creates a CFStringRef from a specified range of memory with a specified encoding.
+        /// Follows the "Create Rule" where if you create it, you delete it.
+        /// </summary>
+        /// <param name="alloc">Should be IntPtr.Zero</param>
+        /// <param name="bytes">The pointer to the beginning of the encoded string.</param>
+        /// <param name="numBytes">The number of bytes in the encoding to read.</param>
+        /// <param name="encoding">The encoding type.</param>
+        /// <param name="isExternalRepresentation">Whether or not a BOM is present.</param>
+        /// <returns>A CFStringRef on success, otherwise a SafeCreateHandle(IntPtr.Zero).</returns>
+        [DllImport(Interop.Libraries.CoreFoundationLibrary)]
+        private static extern SafeCreateHandle CFStringCreateWithBytes(
+            IntPtr alloc,
+            IntPtr bytes,
+            CFIndex numBytes,
+            CFStringBuiltInEncodings encoding,
+            bool isExternalRepresentation);
+
+        /// <summary>
         /// Creates a CFStringRef from a 8-bit String object. Follows the "Create Rule" where if you create it, you delete it.
         /// </summary>
         /// <param name="allocator">Should be IntPtr.Zero</param>
@@ -48,8 +66,8 @@ internal static partial class Interop
         /// <remarks>For *nix systems, the CLR maps ANSI to UTF-8, so be explicit about that</remarks>
         [DllImport(Interop.Libraries.CoreFoundationLibrary, CharSet = CharSet.Ansi)]
         private static extern SafeCreateHandle CFStringCreateWithCString(
-            IntPtr allocator, 
-            string str, 
+            IntPtr allocator,
+            string str,
             CFStringBuiltInEncodings encoding);
 
         /// <summary>
@@ -87,6 +105,25 @@ internal static partial class Interop
         }
 
         /// <summary>
+        /// Creates a CFStringRef from a span of chars.
+        /// Follows the "Create Rule" where if you create it, you delete it.
+        /// </summary>
+        /// <param name="source">The chars to make a CFString version of.</param>
+        /// <returns>A CFStringRef on success, otherwise a SafeCreateHandle(IntPtr.Zero).</returns>
+        internal static unsafe SafeCreateHandle CFStringCreateFromSpan(ReadOnlySpan<char> source)
+        {
+            fixed (char* sourcePtr = source)
+            {
+                return CFStringCreateWithBytes(
+                    IntPtr.Zero,
+                    (IntPtr)sourcePtr,
+                    new CFIndex(source.Length * 2),
+                    CFStringBuiltInEncodings.kCFStringEncodingUTF16,
+                    isExternalRepresentation: false);
+            }
+        }
+
+        /// <summary>
         /// Creates a pointer to an unmanaged CFArray containing the input values. Follows the "Create Rule" where if you create it, you delete it.
         /// </summary>
         /// <param name="allocator">Should be IntPtr.Zero</param>
@@ -115,7 +152,7 @@ internal static partial class Interop
 
         /// <summary>
         /// You should retain a Core Foundation object when you receive it from elsewhere
-        /// (that is, you did not create or copy it) and you want it to persist. If you 
+        /// (that is, you did not create or copy it) and you want it to persist. If you
         /// retain a Core Foundation object you are responsible for releasing it
         /// </summary>
         /// <param name="ptr">The CFType object to retain. This value must not be NULL</param>

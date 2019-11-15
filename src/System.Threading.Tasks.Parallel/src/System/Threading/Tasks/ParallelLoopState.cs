@@ -23,7 +23,7 @@ namespace System.Threading.Tasks
     public class ParallelLoopState
     {
         // Derived classes will track a ParallelStateFlags32 or ParallelStateFlags64.
-        // So this is slightly redundant, but it enables us to implement some 
+        // So this is slightly redundant, but it enables us to implement some
         // methods in this base class.
         private readonly ParallelLoopStateFlags _flagsBase;
 
@@ -208,7 +208,7 @@ namespace System.Threading.Tasks
             int oldLBI = pflags._lowestBreakIteration;
             if (iteration < oldLBI)
             {
-                SpinWait wait = new SpinWait();
+                SpinWait wait = default;
                 while (Interlocked.CompareExchange(
                     ref pflags._lowestBreakIteration,
                         iteration,
@@ -249,7 +249,7 @@ namespace System.Threading.Tasks
             long oldLBI = pflags.LowestBreakIteration;
             if (iteration < oldLBI)
             {
-                SpinWait wait = new SpinWait();
+                SpinWait wait = default;
                 while (Interlocked.CompareExchange(
                     ref pflags._lowestBreakIteration,
                         iteration,
@@ -382,8 +382,8 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <exception cref="System.InvalidOperationException">Break() called after Stop().</exception>
         /// <remarks>
-        /// Atomically sets shared StoppedBroken flag to BROKEN, then atomically sets shared 
-        /// LowestBreakIteration to CurrentIteration, but only if CurrentIteration is less than 
+        /// Atomically sets shared StoppedBroken flag to BROKEN, then atomically sets shared
+        /// LowestBreakIteration to CurrentIteration, but only if CurrentIteration is less than
         /// LowestBreakIteration.
         /// </remarks>
         internal override void InternalBreak()
@@ -419,7 +419,7 @@ namespace System.Threading.Tasks
 
         internal bool AtomicLoopStateUpdate(int newState, int illegalStates, ref int oldState)
         {
-            SpinWait sw = new SpinWait();
+            SpinWait sw = default;
 
             do
             {
@@ -501,7 +501,7 @@ namespace System.Threading.Tasks
         ///   (1) Stop() has been called by one or more tasks.
         ///   (2) An exception has been raised by one or more tasks.
         ///   (3) Break() has been called by one or more tasks, and
-        ///       CallerIteration exceeds the (lowest) iteration at which 
+        ///       CallerIteration exceeds the (lowest) iteration at which
         ///       Break() was called.
         ///   (4) The loop was canceled.
         /// </remarks>
@@ -568,7 +568,7 @@ namespace System.Threading.Tasks
         ///   (1) Stop() has been called by one or more tasks.
         ///   (2) An exception has been raised by one or more tasks.
         ///   (3) Break() has been called by one or more tasks, and
-        ///       CallerIteration exceeds the (lowest) iteration at which 
+        ///       CallerIteration exceeds the (lowest) iteration at which
         ///       Break() was called.
         ///   (4) The loop has been canceled.
         /// </remarks>

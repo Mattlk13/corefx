@@ -15,7 +15,7 @@ using System.Threading;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// An inlined min/max aggregation and its enumerator, for ints. 
+    /// An inlined min/max aggregation and its enumerator, for ints.
     /// </summary>
     internal sealed class IntMinMaxAggregationOperator : InlinedAggregationOperator<int, int, int>
     {
@@ -39,9 +39,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override int InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override int InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -89,7 +89,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<int, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<int, TKey> source, object sharedData, CancellationToken cancellationToken)
+            int index, int count, QueryOperatorEnumerator<int, TKey> source, object? sharedData, CancellationToken cancellationToken)
         {
             return new IntMinMaxAggregationOperatorEnumerator<TKey>(source, index, _sign, cancellationToken);
         }
@@ -126,7 +126,7 @@ namespace System.Linq.Parallel
             {
                 // Based on the sign, do either a min or max reduction.
                 QueryOperatorEnumerator<int, TKey> source = _source;
-                TKey keyUnused = default(TKey);
+                TKey keyUnused = default(TKey)!;
 
                 if (source.MoveNext(ref currentElement, ref keyUnused))
                 {

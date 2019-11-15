@@ -14,9 +14,9 @@ namespace System.DirectoryServices.AccountManagement
         private System.Guid _objectGuid;
 
         // For ADStoreKeys corresponding to well-known SIDs
-        private bool _wellKnownSid;
-        private string _domainName;
-        private byte[] _sid;
+        private readonly bool _wellKnownSid;
+        private readonly string _domainName;
+        private readonly byte[] _sid;
 
         public ADStoreKey(Guid guid)
         {
@@ -39,7 +39,7 @@ namespace System.DirectoryServices.AccountManagement
 
             // Make a copy of the SID, since a byte[] is mutable
             _sid = new byte[sid.Length];
-            Array.Copy(sid, 0, _sid, 0, sid.Length);
+            Array.Copy(sid, _sid, sid.Length);
 
             _domainName = domainName;
             _wellKnownSid = true;

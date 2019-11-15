@@ -18,8 +18,8 @@ namespace System.Linq.Parallel
     /// </summary>
     internal class RangeEnumerable : ParallelQuery<int>, IParallelPartitionable<int>
     {
-        private int _from; // Lowest index to include.
-        private int _count; // Number of indices to include.
+        private readonly int _from; // Lowest index to include.
+        private readonly int _count; // Number of indices to include.
 
         //-----------------------------------------------------------------------------------
         // Constructs a new range enumerable object for the specified range.
@@ -72,12 +72,12 @@ namespace System.Linq.Parallel
         // The actual enumerator that walks over the specified range.
         //
 
-        class RangeEnumerator : QueryOperatorEnumerator<int, int>
+        private class RangeEnumerator : QueryOperatorEnumerator<int, int>
         {
             private readonly int _from; // The initial value.
             private readonly int _count; // How many values to yield.
             private readonly int _initialIndex; // The ordinal index of the first value in the range.
-            private Shared<int> _currentCount; // The 0-based index of the current value. [allocate in moveNext to avoid false-sharing]
+            private Shared<int>? _currentCount; // The 0-based index of the current value. [allocate in moveNext to avoid false-sharing]
 
             //-----------------------------------------------------------------------------------
             // Creates a new enumerator.

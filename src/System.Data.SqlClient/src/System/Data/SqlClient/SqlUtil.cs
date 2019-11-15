@@ -28,15 +28,16 @@ namespace System.Data.SqlClient
             {
                 TaskCompletionSource<object> completion = new TaskCompletionSource<object>();
                 ContinueTaskWithState(task, completion,
-                    state: Tuple.Create(onSuccess, onFailure,completion),
-                    onSuccess: (state) => {
+                    state: Tuple.Create(onSuccess, onFailure, completion),
+                    onSuccess: (state) =>
+                    {
                         var parameters = (Tuple<Action, Action<Exception>, TaskCompletionSource<object>>)state;
                         Action success = parameters.Item1;
                         TaskCompletionSource<object> taskCompletionSource = parameters.Item3;
                         success();
                         taskCompletionSource.SetResult(null);
                     },
-                    onFailure: (exception,state) =>
+                    onFailure: (exception, state) =>
                     {
                         var parameters = (Tuple<Action, Action<Exception>, TaskCompletionSource<object>>)state;
                         Action<Exception> failure = parameters.Item2;
@@ -47,7 +48,7 @@ namespace System.Data.SqlClient
             }
         }
 
-        internal static Task CreateContinuationTaskWithState(Task task, object state, Action<object> onSuccess, Action<Exception,object> onFailure = null)
+        internal static Task CreateContinuationTaskWithState(Task task, object state, Action<object> onSuccess, Action<Exception, object> onFailure = null)
         {
             if (task == null)
             {
@@ -58,7 +59,8 @@ namespace System.Data.SqlClient
             {
                 var completion = new TaskCompletionSource<object>();
                 ContinueTaskWithState(task, completion, state,
-                    onSuccess: (continueState) => {
+                    onSuccess: (continueState) =>
+                    {
                         onSuccess(continueState);
                         completion.SetResult(null);
                     },
@@ -272,7 +274,7 @@ namespace System.Data.SqlClient
         internal static Exception ParsingErrorLibraryType(ParsingErrorState state, int libraryType)
         {
             return ADP.InvalidOperation(SR.GetString(SR.SQL_ParsingErrorAuthLibraryType, ((int)state).ToString(CultureInfo.InvariantCulture), libraryType));
-        }       
+        }
         internal static Exception InvalidSQLServerVersionUnknown()
         {
             return ADP.DataAdapter(SR.GetString(SR.SQL_InvalidSQLServerVersionUnknown));
@@ -798,7 +800,7 @@ namespace System.Data.SqlClient
         //
 
         /// <summary>
-        /// used to block two scenarios if MultiSubnetFailover is true: 
+        /// used to block two scenarios if MultiSubnetFailover is true:
         /// * server-provided failover partner - raising SqlException in this case
         /// * connection string with failover partner and MultiSubnetFailover=true - raising argument one in this case with the same message
         /// </summary>
@@ -1206,7 +1208,7 @@ namespace System.Data.SqlClient
 
         /// <summary>
         /// Escape a string as a TSQL literal, wrapping it around with single quotes.
-        /// Use this method to escape input strings to prevent SQL injection 
+        /// Use this method to escape input strings to prevent SQL injection
         /// and to get correct behavior for embedded quotes.
         /// </summary>
         /// <param name="input">unescaped string</param>

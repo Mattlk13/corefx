@@ -16,8 +16,8 @@ namespace System.IO
      */
     internal sealed class StdInReader : TextReader
     {
-        private static string s_moveLeftString; // string written to move the cursor to the left
-        private static string s_clearToEol;     // string written to clear from cursor to end of line
+        private static string? s_moveLeftString; // string written to move the cursor to the left
+        private static string? s_clearToEol;     // string written to clear from cursor to end of line
 
         private readonly StringBuilder _readLineSB; // SB that holds readLine output.  This is a field simply to enable reuse; it's only used in ReadLine.
         private readonly Stack<ConsoleKeyInfo> _tmpKeys = new Stack<ConsoleKeyInfo>(); // temporary working stack; should be empty outside of ReadLine
@@ -78,23 +78,23 @@ namespace System.IO
             return result;
         }
 
-        public override string ReadLine()
+        public override string? ReadLine()
         {
             return ReadLine(consumeKeys: true);
         }
 
-        private string ReadLine(bool consumeKeys)
+        private string? ReadLine(bool consumeKeys)
         {
             Debug.Assert(_tmpKeys.Count == 0);
-            string readLineStr = null;
+            string? readLineStr = null;
 
             Interop.Sys.InitializeConsoleBeforeRead();
             try
             {
                 // Read key-by-key until we've read a line.
-                while (true) 
+                while (true)
                 {
-                    // Read the next key.  This may come from previously read keys, from previously read but 
+                    // Read the next key.  This may come from previously read keys, from previously read but
                     // unprocessed data, or from an actual stdin read.
                     bool previouslyProcessed;
                     ConsoleKeyInfo keyInfo = ReadKey(out previouslyProcessed);
@@ -156,7 +156,7 @@ namespace System.IO
                                 {
                                     if (s_moveLeftString == null)
                                     {
-                                        string moveLeft = ConsolePal.TerminalFormatStrings.Instance.CursorLeft;
+                                        string? moveLeft = ConsolePal.TerminalFormatStrings.Instance.CursorLeft;
                                         s_moveLeftString = !string.IsNullOrEmpty(moveLeft) ? moveLeft + " " + moveLeft : string.Empty;
                                     }
 
@@ -233,8 +233,8 @@ namespace System.IO
 
         private static bool IsEol(char c)
         {
-            return 
-                c != ConsolePal.s_posixDisableValue && 
+            return
+                c != ConsolePal.s_posixDisableValue &&
                 (c == ConsolePal.s_veolCharacter || c == ConsolePal.s_veol2Character || c == ConsolePal.s_veofCharacter);
         }
 
@@ -359,7 +359,7 @@ namespace System.IO
 
         /// <summary>
         /// Try to intercept the key pressed.
-        /// 
+        ///
         /// Unlike Windows, Unix has no concept of virtual key codes.
         /// Hence, in case we do not recognize a key, we can't really
         /// get the ConsoleKey key code associated with it.
@@ -406,7 +406,7 @@ namespace System.IO
                             (ConsolePal.s_veolCharacter != ConsolePal.s_posixDisableValue ? ConsolePal.s_veolCharacter :
                              ConsolePal.s_veol2Character != ConsolePal.s_posixDisableValue ? ConsolePal.s_veol2Character :
                              ConsolePal.s_veofCharacter != ConsolePal.s_posixDisableValue ? ConsolePal.s_veofCharacter :
-                             0), 
+                             0),
                             default(ConsoleKey), false, false, false);
                     }
                 }

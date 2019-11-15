@@ -15,7 +15,7 @@ namespace System.DirectoryServices.AccountManagement
             _p = p;
         }
 
-        private Principal _p;
+        private readonly Principal _p;
 
         internal string RdnPrefix
         {
@@ -99,9 +99,9 @@ namespace System.DirectoryServices.AccountManagement
                 return defaultObjectClass;
             }
         }
-        /*        
+        /*
                 internal string SchemaAttributeName(string propertyName)
-                {            
+                {
                     System.Reflection.PropertyInfo propInfo = this.GetType().GetProperty(propertyName);
 
                     if ( null == propInfo )
@@ -133,4 +133,3 @@ namespace System.DirectoryServices.AccountManagement
 
     }
 }
-

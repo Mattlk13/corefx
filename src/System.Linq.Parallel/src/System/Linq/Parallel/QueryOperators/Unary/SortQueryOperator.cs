@@ -10,6 +10,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace System.Linq.Parallel
@@ -30,7 +31,7 @@ namespace System.Linq.Parallel
         //
 
         internal SortQueryOperator(IEnumerable<TInputOutput> source, Func<TInputOutput, TSortKey> keySelector,
-                                   IComparer<TSortKey> comparer, bool descending)
+                                   IComparer<TSortKey>? comparer, bool descending)
             : base(source, true)
         {
             Debug.Assert(keySelector != null, "key selector must not be null");
@@ -60,7 +61,7 @@ namespace System.Linq.Parallel
         //
 
         IOrderedEnumerable<TInputOutput> IOrderedEnumerable<TInputOutput>.CreateOrderedEnumerable<TKey2>(
-            Func<TInputOutput, TKey2> key2Selector, IComparer<TKey2> key2Comparer, bool descending)
+            Func<TInputOutput, TKey2> key2Selector, IComparer<TKey2>? key2Comparer, bool descending)
         {
             key2Comparer = key2Comparer ?? Util.GetDefaultComparer<TKey2>();
 
@@ -127,7 +128,7 @@ namespace System.Linq.Parallel
     internal class SortQueryOperatorResults<TInputOutput, TSortKey> : QueryResults<TInputOutput>
     {
         protected QueryResults<TInputOutput> _childQueryResults; // Results of the child query
-        private SortQueryOperator<TInputOutput, TSortKey> _op; // Operator that generated these results
+        private readonly SortQueryOperator<TInputOutput, TSortKey> _op; // Operator that generated these results
         private QuerySettings _settings; // Settings collected from the query
 
         internal SortQueryOperatorResults(
@@ -151,8 +152,8 @@ namespace System.Linq.Parallel
 
         private class ChildResultsRecipient : IPartitionedStreamRecipient<TInputOutput>
         {
-            private IPartitionedStreamRecipient<TInputOutput> _outputRecipient;
-            private SortQueryOperator<TInputOutput, TSortKey> _op;
+            private readonly IPartitionedStreamRecipient<TInputOutput> _outputRecipient;
+            private readonly SortQueryOperator<TInputOutput, TSortKey> _op;
             private QuerySettings _settings;
 
             internal ChildResultsRecipient(IPartitionedStreamRecipient<TInputOutput> outputRecipient, SortQueryOperator<TInputOutput, TSortKey> op, QuerySettings settings)
@@ -175,7 +176,7 @@ namespace System.Linq.Parallel
 
     internal class SortQueryOperatorEnumerator<TInputOutput, TKey, TSortKey> : QueryOperatorEnumerator<TInputOutput, TSortKey>
     {
-        private readonly QueryOperatorEnumerator<TInputOutput, TKey> _source; // Data source to sort.
+        private readonly QueryOperatorEnumerator<TInputOutput, TKey>? _source; // Data source to sort.
         private readonly Func<TInputOutput, TSortKey> _keySelector; // Key selector used when sorting.
 
         //---------------------------------------------------------------------------------------
@@ -198,12 +199,12 @@ namespace System.Linq.Parallel
         // in memory, and the data sorted.
         //
 
-        internal override bool MoveNext(ref TInputOutput currentElement, ref TSortKey currentKey)
+        internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TInputOutput currentElement, ref TSortKey currentKey)
         {
             Debug.Assert(_source != null);
 
-            TKey keyUnused = default(TKey);
-            if (!_source.MoveNext(ref currentElement, ref keyUnused))
+            TKey keyUnused = default(TKey)!;
+            if (!_source.MoveNext(ref currentElement!, ref keyUnused))
             {
                 return false;
             }

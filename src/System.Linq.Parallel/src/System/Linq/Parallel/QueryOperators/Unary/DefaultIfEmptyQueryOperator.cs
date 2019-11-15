@@ -10,6 +10,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace System.Linq.Parallel
@@ -100,17 +101,17 @@ namespace System.Linq.Parallel
 
         private class DefaultIfEmptyQueryOperatorEnumerator<TKey> : QueryOperatorEnumerator<TSource, TKey>
         {
-            private QueryOperatorEnumerator<TSource, TKey> _source; // The data source to enumerate.
+            private readonly QueryOperatorEnumerator<TSource, TKey> _source; // The data source to enumerate.
             private bool _lookedForEmpty; // Whether this partition has looked for empty yet.
-            private int _partitionIndex; // This enumerator's partition index.
-            private int _partitionCount; // The number of partitions.
-            private TSource _defaultValue; // The default value if the 0th partition is empty.
+            private readonly int _partitionIndex; // This enumerator's partition index.
+            private readonly int _partitionCount; // The number of partitions.
+            private readonly TSource _defaultValue; // The default value if the 0th partition is empty.
 
             // Data shared among partitions.
-            private Shared<int> _sharedEmptyCount; // The number of empty partitions.
+            private readonly Shared<int> _sharedEmptyCount; // The number of empty partitions.
 
-            private CountdownEvent _sharedLatch; // Shared latch, signaled when partitions process the 1st item.
-            private CancellationToken _cancelToken; // Token used to cancel this operator.
+            private readonly CountdownEvent _sharedLatch; // Shared latch, signaled when partitions process the 1st item.
+            private readonly CancellationToken _cancelToken; // Token used to cancel this operator.
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new select enumerator.
@@ -139,11 +140,11 @@ namespace System.Linq.Parallel
             // Straightforward IEnumerator<T> methods.
             //
 
-            internal override bool MoveNext(ref TSource currentElement, ref TKey currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TSource currentElement, ref TKey currentKey)
             {
                 Debug.Assert(_source != null);
 
-                bool moveNextResult = _source.MoveNext(ref currentElement, ref currentKey);
+                bool moveNextResult = _source.MoveNext(ref currentElement!, ref currentKey);
 
                 // There is special logic the first time this function is called.
                 if (!_lookedForEmpty)
@@ -167,7 +168,7 @@ namespace System.Linq.Parallel
                             {
                                 // No data, we will yield the default value.
                                 currentElement = _defaultValue;
-                                currentKey = default(TKey);
+                                currentKey = default(TKey)!;
                                 return true;
                             }
                             else

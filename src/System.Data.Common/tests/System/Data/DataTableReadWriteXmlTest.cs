@@ -296,7 +296,7 @@ namespace System.Data.Tests
         {
             // For reading, DataTable.ReadXml only supports reading in xml with
             // the schema included.  This means that we can only read in XML
-            // that was generated with the WriteSchema flag.  
+            // that was generated with the WriteSchema flag.
             DataSet ds;
             DataTable dtMainInDS, dtChildInDS, dtMain;
 
@@ -327,25 +327,11 @@ namespace System.Data.Tests
 
             DataTable newdt = new DataTable();
 
-            try
-            {
-                newdt.ReadXml(new StringReader(xmlDTNone));
-                Assert.False(true);
-            }
-            catch (InvalidOperationException)
-            {
-                // DataTable does not support schema inference from Xml.
-            }
+            // DataTable does not support schema inference from Xml.
+            Assert.Throws<InvalidOperationException>(() => newdt.ReadXml(new StringReader(xmlDTNone)));
 
-            try
-            {
-                newdt.ReadXml(new StringReader(xmlDTDiffGram));
-                Assert.False(true);
-            }
-            catch (InvalidOperationException)
-            {
-                // DataTable does not support schema inference from Xml.
-            }
+            // DataTable does not support schema inference from Xml.
+            Assert.Throws<InvalidOperationException>(() => newdt.ReadXml(new StringReader(xmlDTDiffGram)));
 
             DataTable multiTable = new DataTable();
             multiTable.ReadXml(new StringReader(xmlMultiTable));

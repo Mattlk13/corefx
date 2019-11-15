@@ -33,7 +33,7 @@ namespace System.Xml.Serialization
         private Hashtable _typeEntries;
         private ArrayList _referencesToWrite;
         private Hashtable _objectsInUse;
-        private string _aliasBase = "q";
+        private readonly string _aliasBase = "q";
         private bool _soap12;
         private bool _escapeName = true;
 
@@ -1432,9 +1432,9 @@ namespace System.Xml.Serialization
 
     internal static class DynamicAssemblies
     {
-        private static volatile Hashtable s_nameToAssemblyMap = new Hashtable();
-        private static volatile Hashtable s_assemblyToNameMap = new Hashtable();
-        private static Hashtable s_tableIsTypeDynamic = Hashtable.Synchronized(new Hashtable());
+        private static readonly Hashtable s_nameToAssemblyMap = new Hashtable();
+        private static readonly Hashtable s_assemblyToNameMap = new Hashtable();
+        private static readonly Hashtable s_tableIsTypeDynamic = Hashtable.Synchronized(new Hashtable());
 
         // SxS: This method does not take any resource name and does not expose any resources to the caller.
         // It's OK to suppress the SxS warning.
@@ -1521,7 +1521,7 @@ namespace System.Xml.Serialization
 
         internal static string GetName(Assembly a)
         {
-            return s_assemblyToNameMap != null ? (string) s_assemblyToNameMap[a] : null;
+            return s_assemblyToNameMap != null ? (string)s_assemblyToNameMap[a] : null;
         }
     }
 
@@ -1547,7 +1547,7 @@ namespace System.Xml.Serialization
         // ----------------------------------------------------------------------------------
         private Hashtable _reflectionVariables = null;
         private int _nextReflectionVariableNumber = 0;
-        private IndentedWriter _writer;
+        private readonly IndentedWriter _writer;
         internal ReflectionAwareCodeGen(IndentedWriter writer)
         {
             _writer = writer;
@@ -1627,10 +1627,9 @@ namespace System.Xml.Serialization
             if (_reflectionVariables == null)
             {
                 _reflectionVariables = new Hashtable();
-                _writer.Write(string.Format(CultureInfo.InvariantCulture, s_helperClassesForUseReflection,
+                _writer.Write(string.Format(CultureInfo.InvariantCulture, HelperClassesForUseReflection,
                     "object", "string", typeof(Type).FullName,
-                    typeof(FieldInfo).FullName, typeof(PropertyInfo).FullName,
-                    typeof(MemberInfo).FullName /*, typeof(MemberTypes).FullName*/));
+                    typeof(FieldInfo).FullName, typeof(PropertyInfo).FullName));
 
                 WriteDefaultIndexerInit(typeof(IList), typeof(Array).FullName, false, false);
             }
@@ -1881,12 +1880,12 @@ namespace System.Xml.Serialization
                 string memberInfoName = GetReflectionVariable(typeFullName, memberName);
                 if (memberInfoName != null)
                     return memberInfoName + "[" + obj + "]";
-                // member may be part of the basetype 
+                // member may be part of the basetype
                 typeDesc = typeDesc.BaseTypeDesc;
                 if (typeDesc != null && !typeDesc.UseReflection)
                     return "((" + typeDesc.CSharpName + ")" + obj + ").@" + memberName;
             }
-            //throw GetReflectionVariableException(saveTypeDesc.CSharpName,memberName); 
+            //throw GetReflectionVariableException(saveTypeDesc.CSharpName,memberName);
             // NOTE, sowmys:Must never happen. If it does let the code
             // gen continue to help debugging what's gone wrong.
             // Eventually the compilation will fail.
@@ -1895,12 +1894,12 @@ namespace System.Xml.Serialization
         /*
         Exception GetReflectionVariableException(string typeFullName, string memberName){
             string key;
-            if(memberName == null)
+            if (memberName == null)
                 key = typeFullName;
             else
                 key = memberName+":"+typeFullName;
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            foreach(object varAvail in reflectionVariables.Keys){
+            foreach (object varAvail in reflectionVariables.Keys){
                 sb.Append(varAvail.ToString());
                 sb.Append("\n");
             }
@@ -2132,7 +2131,7 @@ namespace System.Xml.Serialization
             WriteQuotedCSharpString(_writer, value);
         }
 
-        private static string s_helperClassesForUseReflection = @"
+        private const string HelperClassesForUseReflection = @"
     sealed class XSFieldInfo {{
        {3} fieldInfo;
         public XSFieldInfo({2} t, {1} memberName){{
@@ -2178,7 +2177,7 @@ namespace System.Xml.Serialization
     }}
 ";
     }
-    
+
     internal class XmlSerializationWriterCodeGen : XmlSerializationCodeGen
     {
         internal XmlSerializationWriterCodeGen(IndentedWriter writer, TypeScope[] scopes, string access, string className) : base(writer, scopes, access, className)
@@ -2337,8 +2336,8 @@ namespace System.Xml.Serialization
             string methodName = ReferenceMapping(mapping);
 
 #if DEBUG
-                // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
+            // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+            if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
 #endif
 
             Writer.Write(methodName);
@@ -2384,8 +2383,8 @@ namespace System.Xml.Serialization
                 if (mapping is EnumMapping)
                 {
 #if DEBUG
-                        // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                        if (defaultValue.GetType() != typeof(string)) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorDetails, name + " has invalid default type " + defaultValue.GetType().Name));
+                    // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+                    if (defaultValue.GetType() != typeof(string)) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorDetails, name + " has invalid default type " + defaultValue.GetType().Name));
 #endif
 
                     Writer.Write("if (");
@@ -2549,7 +2548,7 @@ namespace System.Xml.Serialization
                 Writer.WriteLine("TopLevelElement();");
             }
 
-            // in the top-level method add check for the parameters length, 
+            // in the top-level method add check for the parameters length,
             // because visual basic does not have a concept of an <out> parameter it uses <ByRef> instead
             // so sometime we think that we have more parameters then supplied
             Writer.WriteLine("int pLength = p.Length;");
@@ -2685,8 +2684,8 @@ namespace System.Xml.Serialization
                     }
 
 #if DEBUG
-                        // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                        if (enumSource == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorDetails, "Can not find " + member.ChoiceIdentifier.MemberName + " in the members mapping."));
+                    // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+                    if (enumSource == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorDetails, "Can not find " + member.ChoiceIdentifier.MemberName + " in the members mapping."));
 #endif
                 }
 
@@ -2912,8 +2911,8 @@ namespace System.Xml.Serialization
                 string methodName = ReferenceMapping(derived);
 
 #if DEBUG
-                    // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                    if (methodName == null) throw new InvalidOperationException("derived from " + mapping.TypeDesc.FullName + ", " + SR.Format(SR.XmlInternalErrorMethod, derived.TypeDesc.Name) + Environment.StackTrace);
+                // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+                if (methodName == null) throw new InvalidOperationException("derived from " + mapping.TypeDesc.FullName + ", " + SR.Format(SR.XmlInternalErrorMethod, derived.TypeDesc.Name) + Environment.StackTrace);
 #endif
 
                 Writer.Write(methodName);
@@ -2950,8 +2949,8 @@ namespace System.Xml.Serialization
                         string methodName = ReferenceMapping(mapping);
 
 #if DEBUG
-                            // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                            if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
+                        // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+                        if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
 #endif
                         Writer.WriteLine("Writer.WriteStartElement(n, ns);");
                         Writer.Write("WriteXsiType(");
@@ -3205,7 +3204,7 @@ namespace System.Xml.Serialization
         private bool CanOptimizeWriteListSequence(TypeDesc listElementTypeDesc)
         {
             // check to see if we can write values of the attribute sequentially
-            // currently we have only one data type (XmlQualifiedName) that we can not write "inline", 
+            // currently we have only one data type (XmlQualifiedName) that we can not write "inline",
             // because we need to output xmlns:qx="..." for each of the qnames
 
             return (listElementTypeDesc != null && listElementTypeDesc != QnameTypeDesc);
@@ -4034,8 +4033,8 @@ namespace System.Xml.Serialization
                     string methodName = ReferenceMapping(mapping);
 
 #if DEBUG
-                        // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
-                        if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
+                    // use exception in the place of Debug.Assert to avoid throwing asserts from a server process such as aspnet_ewp.exe
+                    if (methodName == null) throw new InvalidOperationException(SR.Format(SR.XmlInternalErrorMethod, mapping.TypeDesc.Name) + Environment.StackTrace);
 #endif
                     Writer.Write(methodName);
                     Writer.Write("(");
@@ -4138,12 +4137,12 @@ namespace System.Xml.Serialization
                 Writer.Write(source);
                 Writer.Write(".Length != 0)");
             }
-            else if(value is double || value is float)
+            else if (value is double || value is float)
             {
                 Writer.Write("!");
                 Writer.Write(source);
                 Writer.Write(".Equals(");
-                Type type= Type.GetType(mapping.TypeDesc.Type.FullName);
+                Type type = Type.GetType(mapping.TypeDesc.Type.FullName);
                 WriteValue(type != null ? Convert.ChangeType(value, type) : value);
                 Writer.Write(")");
             }
@@ -4218,11 +4217,11 @@ namespace System.Xml.Serialization
                     {
                         Writer.Write("System.Double.NaN");
                     }
-                    else if(double.IsPositiveInfinity((double)value))
+                    else if (double.IsPositiveInfinity((double)value))
                     {
                         Writer.Write("System.Double.PositiveInfinity");
                     }
-                    else if(double.IsNegativeInfinity((double)value))
+                    else if (double.IsNegativeInfinity((double)value))
                     {
                         Writer.Write("System.Double.NegativeInfinity");
                     }
@@ -4248,7 +4247,7 @@ namespace System.Xml.Serialization
                     {
                         Writer.Write("System.Single.NaN");
                     }
-                    else if(float.IsPositiveInfinity((float)value))
+                    else if (float.IsPositiveInfinity((float)value))
                     {
                         Writer.Write("System.Single.PositiveInfinity");
                     }

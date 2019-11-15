@@ -14,11 +14,11 @@ using System.Runtime.Serialization;
 
 namespace System.Drawing
 {
-    [Serializable]
-    [TypeForwardedFrom("System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
-#if netcoreapp
+#if NETCOREAPP
     [TypeConverter("System.Drawing.IconConverter, System.Windows.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51")]
 #endif
+    [Serializable]
+    [TypeForwardedFrom("System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
     public sealed partial class Icon : MarshalByRefObject, ICloneable, IDisposable, ISerializable
     {
 #if FINALIZATION_WATCH
@@ -217,9 +217,9 @@ namespace System.Drawing
             {
                 if (_iconSize.IsEmpty)
                 {
-                    var info = new SafeNativeMethods.ICONINFO();
+                    SafeNativeMethods.ICONINFO info = default;
                     SafeNativeMethods.GetIconInfo(new HandleRef(this, Handle), ref info);
-                    var bitmap = new SafeNativeMethods.BITMAP();
+                    SafeNativeMethods.BITMAP bitmap = default;
 
                     if (info.hbmColor != IntPtr.Zero)
                     {
@@ -227,7 +227,7 @@ namespace System.Drawing
                             new HandleRef(null, info.hbmColor),
                             sizeof(SafeNativeMethods.BITMAP),
                             ref bitmap);
-                        SafeNativeMethods.IntDeleteObject(new HandleRef(null, info.hbmColor));
+                        Interop.Gdi32.DeleteObject(info.hbmColor);
                         _iconSize = new Size((int)bitmap.bmWidth, (int)bitmap.bmHeight);
                     }
                     else if (info.hbmMask != IntPtr.Zero)
@@ -241,7 +241,7 @@ namespace System.Drawing
 
                     if (info.hbmMask != IntPtr.Zero)
                     {
-                        SafeNativeMethods.IntDeleteObject(new HandleRef(null, info.hbmMask));
+                        Interop.Gdi32.DeleteObject(info.hbmMask);
                     }
                 }
 
@@ -358,7 +358,7 @@ namespace System.Drawing
             // The ROP is SRCCOPY, so we can be simple here and take
             // advantage of clipping regions.  Drawing the cursor
             // is merely a matter of offsetting and clipping.
-            IntPtr hSaveRgn = SafeNativeMethods.SaveClipRgn(dc);
+            IntPtr hSaveRgn = SaveClipRgn(dc);
             try
             {
                 SafeNativeMethods.IntersectClipRect(new HandleRef(this, dc), targetX, targetY, targetX + clipWidth, targetY + clipHeight);
@@ -374,8 +374,28 @@ namespace System.Drawing
             }
             finally
             {
-                SafeNativeMethods.RestoreClipRgn(dc, hSaveRgn);
+                RestoreClipRgn(dc, hSaveRgn);
             }
+        }
+
+        private static IntPtr SaveClipRgn(IntPtr hDC)
+        {
+            IntPtr hTempRgn = Interop.Gdi32.CreateRectRgn(0, 0, 0, 0);
+            IntPtr hSaveRgn = IntPtr.Zero;
+
+            int result = Interop.Gdi32.GetClipRgn(hDC, hTempRgn);
+            if (result > 0)
+            {
+                hSaveRgn = hTempRgn;
+                hTempRgn = IntPtr.Zero;
+            }
+
+            return hSaveRgn;
+        }
+
+        private static void RestoreClipRgn(IntPtr hDC, IntPtr hRgn)
+        {
+            Interop.Gdi32.SelectClipRgn(new HandleRef(null, hDC), new HandleRef(null, hRgn));
         }
 
         internal void Draw(Graphics graphics, int x, int y)
@@ -450,10 +470,10 @@ namespace System.Drawing
 
             if (s_bitDepth == 0)
             {
-                IntPtr dc = UnsafeNativeMethods.GetDC(NativeMethods.NullHandleRef);
-                s_bitDepth = UnsafeNativeMethods.GetDeviceCaps(new HandleRef(null, dc), SafeNativeMethods.BITSPIXEL);
-                s_bitDepth *= UnsafeNativeMethods.GetDeviceCaps(new HandleRef(null, dc), SafeNativeMethods.PLANES);
-                UnsafeNativeMethods.ReleaseDC(NativeMethods.NullHandleRef, new HandleRef(null, dc));
+                IntPtr dc = Interop.User32.GetDC(IntPtr.Zero);
+                s_bitDepth = Interop.Gdi32.GetDeviceCaps(dc, Interop.Gdi32.DeviceCapability.BITSPIXEL);
+                s_bitDepth *= Interop.Gdi32.GetDeviceCaps(dc, Interop.Gdi32.DeviceCapability.PLANES);
+                Interop.User32.ReleaseDC(IntPtr.Zero, dc);
 
                 // If the bitdepth is 8, make it 4 because windows does not
                 // choose a 256 color icon if the display is running in 256 color mode
@@ -525,7 +545,7 @@ namespace System.Drawing
                         int thisDelta = Math.Abs(entry.bWidth - width) + Math.Abs(entry.bHeight - height);
 
                         if ((thisDelta < bestDelta) ||
-                            (thisDelta == bestDelta && (0 <= s_bitDepth && 0 > _bestBitDepth || _bestBitDepth > s_bitDepth && 0 < _bestBitDepth)))
+                            (thisDelta == bestDelta && (iconBitDepth <= s_bitDepth && iconBitDepth > _bestBitDepth || _bestBitDepth > s_bitDepth && iconBitDepth < _bestBitDepth)))
                         {
                             fUpdateBestFit = true;
                         }
@@ -606,10 +626,10 @@ namespace System.Drawing
             }
             else
             {
-                // Ideally, we would pick apart the icon using 
+                // Ideally, we would pick apart the icon using
                 // GetIconInfo, and then pull the individual bitmaps out,
                 // converting them to DIBS and saving them into the file.
-                // But, in the interest of simplicity, we just call to 
+                // But, in the interest of simplicity, we just call to
                 // OLE to do it for us.
                 PICTDESC pictdesc = PICTDESC.CreateIconPICTDESC(Handle);
                 Guid g = typeof(IPicture).GUID;
@@ -740,9 +760,9 @@ namespace System.Drawing
             else if (_bestBitDepth == 0 || _bestBitDepth == 32)
             {
                 // This may be a 32bpp icon or an icon without any data.
-                var info = new SafeNativeMethods.ICONINFO();
+                SafeNativeMethods.ICONINFO info = default;
                 SafeNativeMethods.GetIconInfo(new HandleRef(this, _handle), ref info);
-                var bmp = new SafeNativeMethods.BITMAP();
+                SafeNativeMethods.BITMAP bmp = default;
                 try
                 {
                     if (info.hbmColor != IntPtr.Zero)
@@ -759,7 +779,7 @@ namespace System.Drawing
 
                                 // In GDI+ the bits are there but the bitmap was created with no alpha channel
                                 // so copy the bits by hand to a new bitmap
-                                // we also need to go around a limitation in the way the ICON is stored (ie if it's another bpp 
+                                // we also need to go around a limitation in the way the ICON is stored (ie if it's another bpp
                                 // but stored in 32bpp all pixels are transparent and not opaque)
                                 // (Here you mostly need to remain calm....)
                                 bmpData = tmpBitmap.LockBits(new Rectangle(0, 0, tmpBitmap.Width, tmpBitmap.Height), ImageLockMode.ReadOnly, tmpBitmap.PixelFormat);
@@ -792,11 +812,11 @@ namespace System.Drawing
                 {
                     if (info.hbmColor != IntPtr.Zero)
                     {
-                        SafeNativeMethods.IntDeleteObject(new HandleRef(null, info.hbmColor));
+                        Interop.Gdi32.DeleteObject(info.hbmColor);
                     }
                     if (info.hbmMask != IntPtr.Zero)
                     {
-                        SafeNativeMethods.IntDeleteObject(new HandleRef(null, info.hbmMask));
+                        Interop.Gdi32.DeleteObject(info.hbmMask);
                     }
                 }
             }
@@ -806,7 +826,7 @@ namespace System.Drawing
             {
                 // last chance... all the other cases (ie non 32 bpp icons coming from a handle or from the bitmapData)
 
-                // we have to do this rather than just return Bitmap.FromHIcon because 
+                // we have to do this rather than just return Bitmap.FromHIcon because
                 // the bitmap returned from that, even though it's 32bpp, just paints where the mask allows it
                 // seems like another GDI+ weirdness. might be interesting to investigate further. In the meantime
                 // this looks like the right thing to do and is not more expansive that what was present before.
@@ -826,7 +846,7 @@ namespace System.Drawing
                     catch (ArgumentException)
                     {
                         // Sometimes FromHicon will crash with no real reason.
-                        // The backup plan is to just draw the image like we used to. 
+                        // The backup plan is to just draw the image like we used to.
                         // NOTE: FromHIcon is also where we have the buffer overrun
                         // if width and height are mismatched.
                         Draw(graphics, new Rectangle(0, 0, size.Width, size.Height));
@@ -878,7 +898,7 @@ namespace System.Drawing
         [DllImport(ExternDll.Oleaut32, PreserveSig = false)]
         internal static extern IPicture OleCreatePictureIndirect(PICTDESC pictdesc, [In]ref Guid refiid, bool fOwn);
 
-        [ComImport()]
+        [ComImport]
         [Guid("7BF80980-BF32-101A-8BBB-00AA00300CAB")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IPicture

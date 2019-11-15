@@ -35,7 +35,7 @@ namespace System.Globalization
         private bool LoadCalendarDataFromSystem(string localeName, CalendarId calendarId)
         {
             bool result = true;
-            
+
             // these can return null but are later replaced with String.Empty or other non-nullable value
             result &= GetCalendarInfo(localeName, calendarId, CalendarDataType.NativeName, out this.sNativeName!);
             result &= GetCalendarInfo(localeName, calendarId, CalendarDataType.MonthDay, out this.sMonthDay!);
@@ -134,7 +134,7 @@ namespace System.Globalization
         {
             datePatterns = null;
 
-            EnumCalendarsData callbackContext = new EnumCalendarsData();
+            EnumCalendarsData callbackContext = default;
             callbackContext.Results = new List<string>();
             callbackContext.DisallowDuplicates = true;
             bool result = EnumCalendarInfo(localeName, calendarId, dataType, ref callbackContext);
@@ -359,7 +359,7 @@ namespace System.Globalization
         {
             monthNames = null;
 
-            EnumCalendarsData callbackContext = new EnumCalendarsData();
+            EnumCalendarsData callbackContext = default;
             callbackContext.Results = new List<string>();
             bool result = EnumCalendarInfo(localeName, calendarId, dataType, ref callbackContext);
             if (result)
@@ -407,7 +407,7 @@ namespace System.Globalization
         {
             calendarData = null;
 
-            EnumCalendarsData callbackContext = new EnumCalendarsData();
+            EnumCalendarsData callbackContext = default;
             callbackContext.Results = new List<string>();
             bool result = EnumCalendarInfo(localeName, calendarId, dataType, ref callbackContext);
             if (result)

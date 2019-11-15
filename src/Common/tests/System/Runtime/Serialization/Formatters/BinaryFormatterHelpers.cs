@@ -45,6 +45,11 @@ namespace System.Runtime.Serialization.Formatters.Tests
 
         public static void AssertExceptionDeserializationFails<T>() where T : Exception
         {
+            AssertExceptionDeserializationFails(typeof(T));
+        }
+
+        public static void AssertExceptionDeserializationFails(Type exceptionType)
+        {
             // .NET Core and .NET Native throw PlatformNotSupportedExceptions when deserializing many exceptions.
             // The .NET Framework supports full deserialization.
             if (PlatformDetection.IsFullFramework)
@@ -55,7 +60,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
             // Construct a valid serialization payload. This is necessary as most constructors call
             // the base constructor before throwing a PlatformNotSupportedException, and the base
             // constructor validates the SerializationInfo passed.
-            var info = new SerializationInfo(typeof(T), new FormatterConverter());
+            var info = new SerializationInfo(exceptionType, new FormatterConverter());
             info.AddValue("ClassName", "ClassName");
             info.AddValue("Message", "Message");
             info.AddValue("InnerException", null);
@@ -69,7 +74,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
 
             // Serialization constructors are of the form .ctor(SerializationInfo, StreamingContext).
             ConstructorInfo constructor = null;
-            foreach (ConstructorInfo c in typeof(T).GetTypeInfo().DeclaredConstructors)
+            foreach (ConstructorInfo c in exceptionType.GetTypeInfo().DeclaredConstructors)
             {
                 ParameterInfo[] parameters = c.GetParameters();
                 if (parameters.Length == 2 && parameters[0].ParameterType == typeof(SerializationInfo) && parameters[1].ParameterType == typeof(StreamingContext))
@@ -89,7 +94,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
             Assert.IsType<PlatformNotSupportedException>(ex.InnerException);
         }
 
-        public static byte[] ToByteArray(object obj, 
+        public static byte[] ToByteArray(object obj,
             FormatterAssemblyStyle assemblyStyle = FormatterAssemblyStyle.Full)
         {
             BinaryFormatter bf = new BinaryFormatter();
@@ -101,14 +106,14 @@ namespace System.Runtime.Serialization.Formatters.Tests
             }
         }
 
-        public static string ToBase64String(object obj, 
+        public static string ToBase64String(object obj,
             FormatterAssemblyStyle assemblyStyle = FormatterAssemblyStyle.Full)
         {
             byte[] raw = ToByteArray(obj, assemblyStyle);
             return Convert.ToBase64String(raw);
         }
 
-        public static object FromByteArray(byte[] raw, 
+        public static object FromByteArray(byte[] raw,
             FormatterAssemblyStyle assemblyStyle = FormatterAssemblyStyle.Full)
         {
             var binaryFormatter = new BinaryFormatter();
@@ -119,7 +124,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
             }
         }
 
-        public static object FromBase64String(string base64Str, 
+        public static object FromBase64String(string base64Str,
             FormatterAssemblyStyle assemblyStyle = FormatterAssemblyStyle.Full)
         {
             byte[] raw = Convert.FromBase64String(base64Str);

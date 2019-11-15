@@ -237,11 +237,9 @@ namespace System.Xml.Serialization
                 return ToXmlNmTokens(value);
             }
             throw new XmlException(SR.Format(SR.XmlUnsupportedDefaultValue, formatter));
-            //            Debug.WriteLineIf(CompModSwitches.XmlSerialization.TraceVerbose, "XmlSerialization::Unhandled default value " + value + " formatter " + formatter);
-            //            return DBNull.Value;
         }
 
-        private static string[] s_allDateTimeFormats = new string[] {
+        private static readonly string[] s_allDateTimeFormats = new string[] {
             "yyyy-MM-ddTHH:mm:ss.fffffffzzzzzz",
             "yyyy",
             "---dd",
@@ -310,7 +308,7 @@ namespace System.Xml.Serialization
             "yyyy-MM-ddTHH:mm:ss.ffffffzzzzzz",
         };
 
-        private static string[] s_allDateFormats = new string[] {
+        private static readonly string[] s_allDateFormats = new string[] {
             "yyyy-MM-ddzzzzzz",
             "yyyy-MM-dd",
             "yyyy-MM-ddZ",
@@ -330,7 +328,7 @@ namespace System.Xml.Serialization
             "yyyyzzzzzz",
         };
 
-        private static string[] s_allTimeFormats = new string[] {
+        private static readonly string[] s_allTimeFormats = new string[] {
             "HH:mm:ss.fffffffzzzzzz",
             "HH:mm:ss",
             "HH:mm:ss.f",

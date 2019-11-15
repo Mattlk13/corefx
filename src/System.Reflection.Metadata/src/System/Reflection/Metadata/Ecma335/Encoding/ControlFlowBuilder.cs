@@ -27,25 +27,27 @@ namespace System.Reflection.Metadata.Ecma335
                 _opCode = (byte)opCode;
             }
 
-            internal bool IsShortBranchDistance(ImmutableArray<int>.Builder labels, out int distance)
+            internal int GetBranchDistance(ImmutableArray<int>.Builder labels, ILOpCode branchOpCode, int branchILOffset, bool isShortBranch)
             {
-                const int shortBranchSize = 2;
-                const int longBranchSize = 5;
-
                 int labelTargetOffset = labels[Label.Id - 1];
                 if (labelTargetOffset < 0)
                 {
                     Throw.InvalidOperation_LabelNotMarked(Label.Id);
                 }
 
-                distance = labelTargetOffset - (ILOffset + shortBranchSize);
-                if (unchecked((sbyte)distance) == distance)
+                int branchInstructionSize = 1 + (isShortBranch ? sizeof(sbyte) : sizeof(int));
+                int distance = labelTargetOffset - (ILOffset + branchInstructionSize);
+
+                if (isShortBranch && unchecked((sbyte)distance) != distance)
                 {
-                    return true;
+                    // We could potentially implement algorithm that automatically fixes up branch instructions to accomodate for bigger distances (short vs long),
+                    // however an optimal algorithm would be rather complex (something like: calculate topological ordering of crossing branch instructions
+                    // and then use fixed point to eliminate cycles). If the caller doesn't care about optimal IL size they can use long branches whenever the
+                    // distance is unknown upfront. If they do they probably implement more sophisticated algorithm for IL layout optimization already.
+                    throw new InvalidOperationException(SR.Format(SR.DistanceBetweenInstructionAndLabelTooBig, branchOpCode, branchILOffset, distance));
                 }
 
-                distance = labelTargetOffset - (ILOffset + longBranchSize);
-                return false;
+                return distance;
             }
         }
 
@@ -57,11 +59,11 @@ namespace System.Reflection.Metadata.Ecma335
 
             public ExceptionHandlerInfo(
                 ExceptionRegionKind kind,
-                LabelHandle tryStart, 
+                LabelHandle tryStart,
                 LabelHandle tryEnd,
-                LabelHandle handlerStart, 
-                LabelHandle handlerEnd, 
-                LabelHandle filterStart, 
+                LabelHandle handlerStart,
+                LabelHandle handlerEnd,
+                LabelHandle filterStart,
                 EntityHandle catchType)
             {
                 Kind = kind;
@@ -145,7 +147,7 @@ namespace System.Reflection.Metadata.Ecma335
         /// <param name="handlerEnd">Label marking the instruction immediately following the handler.</param>
         /// <exception cref="ArgumentException">A label was not defined by an instruction encoder this builder is associated with.</exception>
         /// <exception cref="ArgumentNullException">A label has default value.</exception>
-        public void AddFinallyRegion(LabelHandle tryStart, LabelHandle tryEnd, LabelHandle handlerStart, LabelHandle handlerEnd) => 
+        public void AddFinallyRegion(LabelHandle tryStart, LabelHandle tryEnd, LabelHandle handlerStart, LabelHandle handlerEnd) =>
             AddExceptionRegion(ExceptionRegionKind.Finally, tryStart, tryEnd, handlerStart, handlerEnd);
 
         /// <summary>
@@ -198,11 +200,11 @@ namespace System.Reflection.Metadata.Ecma335
         }
 
         private void AddExceptionRegion(
-            ExceptionRegionKind kind, 
-            LabelHandle tryStart, 
-            LabelHandle tryEnd, 
-            LabelHandle handlerStart, 
-            LabelHandle handlerEnd, 
+            ExceptionRegionKind kind,
+            LabelHandle tryStart,
+            LabelHandle tryEnd,
+            LabelHandle handlerStart,
+            LabelHandle handlerEnd,
             LabelHandle filterStart = default(LabelHandle),
             EntityHandle catchType = default(EntityHandle))
         {
@@ -237,14 +239,14 @@ namespace System.Reflection.Metadata.Ecma335
 
             // offset within the source builder
             int srcOffset = 0;
-            
+
             // current offset within the current source blob
             int srcBlobOffset = 0;
 
             foreach (Blob srcBlob in srcBuilder.GetBlobs())
             {
                 Debug.Assert(
-                    srcBlobOffset == 0 || 
+                    srcBlobOffset == 0 ||
                     srcBlobOffset == 1 && srcBlob.Buffer[0] == 0xff ||
                     srcBlobOffset == 4 && srcBlob.Buffer[0] == 0xff && srcBlob.Buffer[1] == 0xff && srcBlob.Buffer[2] == 0xff && srcBlob.Buffer[3] == 0xff);
 
@@ -270,27 +272,17 @@ namespace System.Reflection.Metadata.Ecma335
 
                     // Note: the 4B operand is contiguous since we wrote it via BlobBuilder.WriteInt32()
                     Debug.Assert(
-                        srcBlobOffset + 1 == srcBlob.Length || 
-                        (isShortInstruction ? 
+                        srcBlobOffset + 1 == srcBlob.Length ||
+                        (isShortInstruction ?
                            srcBlob.Buffer[srcBlobOffset + 1] == 0xff :
                            BitConverter.ToUInt32(srcBlob.Buffer, srcBlobOffset + 1) == 0xffffffff));
 
                     // write branch opcode:
                     dstBuilder.WriteByte(srcBlob.Buffer[srcBlobOffset]);
 
+                    int branchDistance = branch.GetBranchDistance(_labels, branch.OpCode, srcOffset, isShortInstruction);
+
                     // write branch operand:
-                    int branchDistance;
-                    bool isShortDistance = branch.IsShortBranchDistance(_labels, out branchDistance);
-
-                    if (isShortInstruction && !isShortDistance)
-                    {
-                        // We could potentially implement algortihm that automatically fixes up the branch instructions as well to accomodate bigger distances,
-                        // however an optimal algorithm would be rather complex (something like: calculate topological ordering of crossing branch instructions 
-                        // and then use fixed point to eliminate cycles). If the caller doesn't care about optimal IL size they can use long branches whenever the 
-                        // distance is unknown upfront. If they do they probably already implement more sophisticad algorithm for IL layout optimization already. 
-                        throw new InvalidOperationException(SR.Format(SR.DistanceBetweenInstructionAndLabelTooBig, branch.OpCode, srcOffset, branchDistance));
-                    }
-
                     if (isShortInstruction)
                     {
                         dstBuilder.WriteSByte((sbyte)branchDistance);
@@ -306,7 +298,7 @@ namespace System.Reflection.Metadata.Ecma335
                     branchIndex++;
                     if (branchIndex == _branches.Count)
                     {
-                        branch = new BranchInfo(int.MaxValue, default(LabelHandle), 0);
+                        branch = new BranchInfo(int.MaxValue, label: default, opCode: default);
                     }
                     else
                     {
@@ -355,25 +347,16 @@ namespace System.Reflection.Metadata.Ecma335
                     Throw.InvalidOperation(SR.Format(SR.InvalidExceptionRegionBounds, handlerStart, handlerEnd));
                 }
 
-                int catchTokenOrOffset;
-                switch (handler.Kind)
+                int catchTokenOrOffset = handler.Kind switch
                 {
-                    case ExceptionRegionKind.Catch:
-                        catchTokenOrOffset = MetadataTokens.GetToken(handler.CatchType);
-                        break;
-
-                    case ExceptionRegionKind.Filter:
-                        catchTokenOrOffset = GetLabelOffsetChecked(handler.FilterStart);
-                        break;
-
-                    default:
-                        catchTokenOrOffset = 0;
-                        break;
-                }
+                    ExceptionRegionKind.Catch => MetadataTokens.GetToken(handler.CatchType),
+                    ExceptionRegionKind.Filter => GetLabelOffsetChecked(handler.FilterStart),
+                    _ => 0,
+                };
 
                 regionEncoder.AddUnchecked(
                     handler.Kind,
-                    tryStart, 
+                    tryStart,
                     tryEnd - tryStart,
                     handlerStart,
                     handlerEnd - handlerStart,

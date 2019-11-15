@@ -43,8 +43,6 @@ namespace System.ComponentModel.Design
 
     internal class RuntimeLicenseContext : LicenseContext
     {
-        private static TraceSwitch s_runtimeLicenseContextSwitch = new TraceSwitch("RuntimeLicenseContextTrace", "RuntimeLicenseContext tracing");
-
         internal Hashtable _savedLicenseKeys;
 
         /// <summary>
@@ -64,7 +62,6 @@ namespace System.ComponentModel.Design
         {
             if (_savedLicenseKeys == null || _savedLicenseKeys[type.AssemblyQualifiedName] == null)
             {
-                Debug.WriteLineIf(s_runtimeLicenseContextSwitch.TraceVerbose, "savedLicenseKey is null or doesn't contain our type");
                 if (_savedLicenseKeys == null)
                 {
                     _savedLicenseKeys = new Hashtable();
@@ -77,14 +74,13 @@ namespace System.ComponentModel.Design
 
                 if (resourceAssembly == null)
                 {
-                    Debug.WriteLineIf(s_runtimeLicenseContextSwitch.TraceVerbose, "resourceAssembly is null");
-                    // If Assembly.EntryAssembly returns null, then we will 
+                    // If Assembly.EntryAssembly returns null, then we will
                     // try everything.
                     foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
                     {
                         // Though, I could not repro this, we seem to be hitting an AssemblyBuilder
-                        // when walking through all the assemblies in the current app domain. This throws an 
-                        // exception on Assembly.CodeBase and we bail out. Catching exceptions here is not a 
+                        // when walking through all the assemblies in the current app domain. This throws an
+                        // exception on Assembly.CodeBase and we bail out. Catching exceptions here is not a
                         // bad thing.
                         if (asm.IsDynamic)
                             continue;
@@ -96,7 +92,7 @@ namespace System.ComponentModel.Design
                         Stream s = asm.GetManifestResourceStream(fileName + ".licenses");
                         if (s == null)
                         {
-                            // Since the casing may be different depending on how the assembly was loaded, 
+                            // Since the casing may be different depending on how the assembly was loaded,
                             // we'll do a case insensitive lookup for this manifest resource stream...
                             s = CaseInsensitiveManifestResourceStreamLookup(asm, fileName + ".licenses");
                         }
@@ -111,7 +107,6 @@ namespace System.ComponentModel.Design
                 else if (!resourceAssembly.IsDynamic)
                 {
                     // EscapedCodeBase won't be supported by emitted assemblies anyway
-                    Debug.WriteLineIf(s_runtimeLicenseContextSwitch.TraceVerbose, "resourceAssembly is not null");
                     string fileName;
 
                     fileName = GetLocalPath(resourceAssembly.EscapedCodeBase);
@@ -149,14 +144,13 @@ namespace System.ComponentModel.Design
                     }
                 }
             }
-            Debug.WriteLineIf(s_runtimeLicenseContextSwitch.TraceVerbose, $"returning : {(string)_savedLicenseKeys[type.AssemblyQualifiedName]}");
             return (string)_savedLicenseKeys[type.AssemblyQualifiedName];
         }
 
         /**
-        * Looks up a .licenses file in the assembly manifest using 
+        * Looks up a .licenses file in the assembly manifest using
         * case-insensitive lookup rules. We do this because the name
-        * we are attempting to locate could have different casing 
+        * we are attempting to locate could have different casing
         * depending on how the assembly was loaded.
         **/
         private Stream CaseInsensitiveManifestResourceStreamLookup(Assembly satellite, string name)
@@ -178,11 +172,9 @@ namespace System.ComponentModel.Design
                 }
             }
 
-            // Finally, attempt to return our stream based on the 
+            // Finally, attempt to return our stream based on the
             // case insensitive match we found.
             return satellite.GetManifestResourceStream(name);
         }
     }
 }
-
-

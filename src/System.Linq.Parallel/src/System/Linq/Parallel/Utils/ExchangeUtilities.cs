@@ -16,7 +16,7 @@ namespace System.Linq.Parallel
 {
     /// <summary>
     /// ExchangeUtilities is a static class that contains helper functions to partition and merge
-    /// streams. 
+    /// streams.
     /// </summary>
     internal static class ExchangeUtilities
     {
@@ -35,8 +35,7 @@ namespace System.Linq.Parallel
             // The partitioned stream to return.
             PartitionedStream<T, int> returnValue;
 
-            IParallelPartitionable<T> sourceAsPartitionable = source as IParallelPartitionable<T>;
-            if (sourceAsPartitionable != null)
+            if (source is IParallelPartitionable<T> sourceAsPartitionable)
             {
                 // The type overrides the partitioning algorithm, so we will use it instead of the default.
                 // The returned enumerator must be the same size that we requested, otherwise we throw.
@@ -80,8 +79,8 @@ namespace System.Linq.Parallel
         // partitioning, all elements with the same hash code are guaranteed to be in the same partition.
         //
         // Arguments:
-        //    source                      - the data to be hash-partitioned. If it is a partitioned stream, it 
-        //                                  must have partitionCount partitions 
+        //    source                      - the data to be hash-partitioned. If it is a partitioned stream, it
+        //                                  must have partitionCount partitions
         //    partitionCount              - the desired number of partitions
         //    useOrdinalOrderPreservation - whether ordinal order preservation is required
         //    keySelector                 - function to obtain the key given an element
@@ -89,16 +88,16 @@ namespace System.Linq.Parallel
         //
 
         internal static PartitionedStream<Pair<TElement, THashKey>, int> HashRepartition<TElement, THashKey, TIgnoreKey>(
-            PartitionedStream<TElement, TIgnoreKey> source, Func<TElement, THashKey> keySelector, IEqualityComparer<THashKey> keyComparer,
-            IEqualityComparer<TElement> elementComparer, CancellationToken cancellationToken)
+            PartitionedStream<TElement, TIgnoreKey> source, Func<TElement, THashKey>? keySelector, IEqualityComparer<THashKey>? keyComparer,
+            IEqualityComparer<TElement>? elementComparer, CancellationToken cancellationToken)
         {
             TraceHelpers.TraceInfo("PartitionStream<..>.HashRepartitionStream(..):: creating **RE**partitioned stream for nested operator");
             return new UnorderedHashRepartitionStream<TElement, THashKey, TIgnoreKey>(source, keySelector, keyComparer, elementComparer, cancellationToken);
         }
 
         internal static PartitionedStream<Pair<TElement, THashKey>, TOrderKey> HashRepartitionOrdered<TElement, THashKey, TOrderKey>(
-            PartitionedStream<TElement, TOrderKey> source, Func<TElement, THashKey> keySelector, IEqualityComparer<THashKey> keyComparer,
-            IEqualityComparer<TElement> elementComparer, CancellationToken cancellationToken)
+            PartitionedStream<TElement, TOrderKey> source, Func<TElement, THashKey>? keySelector, IEqualityComparer<THashKey>? keyComparer,
+            IEqualityComparer<TElement>? elementComparer, CancellationToken cancellationToken)
         {
             TraceHelpers.TraceInfo("PartitionStream<..>.HashRepartitionStream(..):: creating **RE**partitioned stream for nested operator");
             return new OrderedHashRepartitionStream<TElement, THashKey, TOrderKey>(source, keySelector, keyComparer, elementComparer, cancellationToken);

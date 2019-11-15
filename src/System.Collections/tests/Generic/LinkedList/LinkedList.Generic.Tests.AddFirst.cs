@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -58,7 +58,7 @@ namespace System.Collections.Tests
             linkedList.Remove(headItems[headItems.Length - 2]);
             linkedList.RemoveFirst();
             linkedList.RemoveLast();
-            //With the above remove we should have removed the first and last 3 items 
+            //With the above remove we should have removed the first and last 3 items
             // expected items are headItems in reverse order, or a subset of them.
             tempItems = new T[headItemsReverse.Length - 6];
             Array.Copy(headItemsReverse, 3, tempItems, 0, headItemsReverse.Length - 6);
@@ -68,7 +68,7 @@ namespace System.Collections.Tests
                 linkedList.AddFirst(tailItems[i]);
 
             tempItems2 = new T[tempItems.Length + tailItemsReverse.Length];
-            Array.Copy(tailItemsReverse, 0, tempItems2, 0, tailItemsReverse.Length);
+            Array.Copy(tailItemsReverse, tempItems2, tailItemsReverse.Length);
             Array.Copy(tempItems, 0, tempItems2, tailItemsReverse.Length, tempItems.Length);
             InitialItems_Tests(linkedList, tempItems2);
 
@@ -106,7 +106,7 @@ namespace System.Collections.Tests
             }
 
             tempItems = new T[headItemsReverse.Length + tailItems.Length];
-            Array.Copy(headItemsReverse, 0, tempItems, 0, headItemsReverse.Length);
+            Array.Copy(headItemsReverse, tempItems, headItemsReverse.Length);
             Array.Copy(tailItems, 0, tempItems, headItemsReverse.Length, tailItems.Length);
 
             InitialItems_Tests(linkedList, tempItems);
@@ -158,7 +158,7 @@ namespace System.Collections.Tests
             linkedList.Remove(headItems[headItems.Length - 2]);
             linkedList.RemoveFirst();
             linkedList.RemoveLast();
-            //With the above remove we should have removed the first and last 3 items 
+            //With the above remove we should have removed the first and last 3 items
             tempItems = new T[headItemsReverse.Length - 6];
             Array.Copy(headItemsReverse, 3, tempItems, 0, headItemsReverse.Length - 6);
             InitialItems_Tests(linkedList, tempItems);
@@ -167,7 +167,7 @@ namespace System.Collections.Tests
                 linkedList.AddFirst(new LinkedListNode<T>(tailItems[i]));
 
             tempItems2 = new T[tailItemsReverse.Length + tempItems.Length];
-            Array.Copy(tailItemsReverse, 0, tempItems2, 0, tailItemsReverse.Length);
+            Array.Copy(tailItemsReverse, tempItems2, tailItemsReverse.Length);
             Array.Copy(tempItems, 0, tempItems2, tailItemsReverse.Length, tempItems.Length);
             InitialItems_Tests(linkedList, tempItems2);
 
@@ -194,7 +194,7 @@ namespace System.Collections.Tests
             }
 
             tempItems = new T[headItemsReverse.Length + tailItems.Length];
-            Array.Copy(headItemsReverse, 0, tempItems, 0, headItemsReverse.Length);
+            Array.Copy(headItemsReverse, tempItems, headItemsReverse.Length);
             Array.Copy(tailItems, 0, tempItems, headItemsReverse.Length, tailItems.Length);
             InitialItems_Tests(linkedList, tempItems);
         }

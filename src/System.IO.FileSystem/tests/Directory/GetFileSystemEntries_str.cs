@@ -281,11 +281,11 @@ namespace System.IO.Tests
             if (TestDirectories)
             {
                 DirectoryInfo testDir = Directory.CreateDirectory(GetTestFilePath());
-                
+
                 testDir.CreateSubdirectory(valid);
 
                 string[] results = GetEntries(testDir.FullName);
-                 
+
                 Assert.Contains(Path.Combine(testDir.FullName, valid), results);
             }
         }
@@ -335,8 +335,6 @@ namespace System.IO.Tests
                 Assert.NotEmpty(Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*"));
                 Assert.NotEmpty(Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*", SearchOption.AllDirectories));
                 Assert.NotEmpty(Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*", SearchOption.TopDirectoryOnly));
-
-                return RemoteExecutor.SuccessExitCode;
             }, testDir).Dispose();
         }
     }

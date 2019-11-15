@@ -343,22 +343,15 @@ namespace System.Data.OleDb
             return plist;
         }
 
-        private static ParameterDirection ConvertToParameterDirection(int value)
-        {
-            switch (value)
+        private static ParameterDirection ConvertToParameterDirection(int value) =>
+            value switch
             {
-                case ODB.DBPARAMTYPE_INPUT:
-                    return System.Data.ParameterDirection.Input;
-                case ODB.DBPARAMTYPE_INPUTOUTPUT:
-                    return System.Data.ParameterDirection.InputOutput;
-                case ODB.DBPARAMTYPE_OUTPUT:
-                    return System.Data.ParameterDirection.Output;
-                case ODB.DBPARAMTYPE_RETURNVALUE:
-                    return System.Data.ParameterDirection.ReturnValue;
-                default:
-                    return System.Data.ParameterDirection.Input;
-            }
-        }
+                ODB.DBPARAMTYPE_INPUT => System.Data.ParameterDirection.Input,
+                ODB.DBPARAMTYPE_INPUTOUTPUT => System.Data.ParameterDirection.InputOutput,
+                ODB.DBPARAMTYPE_OUTPUT => System.Data.ParameterDirection.Output,
+                ODB.DBPARAMTYPE_RETURNVALUE => System.Data.ParameterDirection.ReturnValue,
+                _ => System.Data.ParameterDirection.Input,
+            };
 
         public override string QuoteIdentifier(string unquotedIdentifier)
         {
@@ -376,7 +369,7 @@ namespace System.Data.OleDb
             {
                 if (connection == null)
                 {
-                    // Use the adapter's connection if QuoteIdentifier was called from 
+                    // Use the adapter's connection if QuoteIdentifier was called from
                     // DbCommandBuilder instance (which does not have an overload that gets connection object)
                     connection = DataAdapter?.SelectCommand?.Connection;
                     if (connection == null)
@@ -426,7 +419,7 @@ namespace System.Data.OleDb
             {
                 if (connection == null)
                 {
-                    // Use the adapter's connection if UnquoteIdentifier was called from 
+                    // Use the adapter's connection if UnquoteIdentifier was called from
                     // DbCommandBuilder instance (which does not have an overload that gets connection object)
                     connection = DataAdapter?.SelectCommand?.Connection;
                     if (connection == null)

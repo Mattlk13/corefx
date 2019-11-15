@@ -226,6 +226,150 @@ namespace System.Security.Cryptography.X509Certificates.Tests
             }
         }
 
+        [Theory]
+        // Tests that the chain fails when a system trust certificate is added to the custom root trust, but its root isn't.
+        [InlineData(true)]
+        // Tests that the chain fails when no certificates are added to the custom root trust.
+        [InlineData(false)]
+        public static void SystemTrustCertificateWithCustomRootTrust(bool addCertificateToCustomRootTrust)
+        {
+            using (var microsoftDotCom = new X509Certificate2(TestData.MicrosoftDotComSslCertBytes))
+            using (var testCert = new X509Certificate2(Path.Combine("TestData", "test.pfx"), TestData.ChainPfxPassword))
+            using (var chainHolder = new ChainHolder())
+            {
+                X509Chain chain = chainHolder.Chain;
+                chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                chain.ChainPolicy.VerificationTime = microsoftDotCom.NotBefore.AddSeconds(1);
+                chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+
+                if (addCertificateToCustomRootTrust)
+                {
+                    chain.ChainPolicy.CustomTrustStore.Add(testCert);
+                }
+
+                Assert.False(chain.Build(microsoftDotCom));
+
+                // Linux and Windows do not search the default system root stores when CustomRootTrust is enabled
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Assert.Equal(3, chain.ChainElements.Count);
+                    Assert.Equal(X509ChainStatusFlags.UntrustedRoot, chain.AllStatusFlags());
+                }
+                else
+                {
+                    Assert.Equal(2, chain.ChainElements.Count);
+                    Assert.Equal(X509ChainStatusFlags.PartialChain, chain.AllStatusFlags());
+                }
+            }
+        }
+
+        public enum BuildChainCustomTrustStoreTestArguments : int
+        {
+            TrustedIntermediateUntrustedRoot,
+            UntrustedIntermediateTrustedRoot,
+            TrustedIntermediateTrustedRoot,
+            MultipleCalls
+        }
+
+        [Theory]
+        [InlineData(false, X509ChainStatusFlags.UntrustedRoot, BuildChainCustomTrustStoreTestArguments.TrustedIntermediateUntrustedRoot)]
+        [InlineData(true, X509ChainStatusFlags.NoError, BuildChainCustomTrustStoreTestArguments.UntrustedIntermediateTrustedRoot)]
+        [InlineData(true, X509ChainStatusFlags.NoError, BuildChainCustomTrustStoreTestArguments.TrustedIntermediateTrustedRoot)]
+        [InlineData(true, X509ChainStatusFlags.NoError, BuildChainCustomTrustStoreTestArguments.MultipleCalls)]
+        public static void BuildChainCustomTrustStore(
+            bool chainBuildsSuccessfully,
+            X509ChainStatusFlags chainFlags,
+            BuildChainCustomTrustStoreTestArguments testArguments)
+        {
+            using (var microsoftDotCom = new X509Certificate2(TestData.MicrosoftDotComSslCertBytes))
+            using (var chainHolderPrep = new ChainHolder())
+            {
+                X509Chain chainPrep = chainHolderPrep.Chain;
+                chainPrep.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                chainPrep.ChainPolicy.VerificationTime = microsoftDotCom.NotBefore.AddSeconds(1);
+
+                chainPrep.Build(microsoftDotCom);
+                X509Certificate2 rootCert = chainPrep.ChainElements[2].Certificate;
+
+                using (var chainHolderTest = new ChainHolder())
+                {
+                    X509Chain chainTest = chainHolderTest.Chain;
+                    chainTest.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                    chainTest.ChainPolicy.VerificationTime = microsoftDotCom.NotBefore.AddSeconds(1);
+                    chainTest.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+
+                    switch (testArguments)
+                    {
+                        case BuildChainCustomTrustStoreTestArguments.TrustedIntermediateUntrustedRoot:
+                            chainTest.ChainPolicy.ExtraStore.Add(rootCert);
+                            break;
+                        case BuildChainCustomTrustStoreTestArguments.UntrustedIntermediateTrustedRoot:
+                            chainTest.ChainPolicy.CustomTrustStore.Add(rootCert);
+                            break;
+                        case BuildChainCustomTrustStoreTestArguments.TrustedIntermediateTrustedRoot:
+                            chainTest.ChainPolicy.CustomTrustStore.Add(rootCert);
+                            break;
+                        case BuildChainCustomTrustStoreTestArguments.MultipleCalls:
+                            chainTest.ChainPolicy.CustomTrustStore.Add(rootCert);
+                            chainTest.Build(microsoftDotCom);
+                            chainHolderTest.DisposeChainElements();
+                            chainTest.ChainPolicy.CustomTrustStore.Remove(rootCert);
+                            chainTest.ChainPolicy.TrustMode = X509ChainTrustMode.System;
+                            break;
+                        default:
+                            throw new InvalidDataException();
+                    }
+
+                    Assert.Equal(chainBuildsSuccessfully, chainTest.Build(microsoftDotCom));
+                    Assert.Equal(3, chainTest.ChainElements.Count);
+                    Assert.Equal(chainFlags, chainTest.AllStatusFlags());
+                }
+            }
+        }
+
+        [Fact]
+        public static void BuildChainWithSystemTrustAndCustomTrustCertificates()
+        {
+            using (var testCert = new X509Certificate2(Path.Combine("TestData", "test.pfx"), TestData.ChainPfxPassword))
+            using (var chainHolder = new ChainHolder())
+            {
+                X509Chain chain = chainHolder.Chain;
+                chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                chain.ChainPolicy.VerificationTime = testCert.NotBefore.AddSeconds(1);
+                chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2());
+
+                Assert.Throws<CryptographicException>(() => chain.Build(testCert));
+            }
+        }
+
+        [Fact]
+        public static void BuildChainWithCustomRootTrustAndInvalidCustomCertificates()
+        {
+            using (var testCert = new X509Certificate2(Path.Combine("TestData", "test.pfx"), TestData.ChainPfxPassword))
+            using (var chainHolder = new ChainHolder())
+            {
+                X509Chain chain = chainHolder.Chain;
+                chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                chain.ChainPolicy.VerificationTime = testCert.NotBefore.AddSeconds(1);
+                chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2());
+                chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+
+                Assert.Throws<CryptographicException>(() => chain.Build(testCert));
+            }
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(2)]
+        public static void Invalidx509ChainTrustMode(int trustMode)
+        {
+            using (var chainHolder = new ChainHolder())
+            {
+                X509Chain chain = chainHolder.Chain;
+                Assert.Throws<ArgumentException>(() => chain.ChainPolicy.TrustMode = (X509ChainTrustMode)trustMode);
+            }
+        }
+
         public static IEnumerable<object[]> VerifyExpressionData()
         {
             // The test will be using the chain for TestData.MicrosoftDotComSslCertBytes
@@ -265,9 +409,9 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                 DateTime local = utcTime.ToLocalTime();
                 DateTime unspecified = new DateTime(local.Ticks);
 
-                testCases.Add(new object[] { utcTime, true, utcTime.Kind });
-                testCases.Add(new object[] { local, true, local.Kind });
-                testCases.Add(new object[] { unspecified, true, unspecified.Kind });
+                testCases.Add(new object[] { utcTime, true });
+                testCases.Add(new object[] { local, true });
+                testCases.Add(new object[] { unspecified, true });
             }
 
             foreach (DateTime utcTime in invalidTimes)
@@ -275,9 +419,9 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                 DateTime local = utcTime.ToLocalTime();
                 DateTime unspecified = new DateTime(local.Ticks);
 
-                testCases.Add(new object[] { utcTime, false, utcTime.Kind });
-                testCases.Add(new object[] { local, false, local.Kind });
-                testCases.Add(new object[] { unspecified, false, unspecified.Kind });
+                testCases.Add(new object[] { utcTime, false });
+                testCases.Add(new object[] { local, false });
+                testCases.Add(new object[] { unspecified, false });
             }
 
             return testCases;
@@ -285,7 +429,7 @@ namespace System.Security.Cryptography.X509Certificates.Tests
 
         [Theory]
         [MemberData(nameof(VerifyExpressionData))]
-        public static void VerifyExpiration_LocalTime(DateTime verificationTime, bool shouldBeValid, DateTimeKind kind)
+        public static void VerifyExpiration_LocalTime(DateTime verificationTime, bool shouldBeValid)
         {
             using (var microsoftDotCom = new X509Certificate2(TestData.MicrosoftDotComSslCertBytes))
             using (var microsoftDotComIssuer = new X509Certificate2(TestData.MicrosoftDotComIssuerBytes))
@@ -463,10 +607,10 @@ namespace System.Security.Cryptography.X509Certificates.Tests
         [OuterLoop(/* Modifies user certificate store */)]
         public static void BuildChain_MicrosoftDotCom_WithRootCertInUserAndSystemRootCertStores()
         {
-            // Verifies that when the same root cert is placed in both a user and machine root certificate store, 
+            // Verifies that when the same root cert is placed in both a user and machine root certificate store,
             // any certs chain building to that root cert will build correctly
-            // 
-            // We use a copy of the microsoft.com SSL certs and root certs to validate that the chain can build 
+            //
+            // We use a copy of the microsoft.com SSL certs and root certs to validate that the chain can build
             // successfully
 
             bool shouldInstallCertToUserStore = true;
@@ -494,9 +638,9 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                     Assert.True(foundCert, string.Format("Did not find expected certificate with thumbprint '{0}' in the machine root store", microsoftDotComRoot.Thumbprint));
                 }
 
-                // Concievably at this point there could still be something wrong and we still don't chain build correctly - if that's 
-                // the case, then there's likely something wrong with the machine. Validating that happy path is out of scope 
-                // of this particular test. 
+                // Concievably at this point there could still be something wrong and we still don't chain build correctly - if that's
+                // the case, then there's likely something wrong with the machine. Validating that happy path is out of scope
+                // of this particular test.
 
                 // Check that microsoft.com's root certificate is NOT installed on in the user cert store as a sanity step
                 // We won't try to install the microsoft.com root cert into the user root store if it's already there
@@ -648,7 +792,7 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                 // The root CA is not expected to be installed on everyone's machines,
                 // so allow for it to report UntrustedRoot, but nothing else..
                 X509ChainStatus[] rootElementStatus = onlineChain.ChainElements[2].ChainElementStatus;
-                
+
                 if (rootElementStatus.Length != 0)
                 {
                     Assert.Equal(1, rootElementStatus.Length);

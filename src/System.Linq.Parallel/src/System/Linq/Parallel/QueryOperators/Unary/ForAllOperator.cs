@@ -18,7 +18,7 @@ namespace System.Linq.Parallel
     /// <summary>
     /// A forall operator just enables an action to be placed at the "top" of a query tree
     /// instead of yielding an enumerator that some consumer can walk. We execute the
-    /// query for effect instead of yielding a data result. 
+    /// query for effect instead of yielding a data result.
     /// </summary>
     /// <typeparam name="TInput"></typeparam>
     internal sealed class ForAllOperator<TInput> : UnaryQueryOperator<TInput, TInput>
@@ -60,7 +60,7 @@ namespace System.Linq.Parallel
 
             QueryLifecycle.LogicalQueryExecutionBegin(settingsWithDefaults.QueryId);
 
-            IEnumerator<TInput> enumerator = GetOpenedEnumerator(ParallelMergeOptions.FullyBuffered, true, true,
+            IEnumerator<TInput>? enumerator = GetOpenedEnumerator(ParallelMergeOptions.FullyBuffered, true, true,
                 settingsWithDefaults);
             settingsWithDefaults.CleanStateAtQueryEnd();
             Debug.Assert(enumerator == null);
@@ -126,7 +126,7 @@ namespace System.Linq.Parallel
         {
             private readonly QueryOperatorEnumerator<TInput, TKey> _source; // The data source.
             private readonly Action<TInput> _elementAction; // Forall operator being executed.
-            private CancellationToken _cancellationToken; // Token used to cancel this operator.
+            private readonly CancellationToken _cancellationToken; // Token used to cancel this operator.
 
             //---------------------------------------------------------------------------------------
             // Constructs a new forall enumerator object.
@@ -147,7 +147,7 @@ namespace System.Linq.Parallel
             // element action for each element.
             //
 
-            internal override bool MoveNext(ref TInput currentElement, ref int currentKey)
+            internal override bool MoveNext([MaybeNull, AllowNull] ref TInput currentElement, ref int currentKey)
             {
                 Debug.Assert(_elementAction != null, "expected a compiled operator");
 
@@ -156,10 +156,10 @@ namespace System.Linq.Parallel
 
                 // Cancellation testing must be performed here as full enumeration occurs within this method.
                 // We only need to throw a simple exception here.. marshalling logic handled via QueryTaskGroupState.QueryEnd (called by ForAllSpoolingTask)
-                TInput element = default(TInput);
-                TKey keyUnused = default(TKey);
+                TInput element = default(TInput)!;
+                TKey keyUnused = default(TKey)!;
                 int i = 0;
-                while (_source.MoveNext(ref element, ref keyUnused))
+                while (_source.MoveNext(ref element!, ref keyUnused))
                 {
                     if ((i++ & CancellationState.POLL_INTERVAL) == 0)
                         CancellationState.ThrowIfCanceled(_cancellationToken);

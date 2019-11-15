@@ -12,7 +12,7 @@ namespace System.ComponentModel
     {
         /// <summary>
         /// Specifies that a property can be set only at design time.
-        /// This <see langword='static'/> field is read-only. 
+        /// This <see langword='static'/> field is read-only.
         /// </summary>
         public static readonly DesignOnlyAttribute Yes = new DesignOnlyAttribute(true);
 
@@ -42,16 +42,8 @@ namespace System.ComponentModel
         /// </summary>
         public bool IsDesignOnly { get; }
 
-        public override bool Equals(object obj)
-        {
-            if (obj == this)
-            {
-                return true;
-            }
-
-            DesignOnlyAttribute other = obj as DesignOnlyAttribute;
-            return other?.IsDesignOnly == IsDesignOnly;
-        }
+        public override bool Equals(object? obj) =>
+            obj is DesignOnlyAttribute other && other.IsDesignOnly == IsDesignOnly;
 
         public override int GetHashCode() => IsDesignOnly.GetHashCode();
 

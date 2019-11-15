@@ -8,7 +8,7 @@ namespace System.Transactions.Distributed
 {
     internal sealed class DistributedTransactionManager
     {
-        internal object NodeName { get; set; }
+        internal object? NodeName { get; set; }
 
         internal IPromotedEnlistment ReenlistTransaction(Guid resourceManagerIdentifier, byte[] resourceManagerRecoveryInformation, RecoveringInternalEnlistment internalEnlistment)
         {
@@ -50,11 +50,11 @@ namespace System.Transactions.Distributed
     /// A Transaction object represents a single transaction.  It is created by TransactionManager
     /// objects through CreateTransaction or through deserialization.  Alternatively, the static Create
     /// methods provided, which creates a "default" TransactionManager and requests that it create
-    /// a new transaction with default values.  A transaction can only be committed by 
-    /// the client application that created the transaction.  If a client application wishes to allow 
-    /// access to the transaction by multiple threads, but wants to prevent those other threads from 
-    /// committing the transaction, the application can make a "clone" of the transaction.  Transaction 
-    /// clones have the same capabilities as the original transaction, except for the ability to commit 
+    /// a new transaction with default values.  A transaction can only be committed by
+    /// the client application that created the transaction.  If a client application wishes to allow
+    /// access to the transaction by multiple threads, but wants to prevent those other threads from
+    /// committing the transaction, the application can make a "clone" of the transaction.  Transaction
+    /// clones have the same capabilities as the original transaction, except for the ability to commit
     /// the transaction.
     /// </summary>
     internal class DistributedTransaction : ISerializable, IObjectReference
@@ -74,12 +74,12 @@ namespace System.Transactions.Distributed
             throw new PlatformNotSupportedException();
         }
 
-        internal Exception InnerException { get; set; }
+        internal Exception? InnerException { get; set; }
         internal Guid Identifier { get; set; }
-        internal RealDistributedTransaction RealTransaction { get; set; }
+        internal RealDistributedTransaction? RealTransaction { get; set; }
         internal TransactionTraceIdentifier TransactionTraceId { get; set; }
         internal IsolationLevel IsolationLevel { get; set; }
-        internal Transaction SavedLtmPromotedTransaction { get; set; }
+        internal Transaction? SavedLtmPromotedTransaction { get; set; }
 
         internal void Dispose()
         {
@@ -149,7 +149,7 @@ namespace System.Transactions.Distributed
 
         internal class RealDistributedTransaction
         {
-            internal InternalTransaction InternalTransaction { get; set; }
+            internal InternalTransaction? InternalTransaction { get; set; }
         }
     }
 

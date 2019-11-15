@@ -3,8 +3,8 @@
     <RootNamespace>System.Numerics</RootNamespace>
     <AssemblyName>System.Runtime.Numerics</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ProjectGuid>{D2C99D27-0BEF-4319-ADB3-05CBEBA8F69B}</ProjectGuid>
-    <Configurations>netcoreapp-Debug;netcoreapp-Release;uap-Windows_NT-Debug;uap-Windows_NT-Release</Configurations>
+    <Nullable>enable</Nullable>
+    <Configurations>netcoreapp-Debug;netcoreapp-Release</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="System\Numerics\BigIntegerCalculator.AddSub.cs" />
@@ -23,7 +23,7 @@
     <Compile Include="$(CommonPath)\System\Globalization\FormatProvider.Number.cs">
       <Link>System\Globalization\FormatProvider.Number.cs</Link>
     </Compile>
-    <Compile Include="$(CommonPath)\CoreLib\System\Text\ValueStringBuilder.cs">
+    <Compile Include="$(CoreLibDir)System\Text\ValueStringBuilder.cs">
       <Link>CoreLib\System\Text\ValueStringBuilder.cs</Link>
     </Compile>
   </ItemGroup>

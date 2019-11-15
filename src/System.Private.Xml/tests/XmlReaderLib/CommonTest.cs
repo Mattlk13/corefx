@@ -6,8 +6,6 @@ using OLEDB.Test.ModuleCore;
 using System.IO;
 using XmlCoreTest.Common;
 
-[assembly: System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAssembly]
-
 namespace System.Xml.Tests
 {
     ////////////////////////////////////////////////////////////////
@@ -1448,7 +1446,7 @@ namespace System.Xml.Tests
         [Variation("Parse an XML declaration that will have some whitespace before the closing")]
         public int Read54()
         {
-            string xml = @"<?xml version   =   '1.0'                 
+            string xml = @"<?xml version   =   '1.0'
 ?><!DOCTYPE doc [
  <!ELEMENT doc ANY >
  <!ELEMENT a ANY >
@@ -1845,4 +1843,3 @@ namespace System.Xml.Tests
         }
     }
 }
-

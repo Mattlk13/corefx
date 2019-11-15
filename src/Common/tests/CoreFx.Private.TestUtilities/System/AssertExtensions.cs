@@ -21,6 +21,12 @@ namespace System
             Assert.Equal(expectedMessage, Assert.Throws<T>(action).Message);
         }
 
+        public static void ThrowsContains<T>(Action action, string expectedMessageContent)
+            where T : Exception
+        {
+            Assert.Contains(expectedMessageContent, Assert.Throws<T>(action).Message);
+        }
+
         public static void Throws<T>(string netCoreParamName, string netFxParamName, Action action)
             where T : ArgumentException
         {
@@ -244,7 +250,7 @@ namespace System
             else
                 return $"{message} {userMessage}";
         }
-        
+
         /// <summary>
         /// Tests whether the specified string contains the specified substring
         /// and throws an exception if the substring does not occur within the
@@ -351,7 +357,7 @@ namespace System
         /// </summary>
         /// <param name="expected">The array that <paramref name="actual"/> should be equal to.</param>
         /// <param name="actual"></param>
-        public static void Equal<T>(T[] expected, T[] actual) where T: IEquatable<T>
+        public static void Equal<T>(T[] expected, T[] actual) where T : IEquatable<T>
         {
             // Use the SequenceEqual to compare the arrays for better performance. The default Assert.Equal method compares
             // the arrays by boxing each element that is very slow for large arrays.
@@ -369,6 +375,61 @@ namespace System
             if (!actual.SetEquals(expected))
             {
                 throw new XunitException($"Expected: {string.Join(", ", expected)}{Environment.NewLine}Actual: {string.Join(", ", actual)}");
+            }
+        }
+
+        public delegate void AssertThrowsActionReadOnly<T>(ReadOnlySpan<T> span);
+
+        public delegate void AssertThrowsAction<T>(Span<T> span);
+
+        // Cannot use standard Assert.Throws() when testing Span - Span and closures don't get along.
+        public static void AssertThrows<E, T>(ReadOnlySpan<T> span, AssertThrowsActionReadOnly<T> action) where E : Exception
+        {
+            Exception exception;
+
+            try
+            {
+                action(span);
+                exception = null;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            if (exception == null)
+            {
+                throw new ThrowsException(typeof(E));
+            }
+
+            if (exception.GetType() != typeof(E))
+            {
+                throw new ThrowsException(typeof(E), exception);
+            }
+        }
+
+        public static void AssertThrows<E, T>(Span<T> span, AssertThrowsAction<T> action) where E : Exception
+        {
+            Exception exception;
+
+            try
+            {
+                action(span);
+                exception = null;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            if (exception == null)
+            {
+                throw new ThrowsException(typeof(E));
+            }
+
+            if (exception.GetType() != typeof(E))
+            {
+                throw new ThrowsException(typeof(E), exception);
             }
         }
     }

@@ -5,8 +5,8 @@
 // =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 //
 // LongRangePartitionerTests.cs - Tests for range partitioner for long integer range.
-// 
-// PLEASE NOTE !! - For tests that need to iterate the elements inside the partitions more 
+//
+// PLEASE NOTE !! - For tests that need to iterate the elements inside the partitions more
 // than once, we need to call GetPartitions for the second time. Iterating a second times
 // over the first enumerable<tuples> / IList<IEnumerator<tuples> will yield no elements
 //
@@ -199,7 +199,7 @@ namespace System.Collections.Concurrent.Tests
         /// We unroll the tuples and flatten them to a single sequence
         /// The single sequence is compared to the original range for verification
         /// This method tests the partitioner created with user provided desiredRangeSize
-        /// The range sizes for individual ranges are checked to see if they are equal to 
+        /// The range sizes for individual ranges are checked to see if they are equal to
         /// desiredRangeSize. The last range may have less than or equal to desiredRangeSize.
         /// </summary>
         [Fact]
@@ -241,7 +241,7 @@ namespace System.Collections.Concurrent.Tests
         /// We unroll the tuples and flatten them to a single sequence
         /// The single sequence is compared to the original range for verification
         /// This method tests the partitioner created with user provided desiredRangeSize
-        /// The range sizes for individual ranges are checked to see if they are equal to 
+        /// The range sizes for individual ranges are checked to see if they are equal to
         /// desiredRangeSize. The last range may have less than or equal to desiredRangeSize.
         /// </summary>
         [Fact]
@@ -283,7 +283,7 @@ namespace System.Collections.Concurrent.Tests
         /// The single sequence is compared to the original range for verification
         /// Also the indices are extracted to ensure that they are ordered & normalized
         /// This method tests the partitioner created with user provided desiredRangeSize
-        /// The range sizes for individual ranges are checked to see if they are equal to 
+        /// The range sizes for individual ranges are checked to see if they are equal to
         /// desiredRangeSize. The last range may have less than or equal to desiredRangeSize.
         /// </summary>
         [Fact]
@@ -336,7 +336,7 @@ namespace System.Collections.Concurrent.Tests
         /// The single sequence is compared to the original range for verification
         /// Also the indices are extracted to ensure that they are ordered & normalized
         /// This method tests the partitioner created with user provided desiredRangeSize
-        /// The range sizes for individual ranges are checked to see if they are equal to 
+        /// The range sizes for individual ranges are checked to see if they are equal to
         /// desiredRangeSize. The last range may have less than or equal to desiredRangeSize.
         /// </summary>
         [Fact]
@@ -382,7 +382,7 @@ namespace System.Collections.Concurrent.Tests
         }
 
         /// <summary>
-        /// Helper function to validate the range size of the partitioners match what the user specified 
+        /// Helper function to validate the range size of the partitioners match what the user specified
         /// (desiredRangeSize).
         /// The last range may have less than or equal to desiredRangeSize.
         /// </summary>
@@ -551,6 +551,30 @@ namespace System.Collections.Concurrent.Tests
 
             // Verifying that all items are there
             Assert.Equal(count, actualCount);
+        }
+        
+        /// <summary>
+        /// Ensure that the range partitioner doesn't exceed the exclusive bound
+        /// </summary>
+        /// <param name="fromInclusive"></param>
+        /// <param name="toExclusive"></param>
+        [Theory]
+        [InlineData(-1, long.MaxValue)]
+        [InlineData(long.MinValue, long.MaxValue)]
+        [InlineData(long.MinValue, -1)]
+        [InlineData(long.MinValue / 2, long.MaxValue / 2)]
+        public void TestPartitionerCreate(long fromInclusive, long toExclusive)
+        {
+            OrderablePartitioner<Tuple<long, long>> op = Partitioner.Create(fromInclusive, toExclusive);
+            long start = fromInclusive;
+
+            foreach (var p in op.GetDynamicPartitions())
+            {
+                Assert.Equal(start, p.Item1);
+                start = p.Item2;
+            }
+
+            Assert.Equal(toExclusive, start);
         }
     }
 }

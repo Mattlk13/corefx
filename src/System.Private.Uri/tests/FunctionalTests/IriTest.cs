@@ -3,8 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
-using System.Common.Tests;
 using System.Linq;
+using System.Tests;
 using System.Text;
 
 using Xunit;
@@ -312,20 +312,19 @@ namespace System.PrivateUri.Tests
                 UriComponents.UserInfo,
             };
 
-            using (ThreadCultureChange helper = new ThreadCultureChange())
+            string[] results1 = new string[components.Length];
+            using (new ThreadCultureChange(_testedLocales[0]))
             {
-                string[] results1 = new string[components.Length];
-
-                helper.ChangeCultureInfo(_testedLocales[0]);
                 for (int i = 0; i < components.Length; i++)
                 {
                     results1[i] = EscapeUnescapeTestComponent(uriInput, components[i]);
                 }
+            }
 
-                for (int j = 1; j < _testedLocales.Length; j++)
+            for (int j = 1; j < _testedLocales.Length; j++)
+            {
+                using (new ThreadCultureChange(_testedLocales[j]))
                 {
-                    helper.ChangeCultureInfo(_testedLocales[j]);
-
                     string[] results2 = new string[components.Length];
                     for (int i = 0; i < components.Length; i++)
                     {
@@ -419,21 +418,21 @@ namespace System.PrivateUri.Tests
             {"http://user@ser%5Dver.srv:123/path/path/resource.ext?query=expression#fragment", null},
 
             // [ ] in userinfo.
-            {"http://us%5Ber@server.srv:123/path/path/resource.ext?query=expression#fragment",  
+            {"http://us%5Ber@server.srv:123/path/path/resource.ext?query=expression#fragment",
                 "http://us%5Ber@server.srv:123/path/path/resource.ext?query=expression#fragment"},
-            {"http://u%5Dser@server.srv:123/path/path/resource.ext?query=expression#fragment", 
+            {"http://u%5Dser@server.srv:123/path/path/resource.ext?query=expression#fragment",
                 "http://u%5Dser@server.srv:123/path/path/resource.ext?query=expression#fragment"},
-            {"http://us%5B%5Der@server.srv:123/path/path/resource.ext?query=expression#fragment", 
+            {"http://us%5B%5Der@server.srv:123/path/path/resource.ext?query=expression#fragment",
                 "http://us%5B%5Der@server.srv:123/path/path/resource.ext?query=expression#fragment"},
-            
+
             // [ ] : ' in path.
-            {"http://user@server.srv:123/path/pa%5B%3A%27th/resource.ext?query=expression#fragment", 
+            {"http://user@server.srv:123/path/pa%5B%3A%27th/resource.ext?query=expression#fragment",
                 "http://user@server.srv:123/path/pa%5B%3A%27th/resource.ext?query=expression#fragment"},
-            {"http://user@server.srv:123/pa%5D%3A%27th/path%5D%3A%27/resource.ext?query=expression#fragment", 
+            {"http://user@server.srv:123/pa%5D%3A%27th/path%5D%3A%27/resource.ext?query=expression#fragment",
                 "http://user@server.srv:123/pa%5D%3A%27th/path%5D%3A%27/resource.ext?query=expression#fragment"},
-            {"http://user@server.srv:123/path/p%5B%3A%27a%5D%3A%27th/resource.ext?query=expression#fragment", 
+            {"http://user@server.srv:123/path/p%5B%3A%27a%5D%3A%27th/resource.ext?query=expression#fragment",
                 "http://user@server.srv:123/path/p%5B%3A%27a%5D%3A%27th/resource.ext?query=expression#fragment"},
-            
+
             // [ ] : ' in query.
             {"http://user@server.srv:123/path/path/resource.ext?que%5B%3A%27ry=expression#fragment",
                 "http://user@server.srv:123/path/path/resource.ext?que%5B%3A%27ry=expression#fragment"},
@@ -441,7 +440,7 @@ namespace System.PrivateUri.Tests
                 "http://user@server.srv:123/path/path/resource.ext?query=exp%5D%3A%27ression#fragment"},
             {"http://user@server.srv:123/path/path/resource.ext?que%5B%3A%27ry=exp%5D%3A%27ression#fragment",
                 "http://user@server.srv:123/path/path/resource.ext?que%5B%3A%27ry=exp%5D%3A%27ression#fragment"},
-            
+
             // [ ] : ' in fragment.
             {"http://user@server.srv:123/path/path/resource.ext?query=expression#fr%5B%3A%27agment",
                 "http://user@server.srv:123/path/path/resource.ext?query=expression#fr%5B%3A%27agment"},
@@ -495,36 +494,24 @@ namespace System.PrivateUri.Tests
             { }
         }
 
-        [Fact]
-        public void Iri_ValidateVeryLongInputString_EscapeDataString()
+        [Theory]
+        [InlineData(maxUriLength)]
+        [InlineData(maxUriLength + 1)]
+        [InlineData(10 + ushort.MaxValue)]
+        public void Iri_ValidateVeryLongInputString_EscapeDataString(int length)
         {
-            string bigString1 = GetUnicodeString(0, maxUriLength, 1);
-            Assert.True(Uri.EscapeDataString(bigString1).Length > bigString1.Length);
-
-            try
-            {
-                string bigString2 = GetUnicodeString(0, maxUriLength + 1, 1);
-                Uri.EscapeDataString(bigString2);
-                Assert.False(true, "Expected UriFormatException: Uri too large");
-            }
-            catch (FormatException)
-            { }
+            string s = GetUnicodeString(0, length, 1);
+            Assert.InRange(Uri.EscapeDataString(s).Length, s.Length + 1, int.MaxValue);
         }
 
-        [Fact]
-        public void Iri_ValidateVeryLongInputString_EscapeUriString()
+        [Theory]
+        [InlineData(maxUriLength)]
+        [InlineData(maxUriLength + 1)]
+        [InlineData(10 + ushort.MaxValue)]
+        public void Iri_ValidateVeryLongInputString_EscapeUriString(int length)
         {
-            string bigString1 = GetUnicodeString(0, maxUriLength, 1);
-            Assert.True(Uri.EscapeUriString(bigString1).Length > bigString1.Length);
-
-            try
-            {
-                string bigString2 = GetUnicodeString(0, maxUriLength + 1, 1);
-                Uri.EscapeUriString(bigString2);
-                Assert.False(true, "Expected UriFormatException: Uri too large");
-            }
-            catch (FormatException)
-            { }
+            string s = GetUnicodeString(0, length, 1);
+            Assert.InRange(Uri.EscapeUriString(s).Length, s.Length + 1, int.MaxValue);
         }
 
         [Theory]
@@ -541,8 +528,8 @@ namespace System.PrivateUri.Tests
         }
 
         [Theory]
-        [InlineData(@"c:/path/with/unicode/ö/test.xml")]
-        [InlineData(@"file://c:/path/with/unicode/ö/test.xml")]
+        [InlineData("c:/path/with/unicode/\u00F6/test.xml")]
+        [InlineData("file://c:/path/with/unicode/\u00F6/test.xml")]
         public void Iri_WindowsPathWithUnicode_DoesRemoveScheme(string uriString)
         {
             var uri = new Uri(uriString);

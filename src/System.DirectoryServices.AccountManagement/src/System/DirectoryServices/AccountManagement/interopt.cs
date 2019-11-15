@@ -360,7 +360,7 @@ namespace System.DirectoryServices.AccountManagement
         //
 
         /*
-        typedef enum 
+        typedef enum
         {
           DsRole_RoleStandaloneWorkstation,
           DsRole_RoleMemberWorkstation,
@@ -390,7 +390,7 @@ namespace System.DirectoryServices.AccountManagement
         }
 
         /*
-        typedef enum 
+        typedef enum
         {
           DsRolePrimaryDomainInfoBasic,
           DsRoleUpgradeStatus,
@@ -408,12 +408,12 @@ namespace System.DirectoryServices.AccountManagement
         }
 
         /*
-         typedef struct _DSROLE_PRIMARY_DOMAIN_INFO_BASIC {  
-         DSROLE_MACHINE_ROLE MachineRole;  
-         ULONG Flags;  
-         LPWSTR DomainNameFlat;  
-         LPWSTR DomainNameDns;  
-         LPWSTR DomainForestName;  
+         typedef struct _DSROLE_PRIMARY_DOMAIN_INFO_BASIC {
+         DSROLE_MACHINE_ROLE MachineRole;
+         ULONG Flags;
+         LPWSTR DomainNameFlat;
+         LPWSTR DomainNameDns;
+         LPWSTR DomainForestName;
          GUID DomainGuid;
          } DSROLE_PRIMARY_DOMAIN_INFO_BASIC,  *PDSROLE_PRIMARY_DOMAIN_INFO_BASIC;
          */
@@ -429,7 +429,7 @@ namespace System.DirectoryServices.AccountManagement
             public string DomainNameDns;
             [MarshalAs(UnmanagedType.LPWStr)]
             public string DomainForestName;
-            public Guid DomainGuid = new Guid();
+            public Guid DomainGuid;
         }
 
         /*
@@ -462,7 +462,7 @@ namespace System.DirectoryServices.AccountManagement
             public string DomainControllerName = null;
             public string DomainControllerAddress = null;
             public int DomainControllerAddressType = 0;
-            public Guid DomainGuid = new Guid();
+            public Guid DomainGuid;
             public string DomainName = null;
             public string DnsForestName = null;
             public int Flags = 0;
@@ -480,11 +480,11 @@ namespace System.DirectoryServices.AccountManagement
             [In] IntPtr buffer);
 
         /*DWORD DsGetDcName(
-            LPCTSTR ComputerName, 
-            LPCTSTR DomainName, 
-            GUID* DomainGuid, 
-            LPCTSTR SiteName, 
-            ULONG Flags, 
+            LPCTSTR ComputerName,
+            LPCTSTR DomainName,
+            GUID* DomainGuid,
+            LPCTSTR SiteName,
+            ULONG Flags,
             PDOMAIN_CONTROLLER_INFO* DomainControllerInfo
         );*/
         [DllImport("logoncli.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "DsGetDcNameW", CharSet = CharSet.Unicode)]
@@ -611,7 +611,7 @@ namespace System.DirectoryServices.AccountManagement
                                         );
 
         /*
-                [DllImport("authz.dll", SetLastError=true, CallingConvention=CallingConvention.StdCall, EntryPoint="AuthzInitializeContextFromToken", CharSet=CharSet.Unicode)]                
+                [DllImport("authz.dll", SetLastError=true, CallingConvention=CallingConvention.StdCall, EntryPoint="AuthzInitializeContextFromToken", CharSet=CharSet.Unicode)]
                 static extern public bool AuthzInitializeContextFromToken(
                                                 int Flags,
                                                 IntPtr TokenHandle,
@@ -739,7 +739,7 @@ namespace System.DirectoryServices.AccountManagement
         public sealed class LSA_TRUST_INFORMATION
         {
             public LSA_UNICODE_STRING name = new LSA_UNICODE_STRING();
-            private IntPtr _pSid = IntPtr.Zero;
+            private readonly IntPtr _pSid = IntPtr.Zero;
         }
 
         [DllImport("advapi32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall, EntryPoint = "OpenThreadToken", CharSet = CharSet.Unicode)]
@@ -824,4 +824,3 @@ namespace System.DirectoryServices.AccountManagement
         public static extern int RevertToSelf();
     }
 }
-

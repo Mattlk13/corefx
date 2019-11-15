@@ -20,7 +20,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
             return ec;
         }
 
-#if netcoreapp
+#if NETCOREAPP
         public ECDsa Create(ECCurve curve)
         {
             return ECDsa.Create(curve);
@@ -34,4 +34,3 @@ namespace System.Security.Cryptography.EcDsa.Tests
     }
 
 }
-

@@ -365,7 +365,7 @@ namespace System.Xml.Tests
 
             bool fRetry = false;
 
-            for (; ;)
+            while (true)
             {
                 try
                 {
@@ -1177,4 +1177,3 @@ namespace System.Xml.Tests
         }
     }
 }
-

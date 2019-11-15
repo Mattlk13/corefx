@@ -15,7 +15,7 @@ using System.Diagnostics;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// Convenience class used by enumerators that merge many partitions into one. 
+    /// Convenience class used by enumerators that merge many partitions into one.
     /// </summary>
     /// <typeparam name="TInputOutput"></typeparam>
     internal abstract class MergeEnumerator<TInputOutput> : IEnumerator<TInputOutput>
@@ -44,7 +44,7 @@ namespace System.Linq.Parallel
         // Straightforward IEnumerator<T> methods. So subclasses needn't bother.
         //
 
-        object IEnumerator.Current
+        object? IEnumerator.Current
         {
             get { return ((IEnumerator<TInputOutput>)this).Current; }
         }

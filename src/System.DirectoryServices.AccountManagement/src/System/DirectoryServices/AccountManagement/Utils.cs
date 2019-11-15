@@ -117,7 +117,7 @@ namespace System.DirectoryServices.AccountManagement
 
         //
         // SID Utilities
-        //        
+        //
 
         internal static string ConvertSidToSDDL(byte[] sid)
         {
@@ -237,19 +237,12 @@ namespace System.DirectoryServices.AccountManagement
                 return SidType.FakeObject;
             }
 
-            switch (rid)
+            return rid switch
             {
-                case 21:
-                    // Account SID
-                    return SidType.RealObject;
-
-                case 32:
-                    // BUILTIN SID
-                    return SidType.RealObjectFakeDomain;
-
-                default:
-                    return SidType.FakeObject;
-            }
+                21 => SidType.RealObject, // Account SID
+                32 => SidType.RealObjectFakeDomain, // BUILTIN SID
+                _ => SidType.FakeObject,
+            };
         }
 
 
@@ -300,9 +293,9 @@ namespace System.DirectoryServices.AccountManagement
             //      If YES -->
             //          IS the local machine a DC
             //          If NO --> is local user
-            //         If YES --> is _not_ local user            
+            //         If YES --> is _not_ local user
             //      If NO --> is _not_ local user
-            //            
+            //
 
             IntPtr pCopyOfUserSid = IntPtr.Zero;
             IntPtr pMachineDomainSid = IntPtr.Zero;
@@ -334,7 +327,7 @@ namespace System.DirectoryServices.AccountManagement
                 }
                 else
                 {
-                    // It's not a domain SID, must be local (e.g., NT AUTHORITY\foo, or BUILTIN\foo)                    
+                    // It's not a domain SID, must be local (e.g., NT AUTHORITY\foo, or BUILTIN\foo)
                     return true;
                 }
             }
@@ -633,7 +626,7 @@ namespace System.DirectoryServices.AccountManagement
                     return lastErr;
                 }
 
-                Debug.Assert(f == 0);   // should never succeed, with a 0 buffer size                
+                Debug.Assert(f == 0);   // should never succeed, with a 0 buffer size
 
                 Debug.Assert(nameLength > 0);
                 Debug.Assert(domainNameLength > 0);
@@ -842,4 +835,3 @@ namespace System.DirectoryServices.AccountManagement
         }
     }
 }
-

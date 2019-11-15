@@ -1034,7 +1034,6 @@ namespace System.Collections.Generic
                 Enumerator theirs = asSorted.GetEnumerator();
                 bool mineEnded = !mine.MoveNext(), theirsEnded = !theirs.MoveNext();
                 T max = Max;
-                T min = Min;
 
                 while (!mineEnded && !theirsEnded && Comparer.Compare(theirs.Current, max) <= 0)
                 {
@@ -1903,13 +1902,13 @@ namespace System.Collections.Generic
         [SuppressMessage("Microsoft.Performance", "CA1815:OverrideEqualsAndOperatorEqualsOnValueTypes", Justification = "not an expected scenario")]
         public struct Enumerator : IEnumerator<T>, IEnumerator, ISerializable, IDeserializationCallback
         {
-            private SortedSet<T> _tree;
-            private int _version;
+            private readonly SortedSet<T> _tree;
+            private readonly int _version;
 
-            private Stack<Node> _stack;
+            private readonly Stack<Node> _stack;
             private Node? _current;
 
-            private bool _reverse;
+            private readonly bool _reverse;
 
             internal Enumerator(SortedSet<T> set)
                 : this(set, reverse: false)
@@ -2065,7 +2064,7 @@ namespace System.Collections.Generic
         /// <param name="actualValue">The value from the set that the search found, or the default value of <typeparamref name="T"/> when the search yielded no match.</param>
         /// <returns>A value indicating whether the search was successful.</returns>
         /// <remarks>
-        /// This can be useful when you want to reuse a previously stored reference instead of 
+        /// This can be useful when you want to reuse a previously stored reference instead of
         /// a newly constructed one (so that more sharing of references can occur) or to look up
         /// a value that has more complete data than the value you currently have, although their
         /// comparer functions indicate they are equal.

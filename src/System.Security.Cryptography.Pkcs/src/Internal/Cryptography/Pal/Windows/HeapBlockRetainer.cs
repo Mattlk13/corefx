@@ -13,8 +13,8 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Internal.Cryptography.Pal.Windows
 {
-    // 
-    // Some CryptoApis take structure parameters that have an insane number of sub blocks hanging off it. This convenience class lets us
+    //
+    // Some CryptoApis take structure parameters that have a huge number of sub blocks hanging off it. This convenience class lets us
     // allocate and preserve a collection of heap blocks in one single object.
     //
     internal sealed class HeapBlockRetainer : IDisposable
@@ -83,5 +83,3 @@ namespace Internal.Cryptography.Pal.Windows
         private List<SafeHeapAllocHandle> _blocks;
     }
 }
-
-

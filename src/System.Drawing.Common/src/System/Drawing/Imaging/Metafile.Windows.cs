@@ -176,7 +176,7 @@ namespace System.Drawing.Imaging
 
             SetNativeImage(metafile);
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref='Metafile'/> class with the specified filename.
         /// </summary>
@@ -375,20 +375,6 @@ namespace System.Drawing.Imaging
         {
             Gdip.CheckStatus(Gdip.GdipGetHemfFromMetafile(new HandleRef(this, nativeImage), out IntPtr hEmf));
             return hEmf;
-        }
-
-        /// <summary>
-        /// Create a new metafile object from a native metafile handle.
-        /// </summary>
-        internal static Metafile FromGDIplus(IntPtr nativeImage)
-        {
-            Metafile metafile = new Metafile();
-            metafile.SetNativeImage(nativeImage);
-            return metafile;
-        }
-
-        private Metafile()
-        {
         }
     }
 }

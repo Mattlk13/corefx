@@ -11,6 +11,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Linq.Parallel
 {
@@ -19,7 +20,7 @@ namespace System.Linq.Parallel
     /// a weakly typed IEnumerable object, allowing it to be accessed as a strongly typed
     /// IEnumerable{object}.
     /// </summary>
-    internal class EnumerableWrapperWeakToStrong : IEnumerable<object>
+    internal class EnumerableWrapperWeakToStrong : IEnumerable<object?>
     {
         private readonly IEnumerable _wrappedEnumerable; // The wrapped enumerable object.
 
@@ -38,7 +39,7 @@ namespace System.Linq.Parallel
             return ((IEnumerable<object>)this).GetEnumerator();
         }
 
-        public IEnumerator<object> GetEnumerator()
+        public IEnumerator<object?> GetEnumerator()
         {
             return new WrapperEnumeratorWeakToStrong(_wrappedEnumerable.GetEnumerator());
         }
@@ -47,9 +48,9 @@ namespace System.Linq.Parallel
         // A wrapper over IEnumerator that provides IEnumerator<object> interface
         //
 
-        class WrapperEnumeratorWeakToStrong : IEnumerator<object>
+        private class WrapperEnumeratorWeakToStrong : IEnumerator<object?>
         {
-            private IEnumerator _wrappedEnumerator; // The weakly typed enumerator we've wrapped.
+            private readonly IEnumerator _wrappedEnumerator; // The weakly typed enumerator we've wrapped.
 
             //-----------------------------------------------------------------------------------
             // Wrap the specified enumerator in a new weak-to-strong converter.
@@ -66,20 +67,19 @@ namespace System.Linq.Parallel
             // forward to the corresponding weakly typed IEnumerator methods.
             //
 
-            object IEnumerator.Current
+            object? IEnumerator.Current
             {
                 get { return _wrappedEnumerator.Current; }
             }
 
-            object IEnumerator<object>.Current
+            object? IEnumerator<object?>.Current
             {
                 get { return _wrappedEnumerator.Current; }
             }
 
             void IDisposable.Dispose()
             {
-                IDisposable disposable = _wrappedEnumerator as IDisposable;
-                if (disposable != null)
+                if (_wrappedEnumerator is IDisposable disposable)
                 {
                     disposable.Dispose();
                 }

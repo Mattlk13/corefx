@@ -21,16 +21,14 @@ namespace Microsoft.Win32.SafeHandles
         {
             if (s_captureTrace)
             {
-                Interop.Sys.PrintF(
-                    "%s\n\n",
-                    $"0x{handle.ToInt64():x} {_stacktrace?.ToString() ?? "no stacktrace..."}");
+                Console.WriteLine($"0x{handle.ToInt64():x} {_stacktrace?.ToString() ?? "no stacktrace..."}");
             }
         }
 #endif
 
         internal static readonly SafeX509Handle InvalidHandle = new SafeX509Handle();
 
-        private SafeX509Handle() : 
+        private SafeX509Handle() :
             base(IntPtr.Zero, ownsHandle: true)
         {
         }

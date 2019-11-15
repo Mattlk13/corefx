@@ -2,11 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace System.Data
@@ -85,7 +86,7 @@ namespace System.Data
             public int GetHashCode(DataRow obj) => obj._objectID;
         }
 
-        private DataViewListener _dvListener = null;
+        private readonly DataViewListener _dvListener = null;
 
         private static int s_objectTypeCount; // Bid counter
         private readonly int _objectID = System.Threading.Interlocked.Increment(ref s_objectTypeCount);
@@ -162,7 +163,7 @@ namespace System.Data
             SetIndex(Sort, RowState, newFilter);
         }
 
-        internal DataView(DataTable table, System.Predicate<DataRow> predicate, System.Comparison<DataRow> comparison, DataViewRowState RowState) 
+        internal DataView(DataTable table, System.Predicate<DataRow> predicate, System.Comparison<DataRow> comparison, DataViewRowState RowState)
         {
             GC.SuppressFinalize(this);
             DataCommonEventSource.Log.Trace("<ds.DataView.DataView|API> %d#, table=%d, RowState=%d{ds.DataViewRowState}\n",
@@ -475,7 +476,9 @@ namespace System.Data
         [RefreshProperties(RefreshProperties.All)]
         public DataTable Table
         {
+            [PreserveDependency(".ctor", "System.Data.DataTableTypeConverter")] // TODO: Remove when https://github.com/mono/linker/issues/800 is fixed
             get { return _table; }
+            [PreserveDependency(".ctor", "System.Data.DataTableTypeConverter")] // TODO: Remove when https://github.com/mono/linker/issues/800 is fixed
             set
             {
                 DataCommonEventSource.Log.Trace("<ds.DataView.set_Table|API> {0}, {1}", ObjectID, (value != null) ? value.ObjectID : 0);
@@ -757,7 +760,7 @@ namespace System.Data
         }
 
         /// <summary>This method exists for LinqDataView to keep a level of abstraction away from the RBTree</summary>
-        internal Range FindRecords<TKey,TRow>(Index.ComparisonBySelector<TKey,TRow> comparison, TKey key) where TRow:DataRow
+        internal Range FindRecords<TKey, TRow>(Index.ComparisonBySelector<TKey, TRow> comparison, TKey key) where TRow : DataRow
         {
             return _index.FindRecords(comparison, key);
         }
@@ -1599,8 +1602,6 @@ namespace System.Data
                     {
                         return;
                     }
-
-                    DataTable table = _index != null ? _index.Table : newIndex.Table;
 
                     if (_index != null)
                     {

@@ -20,10 +20,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -41,10 +41,6 @@ using Gdip = System.Drawing.SafeNativeMethods.Gdip;
 
 namespace System.Drawing
 {
-#if !NETCORE
-    [Editor ("System.Drawing.Design.FontEditor, " + Consts.AssemblySystem_Drawing_Design, typeof (System.Drawing.Design.UITypeEditor))]
-    [TypeConverter (typeof (FontConverter))]
-#endif
     public sealed partial class Font
     {
         private const byte DefaultCharSet = 1;
@@ -100,7 +96,7 @@ namespace System.Drawing
                     inchs = nSrc / 72f;
                     break;
                 default:
-                    throw new ArgumentException("Invalid GraphicsUnit");
+                    throw new ArgumentException(SR.InvalidGraphicsUnit);
             }
 
             switch (toUnit)
@@ -125,7 +121,7 @@ namespace System.Drawing
                     nTrg = inchs * 72;
                     break;
                 default:
-                    throw new ArgumentException("Invalid GraphicsUnit");
+                    throw new ArgumentException(SR.InvalidGraphicsUnit);
             }
         }
 
@@ -166,7 +162,7 @@ namespace System.Drawing
             IntPtr newObject;
             FontStyle newStyle = FontStyle.Regular;
             float newSize;
-            SafeNativeMethods.LOGFONT lf = new SafeNativeMethods.LOGFONT();
+            Interop.User32.LOGFONT lf = default;
 
             // Sanity. Should we throw an exception?
             if (hfont == IntPtr.Zero)
@@ -175,7 +171,7 @@ namespace System.Drawing
                 return (result);
             }
 
-            // If we're on Unix we use our private gdiplus API to avoid Wine 
+            // If we're on Unix we use our private gdiplus API to avoid Wine
             // dependencies in S.D
             int s = Gdip.GdipCreateFontFromHfont(hfont, out newObject, ref lf);
             Gdip.CheckStatus(s);
@@ -215,7 +211,7 @@ namespace System.Drawing
         public IntPtr ToHfont()
         {
             if (_nativeFont == IntPtr.Zero)
-                throw new ArgumentException("Object has been disposed.");
+                throw new ArgumentException(SR.ObjectDisposed);
 
             return _nativeFont;
         }
@@ -326,7 +322,7 @@ namespace System.Drawing
         public static Font FromLogFont(object lf, IntPtr hdc)
         {
             IntPtr newObject;
-            SafeNativeMethods.LOGFONT o = (SafeNativeMethods.LOGFONT)lf;
+            Interop.User32.LOGFONT o = (Interop.User32.LOGFONT)lf;
             int status = Gdip.GdipCreateFontFromLogfont(hdc, ref o, out newObject);
             Gdip.CheckStatus(status);
             return new Font(newObject, "Microsoft Sans Serif", FontStyle.Regular, 10);

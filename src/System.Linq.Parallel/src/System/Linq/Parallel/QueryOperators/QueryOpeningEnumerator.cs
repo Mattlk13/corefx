@@ -24,7 +24,7 @@ namespace System.Linq.Parallel
     internal class QueryOpeningEnumerator<TOutput> : IEnumerator<TOutput>
     {
         private readonly QueryOperator<TOutput> _queryOperator;
-        private IEnumerator<TOutput> _openedQueryEnumerator;
+        private IEnumerator<TOutput>? _openedQueryEnumerator;
         private QuerySettings _querySettings;
         private readonly ParallelMergeOptions? _mergeOptions;
         private readonly bool _suppressOrderPreservation;
@@ -81,7 +81,7 @@ namespace System.Linq.Parallel
             QueryLifecycle.LogicalQueryExecutionEnd(_querySettings.QueryId);
         }
 
-        object IEnumerator.Current
+        object? IEnumerator.Current
         {
             get { return ((IEnumerator<TOutput>)this).Current; }
         }
@@ -108,17 +108,17 @@ namespace System.Linq.Parallel
                 OpenQuery();
             }
 
-            bool innerMoveNextResult = _openedQueryEnumerator.MoveNext();
+            bool innerMoveNextResult = _openedQueryEnumerator!.MoveNext();
 
             // This provides cancellation-testing for the consumer-side of the buffers that appears in each scenario:
             //   Non-order-preserving (defaultMergeHelper)
-            //       - asynchronous channel (pipelining) 
+            //       - asynchronous channel (pipelining)
             //       - synchronous channel  (stop-and-go)
             //   Order-preserving (orderPreservingMergeHelper)
             //       - internal results buffer.
             // This moveNext is consuming data out of buffers, hence the inner moveNext is expected to be very fast.
             // => thus we only test for cancellation per-N-iterations.
-            // NOTE: the cancellation check occurs after performing moveNext in case the cancellation caused no data 
+            // NOTE: the cancellation check occurs after performing moveNext in case the cancellation caused no data
             //       to be produced.. We need to ensure that users sees an OCE rather than simply getting no data. (see Bug702254)
             if ((_moveNextIteration & CancellationState.POLL_INTERVAL) == 0)
             {

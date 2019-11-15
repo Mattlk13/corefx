@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections;
 using System.Xml;
 
@@ -16,7 +15,7 @@ namespace System.Security.Cryptography.Xml
         private string _signatureValueId;
         private KeyInfo _keyInfo;
         private IList _embeddedObjects;
-        private CanonicalXmlNodeList _referencedItems;
+        private readonly CanonicalXmlNodeList _referencedItems;
         private SignedXml _signedXml = null;
 
         internal SignedXml SignedXml
@@ -234,4 +233,3 @@ namespace System.Security.Cryptography.Xml
         }
     }
 }
-

@@ -2,7 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-// This file contains the classes necessary to represent the Transform processing model used in 
+// This file contains the classes necessary to represent the Transform processing model used in
 // XMLDSIG. The basic idea is as follows. A Reference object contains within it a TransformChain, which
 // is an ordered set of XMLDSIG transforms (represented by <Transform>...</Transform> clauses in the XML).
 // A transform in XMLDSIG operates on an input of either an octet stream or a node set and produces
@@ -14,15 +14,9 @@
 // Once the Transform chain is constructed, call TransformToOctetStream to convert some sort of input type to an octet
 // stream. (We only bother implementing that much now since every use of transform chains in XmlDsig ultimately yields something to hash).
 
-using System;
 using System.Collections;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
 using System.Xml;
-using System.Xml.XPath;
-using System.Xml.Xsl;
 
 namespace System.Security.Cryptography.Xml
 {

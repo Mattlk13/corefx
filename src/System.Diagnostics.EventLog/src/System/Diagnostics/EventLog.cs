@@ -251,7 +251,6 @@ namespace System.Diagnostics
             string source = sourceData.Source;
             string machineName = sourceData.MachineName;
 
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "CreateEventSource: Checking arguments");
             if (!SyntaxCheck.CheckMachineName(machineName))
             {
                 throw new ArgumentException(SR.Format(SR.InvalidParameter, nameof(machineName), machineName));
@@ -271,17 +270,13 @@ namespace System.Diagnostics
             try
             {
                 NetFrameworkUtils.EnterMutex(eventLogMutexName, ref mutex);
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "CreateEventSource: Calling SourceExists");
                 if (SourceExists(source, machineName, true))
                 {
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "CreateEventSource: SourceExists returned true");
                     if (".".Equals(machineName))
                         throw new ArgumentException(SR.Format(SR.LocalSourceAlreadyExists, source));
                     else
                         throw new ArgumentException(SR.Format(SR.SourceAlreadyExists, source, machineName));
                 }
-
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "CreateEventSource: Getting DllPath");
 
                 RegistryKey baseKey = null;
                 RegistryKey eventKey = null;
@@ -290,7 +285,6 @@ namespace System.Diagnostics
                 RegistryKey sourceKey = null;
                 try
                 {
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "CreateEventSource: Getting local machine regkey");
                     if (machineName == ".")
                         baseKey = Registry.LocalMachine;
                     else
@@ -454,8 +448,8 @@ namespace System.Diagnostics
             {
                 NetFrameworkUtils.EnterMutex(eventLogMutexName, ref mutex);
                 RegistryKey key = null;
-                // First open the key read only so we can do some checks.  This is important so we get the same 
-                // exceptions even if we don't have write access to the reg key. 
+                // First open the key read only so we can do some checks.  This is important so we get the same
+                // exceptions even if we don't have write access to the reg key.
                 using (key = FindSourceRegistration(source, machineName, true))
                 {
                     if (key == null)
@@ -761,10 +755,10 @@ namespace System.Diagnostics
 
         private static void SetSpecialLogRegValues(RegistryKey logKey, string logName)
         {
-            // Set all the default values for this log.  AutoBackupLogfiles only makes sense in 
-            // Win2000 SP4, WinXP SP1, and Win2003, but it should alright elsewhere. 
+            // Set all the default values for this log.  AutoBackupLogfiles only makes sense in
+            // Win2000 SP4, WinXP SP1, and Win2003, but it should alright elsewhere.
             // Since we use this method on the existing system logs as well as our own,
-            // we need to make sure we don't overwrite any existing values. 
+            // we need to make sure we don't overwrite any existing values.
             if (logKey.GetValue("MaxSize") == null)
                 logKey.SetValue("MaxSize", DefaultMaxSize, RegistryValueKind.DWord);
             if (logKey.GetValue("AutoBackupLogFiles") == null)
@@ -843,7 +837,7 @@ namespace System.Diagnostics
             if (largestNumber > insertionStrings.Length)
             {
                 string[] newStrings = new string[largestNumber];
-                Array.Copy(insertionStrings, 0, newStrings, 0, insertionStrings.Length);
+                Array.Copy(insertionStrings, newStrings, insertionStrings.Length);
                 for (int i = insertionStrings.Length; i < newStrings.Length; i++)
                 {
                     newStrings[i] = "%" + (i + 1);
@@ -925,7 +919,7 @@ namespace System.Diagnostics
         }
         // CharIsPrintable used to be Char.IsPrintable, but Jay removed it and
         // is forcing people to use the Unicode categories themselves.  Copied
-        // the code here.  
+        // the code here.
         private static bool CharIsPrintable(char c)
         {
             UnicodeCategory uc = char.GetUnicodeCategory(c);

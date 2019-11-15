@@ -136,7 +136,7 @@ namespace System.Xml.Xsl.Xslt
             if (++_lastRecord == _records.Length)
             {
                 ScopeRecord[] newRecords = new ScopeRecord[_lastRecord * 2];
-                Array.Copy(_records, 0, newRecords, 0, _lastRecord);
+                Array.Copy(_records, newRecords, _lastRecord);
                 _records = newRecords;
             }
             // reset scope count:
@@ -377,8 +377,8 @@ namespace System.Xml.Xsl.Xslt
 
         internal struct NamespaceEnumerator
         {
-            private CompilerScopeManager<V> _scope;
-            private int _lastRecord;
+            private readonly CompilerScopeManager<V> _scope;
+            private readonly int _lastRecord;
             private int _currentRecord;
 
             public NamespaceEnumerator(CompilerScopeManager<V> scope)

@@ -2,12 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Security;
-using System.Text;
 using Microsoft.Win32;
 using Xunit;
 
@@ -22,7 +19,6 @@ namespace System
         //
 
         public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        public static bool IsUap => IsInAppContainer;
         public static bool IsFullFramework => RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework", StringComparison.OrdinalIgnoreCase);
         public static bool HasWindowsShell => IsWindows && IsNotWindowsServerCore && IsNotWindowsNanoServer && IsNotWindowsIoTCore;
         public static bool IsWindows7 => IsWindows && GetWindowsVersion() == 6 && GetWindowsMinorVersion() == 1;
@@ -31,28 +27,30 @@ namespace System
         public static bool IsWindowsNanoServer => IsWindows && (IsNotWindowsIoTCore && GetWindowsInstallationType().Equals("Nano Server", StringComparison.OrdinalIgnoreCase));
         public static bool IsWindowsServerCore => IsWindows && GetWindowsInstallationType().Equals("Server Core", StringComparison.OrdinalIgnoreCase);
         public static int WindowsVersion => IsWindows ? (int)GetWindowsVersion() : -1;
+        public static bool IsNotWindows7 => !IsWindows7;
         public static bool IsNotWindows8x => !IsWindows8x;
         public static bool IsNotWindowsNanoServer => !IsWindowsNanoServer;
         public static bool IsNotWindowsServerCore => !IsWindowsServerCore;
         public static bool IsNotWindowsIoTCore => !IsWindowsIoTCore;
         public static bool IsNotWindowsHomeEdition => !IsWindowsHomeEdition;
         public static bool IsNotInAppContainer => !IsInAppContainer;
-        public static bool IsWinRTSupported => IsWindows && !IsWindows7;
+        public static bool IsWinRTSupported => IsWindows && IsNotWindows7;
+        public static bool IsWinUISupported => IsWinRTSupported && IsNotWindows8x && IsNotWindowsNanoServer && IsNotWindowsServerCore && IsNotWindowsIoTCore;
         public static bool IsNotWinRTSupported => !IsWinRTSupported;
         public static bool IsSoundPlaySupported => IsWindows && IsNotWindowsNanoServer;
 
         // >= Windows 10 Anniversary Update
         public static bool IsWindows10Version1607OrGreater => IsWindows &&
             GetWindowsVersion() == 10 && GetWindowsMinorVersion() == 0 && GetWindowsBuildNumber() >= 14393;
-        
+
          // >= Windows 10 Creators Update
         public static bool IsWindows10Version1703OrGreater => IsWindows &&
             GetWindowsVersion() == 10 && GetWindowsMinorVersion() == 0 && GetWindowsBuildNumber() >= 15063;
-        
+
         // >= Windows 10 Fall Creators Update
         public static bool IsWindows10Version1709OrGreater => IsWindows &&
             GetWindowsVersion() == 10 && GetWindowsMinorVersion() == 0 && GetWindowsBuildNumber() >= 16299;
-        
+
         // >= Windows 10 April 2018 Update
         public static bool IsWindows10Version1803OrGreater => IsWindows &&
             GetWindowsVersion() == 10 && GetWindowsMinorVersion() == 0 && GetWindowsBuildNumber() >= 17134;
@@ -60,10 +58,6 @@ namespace System
         // >= Windows 10 May 2019 Update (19H1)
         public static bool IsWindows10Version1903OrGreater => IsWindows &&
             GetWindowsVersion() == 10 && GetWindowsMinorVersion() == 0 && GetWindowsBuildNumber() >= 18362;
-
-        // Windows OneCoreUAP SKU doesn't have httpapi.dll
-        public static bool IsNotOneCoreUAP => !IsWindows ||
-            File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "httpapi.dll"));
 
         public static bool IsWindowsIoTCore
         {
@@ -134,7 +128,7 @@ namespace System
 
             return false;
         }
-        
+
         private static string GetWindowsInstallationType()
         {
             string key = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
@@ -144,7 +138,7 @@ namespace System
             {
                 value = (string)Registry.GetValue(key, "InstallationType", defaultValue: "");
             }
-            catch (Exception e) when (e is SecurityException || e is InvalidCastException || e is PlatformNotSupportedException /* UAP */)
+            catch (Exception e) when (e is SecurityException || e is InvalidCastException)
             {
             }
 
@@ -199,7 +193,7 @@ namespace System
         private static int s_isInAppContainer = -1;
         public static bool IsInAppContainer
         {
-            // This actually checks whether code is running in a modern app. 
+            // This actually checks whether code is running in a modern app.
             // Currently this is the only situation where we run in app container.
             // If we want to distinguish the two cases in future,
             // EnvironmentHelpers.IsAppContainerProcess in desktop code shows how to check for the AC token.
@@ -222,6 +216,9 @@ namespace System
                     switch (result)
                     {
                         case 15703: // APPMODEL_ERROR_NO_APPLICATION
+                        case 120:   // ERROR_CALL_NOT_IMPLEMENTED
+                                    // This function is not supported on this system.
+                                    // In example on Windows Nano Server
                             s_isInAppContainer = 0;
                             break;
                         case 0:     // ERROR_SUCCESS

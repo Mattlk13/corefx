@@ -83,8 +83,8 @@ namespace System.Data.Common
         {
             // This method is used to route CancellationTokens to the Cancel method.
             // Cancellation is a suggestion, and exceptions should be ignored
-            // rather than allowed to be unhandled, as the exceptions cannot be 
-            // routed to the caller. These errors will be observed in the regular 
+            // rather than allowed to be unhandled, as the exceptions cannot be
+            // routed to the caller. These errors will be observed in the regular
             // method instead.
             try
             {
@@ -125,7 +125,7 @@ namespace System.Data.Common
             }
             else
             {
-                CancellationTokenRegistration registration = new CancellationTokenRegistration();
+                CancellationTokenRegistration registration = default;
                 if (cancellationToken.CanBeCanceled)
                 {
                     registration = cancellationToken.Register(s => ((DbCommand)s).CancelIgnoreFailure(), this);
@@ -166,7 +166,7 @@ namespace System.Data.Common
             }
             else
             {
-                CancellationTokenRegistration registration = new CancellationTokenRegistration();
+                CancellationTokenRegistration registration = default;
                 if (cancellationToken.CanBeCanceled)
                 {
                     registration = cancellationToken.Register(s => ((DbCommand)s).CancelIgnoreFailure(), this);
@@ -198,7 +198,7 @@ namespace System.Data.Common
             }
             else
             {
-                CancellationTokenRegistration registration = new CancellationTokenRegistration();
+                CancellationTokenRegistration registration = default;
                 if (cancellationToken.CanBeCanceled)
                 {
                     registration = cancellationToken.Register(s => ((DbCommand)s).CancelIgnoreFailure(), this);

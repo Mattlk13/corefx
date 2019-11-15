@@ -3,28 +3,25 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Resources;
 using System.Runtime.CompilerServices;
+using System.Xml;
+using System.Xml.Serialization.Configuration;
+using System.Security;
+using System.Text.RegularExpressions;
+using System.Xml.Extensions;
 
 namespace System.Xml.Serialization
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Configuration;
-    using System.Globalization;
-    using System.Xml;
-    using System.Xml.Serialization.Configuration;
-    using System.Reflection;
-    using System.Reflection.Emit;
-    using System.IO;
-    using System.Security;
-    using System.Text.RegularExpressions;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Xml.Extensions;
-
     internal class CodeGenerator
     {
         internal static BindingFlags InstancePublicBindingFlags = BindingFlags.Instance | BindingFlags.Public;
@@ -35,7 +32,7 @@ namespace System.Xml.Serialization
         internal static MethodAttributes ProtectedOverrideMethodAttributes = MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig;
         internal static MethodAttributes PrivateMethodAttributes = MethodAttributes.Private | MethodAttributes.HideBySig;
 
-        private TypeBuilder _typeBuilder;
+        private readonly TypeBuilder _typeBuilder;
         private MethodBuilder _methodBuilder;
         private ILGenerator _ilGen;
         private Dictionary<string, ArgBuilder> _argList;
@@ -43,7 +40,7 @@ namespace System.Xml.Serialization
         // Stores a queue of free locals available in the context of the method, keyed by
         // type and name of the local
         private Dictionary<Tuple<Type, string>, Queue<LocalBuilder>> _freeLocals;
-        private Stack _blockStack;
+        private Stack<object> _blockStack;
         private Label _methodEndLabel;
 
         internal CodeGenerator(TypeBuilder typeBuilder)
@@ -91,12 +88,12 @@ namespace System.Xml.Serialization
         {
             _methodEndLabel = _ilGen.DefineLabel();
             this.retLabel = _ilGen.DefineLabel();
-            _blockStack = new Stack();
-            _whileStack = new Stack();
+            _blockStack = new Stack<object>();
+            _whileStack = new Stack<WhileState>();
             _currentScope = new LocalScope();
             _freeLocals = new Dictionary<Tuple<Type, string>, Queue<LocalBuilder>>();
             _argList = new Dictionary<string, ArgBuilder>();
-            // this ptr is arg 0 for non static, assuming ref type (not value type) 
+            // this ptr is arg 0 for non static, assuming ref type (not value type)
             if (!isStatic)
                 _argList.Add("this", new ArgBuilder("this", 0, _typeBuilder.BaseType));
             for (int i = 0; i < argTypes.Length; i++)
@@ -158,7 +155,7 @@ namespace System.Xml.Serialization
             get { return retLabel; }
         }
 
-        private Dictionary<Type, LocalBuilder> _tmpLocals = new Dictionary<Type, LocalBuilder>();
+        private readonly Dictionary<Type, LocalBuilder> _tmpLocals = new Dictionary<Type, LocalBuilder>();
         internal LocalBuilder GetTempLocal(Type type)
         {
             LocalBuilder localTmp;
@@ -333,7 +330,7 @@ namespace System.Xml.Serialization
             InternalIf(true);
         }
 
-        private static OpCode[] s_branchCodes = new OpCode[] {
+        private static readonly OpCode[] s_branchCodes = new OpCode[] {
             OpCodes.Bge,
             OpCodes.Bne_Un,
             OpCodes.Bgt,
@@ -381,7 +378,7 @@ namespace System.Xml.Serialization
             MarkLabel(ifState.EndIf);
         }
 
-        private Stack _leaveLabels = new Stack();
+        private readonly Stack<Label> _leaveLabels = new Stack<Label>();
         internal void BeginExceptionBlock()
         {
             _leaveLabels.Push(DefineLabel());
@@ -396,12 +393,12 @@ namespace System.Xml.Serialization
         internal void EndExceptionBlock()
         {
             _ilGen.EndExceptionBlock();
-            _ilGen.MarkLabel((Label)_leaveLabels.Pop());
+            _ilGen.MarkLabel(_leaveLabels.Pop());
         }
 
         internal void Leave()
         {
-            _ilGen.Emit(OpCodes.Leave, (Label)_leaveLabels.Peek());
+            _ilGen.Emit(OpCodes.Leave, _leaveLabels.Peek());
         }
 
         internal void Call(MethodInfo methodInfo)
@@ -687,26 +684,26 @@ namespace System.Xml.Serialization
             _ilGen.Emit(OpCodes.Unbox, type);
         }
 
-        private static OpCode[] s_ldindOpCodes = new OpCode[] {
-            OpCodes.Nop,//Empty = 0,
-            OpCodes.Nop,//Object = 1,
-            OpCodes.Nop,//DBNull = 2,
-            OpCodes.Ldind_I1,//Boolean = 3,
-            OpCodes.Ldind_I2,//Char = 4,
-            OpCodes.Ldind_I1,//SByte = 5,
-            OpCodes.Ldind_U1,//Byte = 6,
-            OpCodes.Ldind_I2,//Int16 = 7,
-            OpCodes.Ldind_U2,//UInt16 = 8,
-            OpCodes.Ldind_I4,//Int32 = 9,
-            OpCodes.Ldind_U4,//UInt32 = 10,
-            OpCodes.Ldind_I8,//Int64 = 11,
-            OpCodes.Ldind_I8,//UInt64 = 12,
-            OpCodes.Ldind_R4,//Single = 13,
-            OpCodes.Ldind_R8,//Double = 14,
-            OpCodes.Nop,//Decimal = 15,
-            OpCodes.Nop,//DateTime = 16,
-            OpCodes.Nop,//17
-            OpCodes.Ldind_Ref,//String = 18,
+        private static readonly OpCode[] s_ldindOpCodes = new OpCode[] {
+            OpCodes.Nop, //Empty = 0,
+            OpCodes.Nop, //Object = 1,
+            OpCodes.Nop, //DBNull = 2,
+            OpCodes.Ldind_I1, //Boolean = 3,
+            OpCodes.Ldind_I2, //Char = 4,
+            OpCodes.Ldind_I1, //SByte = 5,
+            OpCodes.Ldind_U1, //Byte = 6,
+            OpCodes.Ldind_I2, //Int16 = 7,
+            OpCodes.Ldind_U2, //UInt16 = 8,
+            OpCodes.Ldind_I4, //Int32 = 9,
+            OpCodes.Ldind_U4, //UInt32 = 10,
+            OpCodes.Ldind_I8, //Int64 = 11,
+            OpCodes.Ldind_I8, //UInt64 = 12,
+            OpCodes.Ldind_R4, //Single = 13,
+            OpCodes.Ldind_R8, //Double = 14,
+            OpCodes.Nop, //Decimal = 15,
+            OpCodes.Nop, //DateTime = 16,
+            OpCodes.Nop, //17
+            OpCodes.Ldind_Ref, //String = 18,
         };
 
 
@@ -1045,26 +1042,26 @@ namespace System.Xml.Serialization
             _ilGen.Emit(OpCodes.Conv_I4);
         }
 
-        private static OpCode[] s_ldelemOpCodes = new OpCode[] {
-            OpCodes.Nop,//Empty = 0,
-            OpCodes.Ldelem_Ref,//Object = 1,
-            OpCodes.Ldelem_Ref,//DBNull = 2,
-            OpCodes.Ldelem_I1,//Boolean = 3,
-            OpCodes.Ldelem_I2,//Char = 4,
-            OpCodes.Ldelem_I1,//SByte = 5,
-            OpCodes.Ldelem_U1,//Byte = 6,
-            OpCodes.Ldelem_I2,//Int16 = 7,
-            OpCodes.Ldelem_U2,//UInt16 = 8,
-            OpCodes.Ldelem_I4,//Int32 = 9,
-            OpCodes.Ldelem_U4,//UInt32 = 10,
-            OpCodes.Ldelem_I8,//Int64 = 11,
-            OpCodes.Ldelem_I8,//UInt64 = 12,
-            OpCodes.Ldelem_R4,//Single = 13,
-            OpCodes.Ldelem_R8,//Double = 14,
-            OpCodes.Nop,//Decimal = 15,
-            OpCodes.Nop,//DateTime = 16,
-            OpCodes.Nop,//17
-            OpCodes.Ldelem_Ref,//String = 18,
+        private static readonly OpCode[] s_ldelemOpCodes = new OpCode[] {
+            OpCodes.Nop, //Empty = 0,
+            OpCodes.Ldelem_Ref, //Object = 1,
+            OpCodes.Ldelem_Ref, //DBNull = 2,
+            OpCodes.Ldelem_I1, //Boolean = 3,
+            OpCodes.Ldelem_I2, //Char = 4,
+            OpCodes.Ldelem_I1, //SByte = 5,
+            OpCodes.Ldelem_U1, //Byte = 6,
+            OpCodes.Ldelem_I2, //Int16 = 7,
+            OpCodes.Ldelem_U2, //UInt16 = 8,
+            OpCodes.Ldelem_I4, //Int32 = 9,
+            OpCodes.Ldelem_U4, //UInt32 = 10,
+            OpCodes.Ldelem_I8, //Int64 = 11,
+            OpCodes.Ldelem_I8, //UInt64 = 12,
+            OpCodes.Ldelem_R4, //Single = 13,
+            OpCodes.Ldelem_R8, //Double = 14,
+            OpCodes.Nop, //Decimal = 15,
+            OpCodes.Nop, //DateTime = 16,
+            OpCodes.Nop, //17
+            OpCodes.Ldelem_Ref, //String = 18,
         };
 
         private OpCode GetLdelemOpCode(TypeCode typeCode)
@@ -1093,26 +1090,26 @@ namespace System.Xml.Serialization
             _ilGen.Emit(opCode, arrayElementType);
         }
 
-        private static OpCode[] s_stelemOpCodes = new OpCode[] {
-            OpCodes.Nop,//Empty = 0,
-            OpCodes.Stelem_Ref,//Object = 1,
-            OpCodes.Stelem_Ref,//DBNull = 2,
-            OpCodes.Stelem_I1,//Boolean = 3,
-            OpCodes.Stelem_I2,//Char = 4,
-            OpCodes.Stelem_I1,//SByte = 5,
-            OpCodes.Stelem_I1,//Byte = 6,
-            OpCodes.Stelem_I2,//Int16 = 7,
-            OpCodes.Stelem_I2,//UInt16 = 8,
-            OpCodes.Stelem_I4,//Int32 = 9,
-            OpCodes.Stelem_I4,//UInt32 = 10,
-            OpCodes.Stelem_I8,//Int64 = 11,
-            OpCodes.Stelem_I8,//UInt64 = 12,
-            OpCodes.Stelem_R4,//Single = 13,
-            OpCodes.Stelem_R8,//Double = 14,
-            OpCodes.Nop,//Decimal = 15,
-            OpCodes.Nop,//DateTime = 16,
-            OpCodes.Nop,//17
-            OpCodes.Stelem_Ref,//String = 18,
+        private static readonly OpCode[] s_stelemOpCodes = new OpCode[] {
+            OpCodes.Nop, //Empty = 0,
+            OpCodes.Stelem_Ref, //Object = 1,
+            OpCodes.Stelem_Ref, //DBNull = 2,
+            OpCodes.Stelem_I1, //Boolean = 3,
+            OpCodes.Stelem_I2, //Char = 4,
+            OpCodes.Stelem_I1, //SByte = 5,
+            OpCodes.Stelem_I1, //Byte = 6,
+            OpCodes.Stelem_I2, //Int16 = 7,
+            OpCodes.Stelem_I2, //UInt16 = 8,
+            OpCodes.Stelem_I4, //Int32 = 9,
+            OpCodes.Stelem_I4, //UInt32 = 10,
+            OpCodes.Stelem_I8, //Int64 = 11,
+            OpCodes.Stelem_I8, //UInt64 = 12,
+            OpCodes.Stelem_R4, //Single = 13,
+            OpCodes.Stelem_R8, //Double = 14,
+            OpCodes.Nop, //Decimal = 15,
+            OpCodes.Nop, //DateTime = 16,
+            OpCodes.Nop, //17
+            OpCodes.Stelem_Ref, //String = 18,
         };
 
         private OpCode GetStelemOpCode(TypeCode typeCode)
@@ -1205,26 +1202,26 @@ namespace System.Xml.Serialization
             _blockStack.Push(ifState);
         }
 
-        private static OpCode[] s_convOpCodes = new OpCode[] {
-            OpCodes.Nop,//Empty = 0,
-            OpCodes.Nop,//Object = 1,
-            OpCodes.Nop,//DBNull = 2,
-            OpCodes.Conv_I1,//Boolean = 3,
-            OpCodes.Conv_I2,//Char = 4,
-            OpCodes.Conv_I1,//SByte = 5,
-            OpCodes.Conv_U1,//Byte = 6,
-            OpCodes.Conv_I2,//Int16 = 7,
-            OpCodes.Conv_U2,//UInt16 = 8,
-            OpCodes.Conv_I4,//Int32 = 9,
-            OpCodes.Conv_U4,//UInt32 = 10,
-            OpCodes.Conv_I8,//Int64 = 11,
-            OpCodes.Conv_U8,//UInt64 = 12,
-            OpCodes.Conv_R4,//Single = 13,
-            OpCodes.Conv_R8,//Double = 14,
-            OpCodes.Nop,//Decimal = 15,
-            OpCodes.Nop,//DateTime = 16,
-            OpCodes.Nop,//17
-            OpCodes.Nop,//String = 18,
+        private static readonly OpCode[] s_convOpCodes = new OpCode[] {
+            OpCodes.Nop, //Empty = 0,
+            OpCodes.Nop, //Object = 1,
+            OpCodes.Nop, //DBNull = 2,
+            OpCodes.Conv_I1, //Boolean = 3,
+            OpCodes.Conv_I2, //Char = 4,
+            OpCodes.Conv_I1, //SByte = 5,
+            OpCodes.Conv_U1, //Byte = 6,
+            OpCodes.Conv_I2, //Int16 = 7,
+            OpCodes.Conv_U2, //UInt16 = 8,
+            OpCodes.Conv_I4, //Int32 = 9,
+            OpCodes.Conv_U4, //UInt32 = 10,
+            OpCodes.Conv_I8, //Int64 = 11,
+            OpCodes.Conv_U8, //UInt64 = 12,
+            OpCodes.Conv_R4, //Single = 13,
+            OpCodes.Conv_R8, //Double = 14,
+            OpCodes.Nop, //Decimal = 15,
+            OpCodes.Nop, //DateTime = 16,
+            OpCodes.Nop, //17
+            OpCodes.Nop, //String = 18,
         };
 
         private OpCode GetConvOpCode(TypeCode typeCode)
@@ -1414,30 +1411,38 @@ namespace System.Xml.Serialization
         // (bool on stack)
         // WhileEndCondition()
         // WhileEnd()
-        private Stack _whileStack;
+        private Stack<WhileState> _whileStack;
         internal void WhileBegin()
         {
             WhileState whileState = new WhileState(this);
-            Br(whileState.CondLabel);
+            // ECMA-335 III.1.7.5 states that code blocks after unconditional
+            // branch which could only be reached by backward branch are assumed
+            // to have empty stack on the entrance.
+            //
+            // Since we don't have control over the current stack contents here
+            // we have to generate conditional branch here instead of
+            // Br(whileState.CondLabel) to make the IL verifiable.
+            Ldc(true);
+            Brtrue(whileState.CondLabel);
             MarkLabel(whileState.StartLabel);
             _whileStack.Push(whileState);
         }
 
         internal void WhileEnd()
         {
-            WhileState whileState = (WhileState)_whileStack.Pop();
+            WhileState whileState = _whileStack.Pop();
             MarkLabel(whileState.EndLabel);
         }
 
         internal void WhileContinue()
         {
-            WhileState whileState = (WhileState)_whileStack.Peek();
+            WhileState whileState = _whileStack.Peek();
             Br(whileState.CondLabel);
         }
 
         internal void WhileBeginCondition()
         {
-            WhileState whileState = (WhileState)_whileStack.Peek();
+            WhileState whileState = _whileStack.Peek();
             // If there are two MarkLabel ILs consecutively, Labels will converge to one label.
             // This could cause the code to look different.  We insert Nop here specifically
             // that the While label stands out.
@@ -1447,7 +1452,7 @@ namespace System.Xml.Serialization
 
         internal void WhileEndCondition()
         {
-            WhileState whileState = (WhileState)_whileStack.Peek();
+            WhileState whileState = _whileStack.Peek();
             Brtrue(whileState.StartLabel);
         }
     }
@@ -1468,10 +1473,10 @@ namespace System.Xml.Serialization
 
     internal class ForState
     {
-        private LocalBuilder _indexVar;
-        private Label _beginLabel;
-        private Label _testLabel;
-        private object _end;
+        private readonly LocalBuilder _indexVar;
+        private readonly Label _beginLabel;
+        private readonly Label _testLabel;
+        private readonly object _end;
 
         internal ForState(LocalBuilder indexVar, Label beginLabel, Label testLabel, object end)
         {
@@ -1614,7 +1619,7 @@ namespace System.Xml.Serialization
                 Queue<LocalBuilder> freeLocalQueue;
                 if (freeLocals.TryGetValue(key, out freeLocalQueue))
                 {
-                    // Add to end of the queue so that it will be re-used in 
+                    // Add to end of the queue so that it will be re-used in
                     // FIFO manner
                     freeLocalQueue.Enqueue(item.Value);
                 }
@@ -1654,10 +1659,10 @@ namespace System.Xml.Serialization
 
     internal class CodeGeneratorConversionException : Exception
     {
-        private Type _sourceType;
-        private Type _targetType;
-        private bool _isAddress;
-        private string _reason;
+        private readonly Type _sourceType;
+        private readonly Type _targetType;
+        private readonly bool _isAddress;
+        private readonly string _reason;
 
         public CodeGeneratorConversionException(Type sourceType, Type targetType, bool isAddress, string reason)
             : base()

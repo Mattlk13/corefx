@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Diagnostics;
 using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
+using System.Tests;
 
 namespace System.Collections.Tests
 {
@@ -98,7 +99,7 @@ namespace System.Collections.Tests
                 var comparer = new CaseInsensitiveComparer(culture);
 
                 // Turkish has lower-case and upper-case version of the dotted "i", so the upper case of "i" (U+0069) isn't "I" (U+0049)
-                // but rather "İ" (U+0130)
+                // but rather U+0130.
                 if (culture.Name == "tr-TR")
                 {
                     Assert.Equal(1, comparer.Compare("file", "FILE"));
@@ -121,62 +122,46 @@ namespace System.Collections.Tests
         [InlineData("hello", "hello", 0)]
         [InlineData("HELLO", "HELLO", 0)]
         [InlineData("hello", "goodbye", 1)]
-        [InlineData("hello", "null", 1)]
-        [InlineData("null", "hello", -1)]
+        [InlineData("hello", null, 1)]
+        [InlineData(null, "hello", -1)]
         [InlineData("file", "FILE", 0)] // Turkey's comparing system is ignored as this is invariant
         [InlineData(5, 5, 0)]
         [InlineData(10, 5, 1)]
         [InlineData(5, 10, -1)]
-        [InlineData(5, "null", 1)]
-        [InlineData("null", 5, -1)]
-        [InlineData("null", "null", 0)]
+        [InlineData(5, null, 1)]
+        [InlineData(null, 5, -1)]
+        [InlineData(null, null, 0)]
         public void DefaultInvariant_Compare(object a, object b, int expected)
         {
-            RemoteExecutor.Invoke((ra, rb, rexpected) =>
+            var cultureNames = new string[]
             {
-                Func<string, object> convert = (string o) =>
-                {
-                    if (Int32.TryParse(o, out int ret))
-                        return ret;
-
-                    return (o == "null") ? null : o;
-                };
-
-                var ra_val = convert(ra);
-                var rb_val = convert(rb);
-                var rexpected_val = convert(rexpected);
-
-                var cultureNames = new string[]
-{
                 "cs-CZ","da-DK","de-DE","el-GR","en-US",
                 "es-ES","fi-FI","fr-FR","hu-HU","it-IT",
                 "ja-JP","ko-KR","nb-NO","nl-NL","pl-PL",
                 "pt-BR","pt-PT","ru-RU","sv-SE","tr-TR",
                 "zh-CN","zh-HK","zh-TW"
-};
+            };
 
-                foreach (string cultureName in cultureNames)
+            foreach (string cultureName in cultureNames)
+            {
+                CultureInfo culture;
+                try
                 {
-                    CultureInfo culture;
-                    try
-                    {
-                        culture = new CultureInfo(cultureName);
-                    }
-                    catch (CultureNotFoundException)
-                    {
-                        continue;
-                    }
+                    culture = new CultureInfo(cultureName);
+                }
+                catch (CultureNotFoundException)
+                {
+                    continue;
+                }
 
-                    // Set current culture
-                    CultureInfo.CurrentCulture = culture;
-                    CultureInfo.CurrentUICulture = culture;
-
+                // Set current culture
+                using (new ThreadCultureChange(culture, culture))
+                {
                     // All cultures should sort the same way, irrespective of the thread's culture
                     CaseInsensitiveComparer defaultInvComparer = CaseInsensitiveComparer.DefaultInvariant;
-                    Assert.Equal(rexpected_val, Math.Sign(defaultInvComparer.Compare(ra_val, rb_val)));
+                    Assert.Equal(expected, Math.Sign(defaultInvComparer.Compare(a, b)));
                 }
-                return RemoteExecutor.SuccessExitCode;
-            }, a.ToString(), b.ToString(), expected.ToString()).Dispose();
+            }
         }
 
         [Theory]
@@ -201,7 +186,7 @@ namespace System.Collections.Tests
         public void Default_Compare_TurkishI()
         {
             // Turkish has lower-case and upper-case version of the dotted "i", so the upper case of "i" (U+0069) isn't "I" (U+0049)
-            // but rather "İ" (U+0130)
+            // but rather U+0130.
             CultureInfo culture = CultureInfo.CurrentCulture;
             CaseInsensitiveComparer comparer = CaseInsensitiveComparer.Default;
             if (culture.Name == "tr-TR")

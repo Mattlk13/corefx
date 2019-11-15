@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
+using System.Tests;
 
 namespace System.Json.Tests
 {
@@ -128,7 +129,7 @@ namespace System.Json.Tests
                 Assert.Equal("[1, 2, 3, null, null]", value.ToString());
             });
         }
-        
+
         [Fact]
         public void JsonValue_ToString_JsonObjectWithNulls()
         {
@@ -173,7 +174,7 @@ namespace System.Json.Tests
         {
             AssertExtensions.Throws<ArgumentNullException>("jsonString", () => JsonValue.Parse(null));
         }
-        
+
         [Theory]
         [InlineData("")]
         [InlineData("-")]
@@ -274,14 +275,13 @@ namespace System.Json.Tests
         [InlineData("0.000000000000000000000000000011", 1.1E-29)]
         public void JsonValue_Parse_Double(string json, double expected)
         {
-            RemoteExecutor.Invoke((jsonInner, expectedInner) =>
+            foreach (string culture in new[] { "en", "fr", "de" })
             {
-                foreach (string culture in new[] { "en", "fr", "de" })
+                using (new ThreadCultureChange(culture))
                 {
-                    CultureInfo.CurrentCulture = new CultureInfo(culture);
-                    Assert.Equal(double.Parse(expectedInner, CultureInfo.InvariantCulture), (double)JsonValue.Parse(jsonInner));
+                    Assert.Equal(expected, (double)JsonValue.Parse(json));
                 }
-            }, json, expected.ToString("R", CultureInfo.InvariantCulture)).Dispose();
+            }
         }
 
         [Theory]
@@ -320,15 +320,13 @@ namespace System.Json.Tests
         [InlineData(1.123456789e-28)] // Values around the smallest positive decimal value
         public void JsonValue_Parse_Double_ViaJsonPrimitive(double number)
         {
-            RemoteExecutor.Invoke(numberText =>
+            foreach (string culture in new[] { "en", "fr", "de" })
             {
-                double numberInner = double.Parse(numberText, CultureInfo.InvariantCulture);
-                foreach (string culture in new[] { "en", "fr", "de" })
+                using (new ThreadCultureChange(culture))
                 {
-                    CultureInfo.CurrentCulture = new CultureInfo(culture);
-                    Assert.Equal(numberInner, (double)JsonValue.Parse(new JsonPrimitive(numberInner).ToString()));
+                    Assert.Equal(number, (double)JsonValue.Parse(new JsonPrimitive(number).ToString()));
                 }
-            }, number.ToString("R", CultureInfo.InvariantCulture)).Dispose();
+            }
         }
 
         [Fact]
@@ -361,7 +359,7 @@ namespace System.Json.Tests
             Assert.Equal("1E-30", JsonValue.Parse("1e-30").ToString());
             Assert.Equal("1E+30", JsonValue.Parse("1e+30").ToString());
         }
-        
+
         [Theory]
         [InlineData("Fact\b\f\n\r\t\"\\/</\0x")]
         [InlineData("x\ud800")]
@@ -392,14 +390,14 @@ namespace System.Json.Tests
         public void JsonPrimitive_StringHandling()
         {
             Assert.Equal("\"Fact\"", new JsonPrimitive("Fact").ToString());
-            
+
             // Handling of characters
             Assert.Equal("\"f\"", new JsonPrimitive('f').ToString());
             Assert.Equal('f', (char)JsonValue.Parse("\"f\""));
 
             // Control characters with special escape sequence
             Assert.Equal("\"\\b\\f\\n\\r\\t\"", new JsonPrimitive("\b\f\n\r\t").ToString());
-            
+
             // Other characters which must be escaped
             Assert.Equal(@"""\""\\""", new JsonPrimitive("\"\\").ToString());
 
@@ -596,7 +594,7 @@ namespace System.Json.Tests
             JsonValue fromPrimitive = toPrimitive;
             Assert.Equal(primitive, toPrimitive);
         }
-        
+
         [Fact]
         public void ImplicitCast_Double()
         {

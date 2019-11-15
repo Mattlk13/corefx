@@ -2,14 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Internal.Cryptography;
 using Microsoft.Win32.SafeHandles;
 
 namespace System.Security.Cryptography
@@ -32,8 +25,6 @@ namespace System.Security.Cryptography
             Span<byte> tag,
             ReadOnlySpan<byte> associatedData = default)
         {
-            ref byte nullRef = ref MemoryMarshal.GetReference(Span<byte>.Empty);
-
             using (SafeEvpCipherCtxHandle ctx = Interop.Crypto.EvpCipherCreatePartial(GetCipher(_key.Length * 8)))
             {
                 Interop.Crypto.CheckValidOpenSslHandle(ctx);

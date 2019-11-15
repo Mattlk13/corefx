@@ -17,7 +17,6 @@ namespace System.Net.Http.Functional.Tests
 {
     using Configuration = System.Net.Test.Common.Configuration;
 
-    [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "SslProtocols not supported on UAP")]
     public abstract partial class HttpClientHandler_SslProtocols_Test : HttpClientHandlerTestBase
     {
         public HttpClientHandler_SslProtocols_Test(ITestOutputHelper output) : base(output) { }
@@ -57,11 +56,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SetProtocols_AfterRequest_ThrowsException()
         {
-            if (!BackendSupportsSslConfiguration)
-            {
-                return;
-            }
-
             using (HttpClientHandler handler = CreateHttpClientHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -111,19 +105,6 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(GetAsync_AllowedSSLVersion_Succeeds_MemberData))]
         public async Task GetAsync_AllowedSSLVersion_Succeeds(SslProtocols acceptedProtocol, bool requestOnlyThisProtocol)
         {
-            if (!BackendSupportsSslConfiguration)
-            {
-                return;
-            }
-
-#pragma warning disable 0618
-            if (IsCurlHandler && PlatformDetection.IsRedHatFamily6 && acceptedProtocol == SslProtocols.Ssl3)
-            {
-                // Issue: #28790: SSLv3 is supported on RHEL 6, but it fails with curl.
-                throw new SkipTestException("CurlHandler (libCurl) has problems with SSL3 on RH6");
-            }
-#pragma warning restore 0618
-
             using (HttpClientHandler handler = CreateHttpClientHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -133,6 +114,15 @@ namespace System.Net.Http.Functional.Tests
                 {
                     handler.SslProtocols = acceptedProtocol;
                 }
+                else
+                {
+                    // Explicitly setting protocols clears implementation default
+                    // restrictions on minimum TLS/SSL version
+                    // We currently know that some platforms like Debian 10 OpenSSL
+                    // will by default block < TLS 1.2
+                    handler.SslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
+                }
+
                 var options = new LoopbackServer.Options { UseSsl = true, SslProtocols = acceptedProtocol };
                 await LoopbackServer.CreateServerAsync(async (server, url) =>
                 {
@@ -225,11 +215,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_NoSpecifiedProtocol_DefaultsToTls12()
         {
-            if (!BackendSupportsSslConfiguration)
-            {
-                return;
-            }
-
             using (HttpClientHandler handler = CreateHttpClientHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -261,12 +246,7 @@ namespace System.Net.Http.Functional.Tests
         public async Task GetAsync_AllowedClientSslVersionDiffersFromServer_ThrowsException(
             SslProtocols allowedClientProtocols, SslProtocols acceptedServerProtocols)
         {
-            if (!BackendSupportsSslConfiguration)
-            {
-                return;
-            }
-
-            if (IsWinHttpHandler && 
+            if (IsWinHttpHandler &&
                 allowedClientProtocols == (SslProtocols.Tls11 | SslProtocols.Tls12) &&
                 acceptedServerProtocols == SslProtocols.Tls)
             {

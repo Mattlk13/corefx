@@ -15,7 +15,7 @@ using System.Threading;
 namespace System.Linq.Parallel
 {
     /// <summary>
-    /// An inlined count aggregation and its enumerator. 
+    /// An inlined count aggregation and its enumerator.
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     internal sealed class LongCountAggregationOperator<TSource> : InlinedAggregationOperator<TSource, long, long>
@@ -36,9 +36,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override long InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override long InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -63,7 +63,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<long, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<TSource, TKey> source, object sharedData, CancellationToken cancellationToken)
+            int index, int count, QueryOperatorEnumerator<TSource, TKey> source, object? sharedData, CancellationToken cancellationToken)
         {
             return new LongCountAggregationOperatorEnumerator<TKey>(source, index, cancellationToken);
         }
@@ -96,8 +96,8 @@ namespace System.Linq.Parallel
 
             protected override bool MoveNextCore(ref long currentElement)
             {
-                TSource elementUnused = default(TSource);
-                TKey keyUnused = default(TKey);
+                TSource elementUnused = default(TSource)!;
+                TKey keyUnused = default(TKey)!;
 
                 QueryOperatorEnumerator<TSource, TKey> source = _source;
                 if (source.MoveNext(ref elementUnused, ref keyUnused))

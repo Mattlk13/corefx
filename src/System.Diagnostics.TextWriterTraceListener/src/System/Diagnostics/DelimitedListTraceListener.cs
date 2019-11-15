@@ -179,11 +179,14 @@ namespace System.Diagnostics
                 if (IsEnabled(TraceOptions.Timestamp))
                     Write(eventCache.Timestamp.ToString(CultureInfo.InvariantCulture));
                 Write(Delimiter); // Use get_Delimiter
+
+                if (IsEnabled(TraceOptions.Callstack))
+                    WriteEscaped(eventCache.Callstack);
             }
             else
             {
                 for (int i = 0; i < 5; i++)
-                    Write(Delimiter); // Use get_Delimiter 
+                    Write(Delimiter); // Use get_Delimiter
             }
 
             WriteLine("");
@@ -214,7 +217,7 @@ namespace System.Diagnostics
                 {
                     first = false;
                 }
-                
+
                 string operation = obj.ToString();
                 EscapeMessage(operation, sb);
             }

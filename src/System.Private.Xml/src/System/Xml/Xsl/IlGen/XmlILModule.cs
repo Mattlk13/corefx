@@ -24,11 +24,11 @@ namespace System.Xml.Xsl.IlGen
     internal class XmlILModule
     {
         private static long s_assemblyId;                                     // Unique identifier used to ensure that assembly names are unique within AppDomain
-        private static ModuleBuilder s_LREModule = CreateLREModule();         // Module used to emit dynamic lightweight-reflection-emit (LRE) methods
+        private static readonly ModuleBuilder s_LREModule = CreateLREModule();         // Module used to emit dynamic lightweight-reflection-emit (LRE) methods
 
         private TypeBuilder _typeBldr;
         private Hashtable _methods;
-        private bool _useLRE, _emitSymbols;
+        private readonly bool _useLRE, _emitSymbols;
 
         private const string RuntimeName = "{" + XmlReservedNs.NsXslDebug + "}" + "runtime";
 
@@ -67,9 +67,9 @@ namespace System.Xml.Xsl.IlGen
             }
         }
 
-        // SxS note: AssemblyBuilder.DefineDynamicModule() below may be using name which is not SxS safe. 
-        // This file is written only for internal tracing/debugging purposes. In retail builds persistAsm 
-        // will be always false and the file should never be written. As a result it's fine just to suppress 
+        // SxS note: AssemblyBuilder.DefineDynamicModule() below may be using name which is not SxS safe.
+        // This file is written only for internal tracing/debugging purposes. In retail builds persistAsm
+        // will be always false and the file should never be written. As a result it's fine just to suppress
         // the SxS warning.
         public XmlILModule(bool useLRE, bool emitSymbols)
         {

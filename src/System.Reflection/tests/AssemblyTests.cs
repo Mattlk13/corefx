@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection.Tests;
 using System.Runtime.CompilerServices;
 using System.Security;
+using System.Text;
 using Xunit;
 
 [assembly:
@@ -32,7 +33,7 @@ namespace System.Reflection.Tests
         private string DestTestAssemblyPath { get; }
         private string LoadFromTestPath { get; }
 
-        public AssemblyTests() 
+        public AssemblyTests()
         {
             // Assembly.Location does not return the file path for single-file deployment targets.
             DestTestAssemblyPath = Path.Combine(base.TestDirectory, "TestAssembly.dll");
@@ -144,8 +145,7 @@ namespace System.Reflection.Tests
         {
             Assert.NotNull(Assembly.GetEntryAssembly());
             string assembly = Assembly.GetEntryAssembly().ToString();
-            bool correct = assembly.IndexOf("xunit.console", StringComparison.OrdinalIgnoreCase) != -1 ||
-                           assembly.IndexOf("Microsoft.DotNet.XUnitRunnerUap", StringComparison.OrdinalIgnoreCase) != -1;
+            bool correct = assembly.IndexOf("xunit.console", StringComparison.OrdinalIgnoreCase) != -1;
             Assert.True(correct, $"Unexpected assembly name {assembly}");
         }
 
@@ -226,7 +226,7 @@ namespace System.Reflection.Tests
             Assembly a = typeof(AssemblyTests).Assembly;
             Type t = a.GetType("G`1[[G`1[[System.Int32, mscorlib]]]]", throwOnError: true, ignoreCase: false);
             Assert.Equal(typeof(G<G<int>>), t);
-        }    
+        }
 
         [Fact]
         public void GlobalAssemblyCache()
@@ -270,7 +270,7 @@ namespace System.Reflection.Tests
         public void SecurityRuleSet_Netcore()
         {
             Assert.Equal(SecurityRuleSet.None, typeof(AssemblyTests).Assembly.SecurityRuleSet);
-        }     
+        }
 
         [Theory]
         [MemberData(nameof(Load_TestData))]
@@ -287,7 +287,6 @@ namespace System.Reflection.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Assembly.LoadFile() not supported on UWP")]
         public void LoadFile()
         {
             Assembly currentAssembly = typeof(AssemblyTests).Assembly;
@@ -297,7 +296,7 @@ namespace System.Reflection.Tests
             var loadedAssembly1 = Assembly.LoadFile(fullRuntimeTestsPath);
             Assert.NotEqual(currentAssembly, loadedAssembly1);
 
-#if netcoreapp
+#if NETCOREAPP
             System.Runtime.Loader.AssemblyLoadContext alc = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(loadedAssembly1);
             string expectedName = string.Format("Assembly.LoadFile({0})", fullRuntimeTestsPath);
             Assert.Equal(expectedName, alc.Name);
@@ -314,18 +313,58 @@ namespace System.Reflection.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)]
         public void LoadFile_NullPath_Netcore_ThrowsArgumentNullException()
         {
             AssertExtensions.Throws<ArgumentNullException>("path", () => Assembly.LoadFile(null));
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Assembly.LoadFile() not supported on UWP")]
-        public void LoadFile_NoSuchPath_ThrowsArgumentException()
+        public void LoadFile_NoSuchPath_ThrowsFileNotFoundException()
         {
-            AssertExtensions.Throws<ArgumentException>("path", null, () => Assembly.LoadFile("System.Runtime.Tests.dll"));
-        }       
+            string rootedPath = Path.GetFullPath(Guid.NewGuid().ToString("N"));
+            AssertExtensions.ThrowsContains<FileNotFoundException>(() => Assembly.LoadFile(rootedPath), rootedPath);
+        }
+
+        [Fact]
+        public void LoadFile_PartiallyQualifiedPath_ThrowsArgumentException()
+        {
+            string path = "System.Runtime.Tests.dll";
+            ArgumentException ex = AssertExtensions.Throws<ArgumentException>("path", () => Assembly.LoadFile(path));
+            Assert.Contains(path, ex.Message);
+        }
+
+        // This test should apply equally to Unix, but this reliably hits a particular one of the
+        // myriad ways that assembly load can fail
+        [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
+        public void LoadFile_ValidPEBadIL_ThrowsBadImageFormatExceptionWithPath()
+        {
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "kernelbase.dll");
+            if (!File.Exists(path))
+                return;
+
+            AssertExtensions.ThrowsContains<BadImageFormatException>(() => Assembly.LoadFile(path), path);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(5)]
+        [InlineData(50)]
+        [InlineData(100)]
+        // Higher numbers hit some codepaths that currently don't include the path in the exception message
+        public void LoadFile_ValidPEBadIL_ThrowsBadImageFormatExceptionWithPath(int seek)
+        {
+            ReadOnlySpan<byte> garbage = Encoding.UTF8.GetBytes(new string('X', 500));
+            string path = GetTestFilePath();
+            File.Copy(SourceTestAssemblyPath, path);
+            using (var fs = new FileStream(path, FileMode.Open))
+            {
+                fs.Position = seek;
+                fs.Write(garbage);
+            }
+
+            AssertExtensions.ThrowsContains<BadImageFormatException>(() => Assembly.LoadFile(path), path);
+        }
 
         [Fact]
         public void LoadFromUsingHashValue_Netcore()
@@ -410,7 +449,7 @@ namespace System.Reflection.Tests
             AssertExtensions.Throws<ArgumentNullException>("partialName", () => Assembly.LoadWithPartialName(null));
             AssertExtensions.Throws<ArgumentException>("partialName", () => Assembly.LoadWithPartialName(""));
             Assert.Null(Assembly.LoadWithPartialName("no such assembly"));
-        }        
+        }
 #pragma warning restore 618
 
         [Fact]
@@ -486,8 +525,8 @@ namespace System.Reflection.Tests
 
             assembly = typeof(AssemblyTests).Assembly;
             Assert.Throws(exceptionType, () => assembly.CreateInstance(typeName, true, BindingFlags.Public, null, null, null, null));
-            Assert.Throws(exceptionType, () => assembly.CreateInstance(typeName, false, BindingFlags.Public, null, null, null, null));            
-        }     
+            Assert.Throws(exceptionType, () => assembly.CreateInstance(typeName, false, BindingFlags.Public, null, null, null, null));
+        }
 
         [Fact]
         public void CreateQualifiedName()
@@ -588,11 +627,11 @@ namespace System.Reflection.Tests
             AssemblyName an = typeof(AssemblyTests).Assembly.GetName();
             string fullName = an.FullName;
             string simpleName = an.Name;
-        
+
             Assembly a1 = Assembly.Load(fullName);
             Assert.NotNull(a1);
             Assert.Equal(fullName, a1.GetName().FullName);
-        
+
             Assembly a2 = Assembly.Load(simpleName);
             Assert.NotNull(a2);
             Assert.Equal(fullName, a2.GetName().FullName);
@@ -603,7 +642,7 @@ namespace System.Reflection.Tests
         {
             Assert.Throws<ArgumentNullException>(() => Assembly.Load((string)null));
             AssertExtensions.Throws<ArgumentException>(null, () => Assembly.Load(string.Empty));
-        
+
             string emptyCName = new string('\0', 1);
             AssertExtensions.Throws<ArgumentException>(null, () => Assembly.Load(emptyCName));
 
@@ -611,7 +650,6 @@ namespace System.Reflection.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Assembly.Load(byte[]) not supported on UWP")]
         public void AssemblyLoadFromBytes()
         {
             Assembly assembly = typeof(AssemblyTests).Assembly;
@@ -623,7 +661,6 @@ namespace System.Reflection.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Assembly.Load(byte[]) not supported on UWP")]
         public void AssemblyLoadFromBytesNeg()
         {
             Assert.Throws<ArgumentNullException>(() => Assembly.Load((byte[])null));
@@ -631,7 +668,6 @@ namespace System.Reflection.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Assembly.Load(byte[]) not supported on UWP")]
         public void AssemblyLoadFromBytesWithSymbols()
         {
             Assembly assembly = typeof(AssemblyTests).Assembly;
@@ -737,7 +773,7 @@ namespace System.Reflection.Tests
         private static Assembly GetGetCallingAssembly()
         {
             return Assembly.GetCallingAssembly();
-        }        
+        }
     }
 
     public struct PublicStruct { }

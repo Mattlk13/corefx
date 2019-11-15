@@ -17,12 +17,12 @@ namespace System.Transactions
     //
     //  The legacy TransactionScope uses TLS to store the ambient transaction. TLS data doesn't flow across thread continuations and hence legacy TransactionScope does not compose well with
     //  new .NET async programming model constructs like Tasks and async/await. To enable TransactionScope to work with Task and async/await, a new TransactionScopeAsyncFlowOption
-    //  is introduced. When users opt-in the async flow option, ambient transaction will automatically flow across thread continuations and user can compose TransactionScope with Task and/or    
-    //  async/await constructs. 
-    // 
+    //  is introduced. When users opt-in the async flow option, ambient transaction will automatically flow across thread continuations and user can compose TransactionScope with Task and/or
+    //  async/await constructs.
+    //
     public enum TransactionScopeAsyncFlowOption
     {
-        Suppress, // Ambient transaction will be stored in TLS and will not flow across thread continuations. 
+        Suppress, // Ambient transaction will be stored in TLS and will not flow across thread continuations.
         Enabled,  // Ambient transaction will be stored in CallContext and will flow across thread continuations. This option will enable TransactionScope to compose well with Task and async/await.
     }
 
@@ -93,7 +93,7 @@ namespace System.Transactions
                     etwLog.TransactionScopeCreated(_expectedCurrent.TransactionTraceId, scopeResult);
                 }
             }
- 
+
             PushScope();
 
             if (etwLog.IsEnabled())
@@ -270,7 +270,7 @@ namespace System.Transactions
             {
                 etwLog.MethodEnter(TraceSourceType.TraceSourceBase, this);
             }
- 
+
             ValidateScopeTimeout("transactionOptions.Timeout", transactionOptions.Timeout);
             TimeSpan scopeTimeout = transactionOptions.Timeout;
 
@@ -497,7 +497,7 @@ namespace System.Transactions
         }
 
 
-        // We don't have a finalizer (~TransactionScope) because all it would be able to do is try to 
+        // We don't have a finalizer (~TransactionScope) because all it would be able to do is try to
         // operate on other managed objects (the transaction), which is not safe to do because they may
         // already have been finalized.
 
@@ -530,21 +530,22 @@ namespace System.Transactions
                 throw new InvalidOperationException(SR.InvalidScopeThread);
             }
 
-            Exception exToThrow = null;
+            Exception? exToThrow = null;
 
             try
             {
                 // Single threaded from this point
                 _disposed = true;
 
+                Debug.Assert(_threadContextData != null);
                 // First, lets pop the "stack" of TransactionScopes and dispose each one that is above us in
                 // the stack, making sure they are NOT consistent before disposing them.
 
                 // Optimize the first lookup by getting both the actual current scope and actual current
                 // transaction at the same time.
-                TransactionScope actualCurrentScope = _threadContextData.CurrentScope;
-                Transaction contextTransaction = null;
-                Transaction current = Transaction.FastGetTransaction(actualCurrentScope, _threadContextData, out contextTransaction);
+                TransactionScope? actualCurrentScope = _threadContextData.CurrentScope;
+                Transaction? contextTransaction = null;
+                Transaction? current = Transaction.FastGetTransaction(actualCurrentScope, _threadContextData, out contextTransaction);
 
                 if (!Equals(actualCurrentScope))
                 {
@@ -556,7 +557,7 @@ namespace System.Transactions
                         // Something must have gone wrong trying to clean up a bad scope
                         // stack previously.
                         // Make a best effort to abort the active transaction.
-                        Transaction rollbackTransaction = _committableTransaction;
+                        Transaction? rollbackTransaction = _committableTransaction;
                         if (rollbackTransaction == null)
                         {
                             rollbackTransaction = _dependentTransaction;
@@ -633,7 +634,7 @@ namespace System.Transactions
                                 current == null ? Guid.Empty : current.DistributedTxId);
                         }
 
-                        if (null == actualCurrentScope._expectedCurrent)
+                        if (null == actualCurrentScope!._expectedCurrent)
                         {
                             if (etwLog.IsEnabled())
                             {
@@ -793,7 +794,7 @@ namespace System.Transactions
                         // Note: Rollback is not called on expected current because someone could conceiveably
                         //       dispose expectedCurrent out from under the transaction scope.
                         //
-                        Transaction rollbackTransaction = _committableTransaction;
+                        Transaction? rollbackTransaction = _committableTransaction;
                         if (rollbackTransaction == null)
                         {
                             rollbackTransaction = _dependentTransaction;
@@ -827,6 +828,7 @@ namespace System.Transactions
                 {
                     _committableTransaction.Dispose();
 
+                    Debug.Assert(_expectedCurrent != null);
                     // If we created the committable transaction then we placed a clone in expectedCurrent
                     // and it needs to be disposed as well.
                     _expectedCurrent.Dispose();
@@ -863,9 +865,9 @@ namespace System.Transactions
             }
         }
 
-        private static void TimerCallback(object state)
+        private static void TimerCallback(object? state)
         {
-            TransactionScope scope = state as TransactionScope;
+            TransactionScope? scope = state as TransactionScope;
             if (null == scope)
             {
                 TransactionsEtwProvider etwLog = TransactionsEtwProvider.Log;
@@ -930,7 +932,7 @@ namespace System.Transactions
                             out _contextTransaction
                             );
 
-            // Calling validate here as we need to make sure the existing parent ambient transaction scope is already looked up to see if we have ES interop enabled.  
+            // Calling validate here as we need to make sure the existing parent ambient transaction scope is already looked up to see if we have ES interop enabled.
             ValidateAsyncFlowOptionAndESInteropOption();
         }
 
@@ -952,7 +954,8 @@ namespace System.Transactions
 
             if (AsyncFlowEnabled)
             {
-                // Async Flow is enabled and CallContext will be used for ambient transaction. 
+                Debug.Assert(ContextKey != null);
+                // Async Flow is enabled and CallContext will be used for ambient transaction.
                 _threadContextData = CallContextCurrentData.CreateOrGetCurrentData(ContextKey);
 
                 if (_savedCurrentScope == null && _savedCurrent == null)
@@ -998,6 +1001,7 @@ namespace System.Transactions
             {
                 if (_savedCurrentScope.AsyncFlowEnabled)
                 {
+                    Debug.Assert(_savedCurrentScope.ContextKey != null);
                     _threadContextData = CallContextCurrentData.CreateOrGetCurrentData(_savedCurrentScope.ContextKey);
                 }
                 else
@@ -1036,9 +1040,10 @@ namespace System.Transactions
                 }
             }
 
-            // prevent restoring the context in an unexpected thread due to thread switch during TransactionScope's Dispose 
+            // prevent restoring the context in an unexpected thread due to thread switch during TransactionScope's Dispose
             if (shouldRestoreContextData)
             {
+                Debug.Assert(_threadContextData != null);
                 _threadContextData.CurrentScope = _savedCurrentScope;
                 RestoreCurrent();
             }
@@ -1047,7 +1052,7 @@ namespace System.Transactions
         // SetCurrent
         //
         // Place the given value in current by whatever means necessary for interop mode.
-        private void SetCurrent(Transaction newCurrent)
+        private void SetCurrent(Transaction? newCurrent)
         {
             // Keep a dependent clone of current if we don't have one and we are not committable
             if (_dependentTransaction == null && _committableTransaction == null)
@@ -1061,7 +1066,7 @@ namespace System.Transactions
             switch (_interopOption)
             {
                 case EnterpriseServicesInteropOption.None:
-                    _threadContextData.CurrentTransaction = newCurrent;
+                    _threadContextData!.CurrentTransaction = newCurrent;
                     break;
 
                 case EnterpriseServicesInteropOption.Automatic:
@@ -1072,7 +1077,7 @@ namespace System.Transactions
                     }
                     else
                     {
-                        _threadContextData.CurrentTransaction = newCurrent;
+                        _threadContextData!.CurrentTransaction = newCurrent;
                     }
                     break;
 
@@ -1118,7 +1123,7 @@ namespace System.Transactions
             }
 
             // Only restore the value that was actually in the context.
-            _threadContextData.CurrentTransaction = _contextTransaction;
+            _threadContextData!.CurrentTransaction = _contextTransaction;
         }
 
 
@@ -1137,7 +1142,7 @@ namespace System.Transactions
         // ValidateScopeTimeout
         //
         // Scope timeouts are not governed by MaxTimeout and therefore need a special validate function
-        private void ValidateScopeTimeout(string paramName, TimeSpan scopeTimeout)
+        private void ValidateScopeTimeout(string? paramName, TimeSpan scopeTimeout)
         {
             if (scopeTimeout < TimeSpan.Zero)
             {
@@ -1158,7 +1163,7 @@ namespace System.Transactions
             }
         }
 
-        // The validate method assumes that the existing parent ambient transaction scope is already looked up.  
+        // The validate method assumes that the existing parent ambient transaction scope is already looked up.
         private void ValidateAsyncFlowOptionAndESInteropOption()
         {
             if (AsyncFlowEnabled)
@@ -1189,41 +1194,41 @@ namespace System.Transactions
         }
 
         // Storage location for the previous current transaction.
-        private Transaction _savedCurrent;
+        private Transaction? _savedCurrent;
 
         // To ensure that we don't restore a value for current that was
         // returned to us by an external entity keep the value that was actually
         // in TLS when the scope was created.
-        private Transaction _contextTransaction;
+        private Transaction? _contextTransaction;
 
         // Storage for the value to restore to current
-        private TransactionScope _savedCurrentScope;
+        private TransactionScope? _savedCurrentScope;
 
         // Store a reference to the context data object for this scope.
-        private ContextData _threadContextData;
+        private ContextData? _threadContextData;
 
-        private ContextData _savedTLSContextData;
+        private ContextData? _savedTLSContextData;
 
         // Store a reference to the value that this scope expects for current
-        private Transaction _expectedCurrent;
+        private Transaction? _expectedCurrent;
 
-        // Store a reference to the committable form of this transaction if 
+        // Store a reference to the committable form of this transaction if
         // the scope made one.
-        private CommittableTransaction _committableTransaction;
+        private CommittableTransaction? _committableTransaction;
 
         // Store a reference to the scopes transaction guard.
-        private DependentTransaction _dependentTransaction;
+        private DependentTransaction? _dependentTransaction;
 
         // Note when the scope is disposed.
         private bool _disposed;
 
         // BUGBUG: A shared timer should be used.
         // Individual timer for this scope.
-        private Timer _scopeTimer;
+        private Timer? _scopeTimer;
 
         // Store a reference to the thread on which the scope was created so that we can
         // check to make sure that the dispose pattern for scope is being used correctly.
-        private Thread _scopeThread;
+        private Thread? _scopeThread;
 
         // Store the interop mode for this transaction scope.
         private bool _interopModeSpecified = false;
@@ -1236,7 +1241,7 @@ namespace System.Transactions
             }
         }
 
-        internal ContextKey ContextKey
+        internal ContextKey? ContextKey
         {
             get;
             private set;

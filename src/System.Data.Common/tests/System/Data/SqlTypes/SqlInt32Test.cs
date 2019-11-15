@@ -13,10 +13,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -497,15 +497,9 @@ namespace System.Data.Tests.SqlTypes
             ReadWriteXmlTestInternal(xml1, test1, "BA01");
             ReadWriteXmlTestInternal(xml2, test2, "BA02");
 
-            try
-            {
-                ReadWriteXmlTestInternal(xml3, test3, "#BA03");
-                Assert.False(true);
-            }
-            catch (InvalidOperationException e)
-            {
-                Assert.Equal(typeof(FormatException), e.InnerException.GetType());
-            }
+            InvalidOperationException ex =
+                Assert.Throws<InvalidOperationException>(() => ReadWriteXmlTestInternal(xml3, test3, "#BA03"));
+            Assert.Equal(typeof(FormatException), ex.InnerException.GetType());
         }
     }
 }

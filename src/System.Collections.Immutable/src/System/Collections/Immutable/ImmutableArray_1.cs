@@ -92,7 +92,7 @@ namespace System.Collections.Immutable
             }
         }
 
-#if !NETSTANDARD10
+#if !NETSTANDARD1_0
         public ReadOnlySpan<T> AsSpan() => new ReadOnlySpan<T>(array);
 
         public ReadOnlyMemory<T> AsMemory() => new ReadOnlyMemory<T>(array);
@@ -316,13 +316,13 @@ namespace System.Collections.Immutable
 
             if (index != 0)
             {
-                Array.Copy(self.array, 0, tmp, 0, index);
+                Array.Copy(self.array, tmp, index);
             }
             if (index != self.Length)
             {
                 Array.Copy(self.array, index, tmp, index + 1, self.Length - index);
             }
-            
+
             return new ImmutableArray<T>(tmp);
         }
 
@@ -352,10 +352,10 @@ namespace System.Collections.Immutable
             }
 
             T[] tmp = new T[self.Length + count];
-            
+
             if (index != 0)
             {
-                Array.Copy(self.array, 0, tmp, 0, index);
+                Array.Copy(self.array, tmp, index);
             }
             if (index != self.Length)
             {
@@ -404,10 +404,10 @@ namespace System.Collections.Immutable
             }
 
             T[] tmp = new T[self.Length + items.Length];
-            
+
             if (index != 0)
             {
-                Array.Copy(self.array, 0, tmp, 0, index);
+                Array.Copy(self.array, tmp, index);
             }
             if (index != self.Length)
             {
@@ -474,7 +474,7 @@ namespace System.Collections.Immutable
             Requires.Range(index >= 0 && index < self.Length, nameof(index));
 
             T[] tmp = new T[self.Length];
-            Array.Copy(self.array, 0, tmp, 0, self.Length);
+            Array.Copy(self.array, tmp, self.Length);
             tmp[index] = item;
             return new ImmutableArray<T>(tmp);
         }
@@ -580,7 +580,7 @@ namespace System.Collections.Immutable
             }
 
             T[] tmp = new T[self.Length - length];
-            Array.Copy(self.array, 0, tmp, 0, index);
+            Array.Copy(self.array, tmp, index);
             Array.Copy(self.array, index + length, tmp, index, self.Length - index - length);
             return new ImmutableArray<T>(tmp);
         }
@@ -800,7 +800,7 @@ namespace System.Collections.Immutable
                 if (outOfOrder)
                 {
                     var tmp = new T[self.Length];
-                    Array.Copy(self.array, 0, tmp, 0, self.Length);
+                    Array.Copy(self.array, tmp, self.Length);
                     Array.Sort(tmp, index, count, comparer);
                     return new ImmutableArray<T>(tmp);
                 }
@@ -1262,6 +1262,11 @@ namespace System.Collections.Immutable
             if (otherArray != null)
             {
                 IStructuralComparable ours = self.array;
+                if (ours == null)
+                {
+                    throw new ArgumentException(SR.ArrayInitializedStateNotEqual, nameof(other));
+                }
+
                 return ours.CompareTo(otherArray, comparer);
             }
 

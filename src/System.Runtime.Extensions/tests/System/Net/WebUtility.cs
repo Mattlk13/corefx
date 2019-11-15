@@ -56,6 +56,10 @@ namespace System.Net.Tests
             // Empty
             yield return new object[] { "", "" };
             yield return new object[] { null, null };
+
+            // Should decode the innermost entity
+            yield return new object[] { "& &amp;", "& &" };
+            yield return new object[] { "&quot; &lt &gt;", "\" &lt >" };
         }
 
         [Theory]
@@ -83,6 +87,8 @@ namespace System.Net.Tests
             yield return new object[] { char.ConvertFromUtf32(144308), "&#144308;" };
             yield return new object[] { "\uD800\uDC00", "&#65536;" };
             yield return new object[] { "a\uD800\uDC00b", "a&#65536;b" };
+            yield return new object[] { "\uD83D\uDE01\uD83D\uDE02\uD83D\uDE03", "&#128513;&#128514;&#128515;" };
+            yield return new object[] { "a\uD83D\uDE01\uD83D\uDE02\uD83D\uDE03b", "a&#128513;&#128514;&#128515;b" };
 
             // High BMP non-chars
             yield return new object[] { "\uFFFD", "\uFFFD" };
@@ -178,7 +184,7 @@ namespace System.Net.Tests
             yield return Tuple.Create("    ", "++++");
             yield return Tuple.Create("++++", "%2B%2B%2B%2B");
 
-            // Tests for stray surrogate chars (all should be encoded as U+FFFD)            
+            // Tests for stray surrogate chars (all should be encoded as U+FFFD)
             yield return Tuple.Create("\uD800", "%EF%BF%BD"); // High surrogate
             yield return Tuple.Create("\uDC00", "%EF%BF%BD"); // Low surrogate
 
@@ -324,7 +330,7 @@ namespace System.Net.Tests
         {
             AssertExtensions.Throws<ArgumentOutOfRangeException>("count", () => WebUtility.UrlDecodeToBytes(new byte[byteCount], offset, count));
         }
-        
+
         public static IEnumerable<object[]> UrlEncodeToBytes_TestData()
         {
             foreach (var tuple in UrlEncode_SharedTestData())
@@ -424,7 +430,7 @@ namespace System.Net.Tests
             string actual = Encoding.UTF8.GetString(encoded);
             Assert.Equal(expected, actual);
         }
-        
+
         [Fact]
         public static void UrlEncodeToBytes_NoEncodingNeeded_ReturnsNewClonedArray()
         {
@@ -463,7 +469,7 @@ namespace System.Net.Tests
         [MemberData(nameof(HtmlDecode_TestData))]
         public static void HtmlDecode_TextWriterOutput(string value, string expected)
         {
-            if(value == null)
+            if (value == null)
                 expected = string.Empty;
             StringWriter output = new StringWriter(CultureInfo.InvariantCulture);
             WebUtility.HtmlDecode(value, output);
@@ -474,7 +480,7 @@ namespace System.Net.Tests
         [MemberData(nameof(HtmlEncode_TestData))]
         public static void HtmlEncode_TextWriterOutput(string value, string expected)
         {
-            if(value == null)
+            if (value == null)
                 expected = string.Empty;
             StringWriter output = new StringWriter(CultureInfo.InvariantCulture);
             WebUtility.HtmlEncode(value, output);

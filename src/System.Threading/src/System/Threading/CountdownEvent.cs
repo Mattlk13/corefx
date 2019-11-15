@@ -34,7 +34,7 @@ namespace System.Threading
 
         private int _initialCount; // The original # of signals the latch was instantiated with.
         private volatile int _currentCount;  // The # of outstanding signals before the latch transitions to a signaled state.
-        private ManualResetEventSlim _event;   // An event used to manage blocking and signaling.
+        private readonly ManualResetEventSlim _event;   // An event used to manage blocking and signaling.
         private volatile bool _disposed; // Whether the latch has been disposed.
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace System.Threading
         }
 
         /// <summary>
-        /// Gets a <see cref="System.Threading.WaitHandle"/> that is used to wait for the event to be set. 
+        /// Gets a <see cref="System.Threading.WaitHandle"/> that is used to wait for the event to be set.
         /// </summary>
         /// <value>A <see cref="System.Threading.WaitHandle"/> that is used to wait for the event to be set.</value>
         /// <exception cref="System.ObjectDisposedException">The current instance has already been disposed.</exception>
@@ -225,7 +225,7 @@ namespace System.Threading
             Debug.Assert(_event != null);
 
             int observedCount;
-            SpinWait spin = new SpinWait();
+            SpinWait spin = default;
             while (true)
             {
                 observedCount = _currentCount;
@@ -332,7 +332,7 @@ namespace System.Threading
 
             // Loop around until we successfully increment the count.
             int observedCount;
-            SpinWait spin = new SpinWait();
+            SpinWait spin = default;
             while (true)
             {
                 observedCount = _currentCount;
@@ -417,7 +417,7 @@ namespace System.Threading
         /// disposed.</exception>
         public void Wait()
         {
-            Wait(Timeout.Infinite, new CancellationToken());
+            Wait(Timeout.Infinite, CancellationToken.None);
         }
 
 
@@ -429,7 +429,7 @@ namespace System.Threading
         /// observe.</param>
         /// <remarks>
         /// The caller of this method blocks indefinitely until the current instance is set. The caller will
-        /// return immediately if the event is currently in a set state.  If the 
+        /// return immediately if the event is currently in a set state.  If the
         /// <see cref="System.Threading.CancellationToken">CancellationToken</see> being observed
         /// is canceled during the wait operation, an <see cref="System.OperationCanceledException"/>
         /// will be thrown.
@@ -465,7 +465,7 @@ namespace System.Threading
                 throw new ArgumentOutOfRangeException(nameof(timeout));
             }
 
-            return Wait((int)totalMilliseconds, new CancellationToken());
+            return Wait((int)totalMilliseconds, CancellationToken.None);
         }
 
         /// <summary>
@@ -512,7 +512,7 @@ namespace System.Threading
         /// disposed.</exception>
         public bool Wait(int millisecondsTimeout)
         {
-            return Wait(millisecondsTimeout, new CancellationToken());
+            return Wait(millisecondsTimeout, CancellationToken.None);
         }
 
         /// <summary>
@@ -570,7 +570,7 @@ namespace System.Threading
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException("CountdownEvent");
+                throw new ObjectDisposedException(nameof(CountdownEvent));
             }
         }
     }

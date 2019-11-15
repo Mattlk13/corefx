@@ -12,15 +12,16 @@ namespace System.Security.Cryptography.Cng.Tests
 
         private static readonly CngAlgorithm s_cngAlgorithm = new CngAlgorithm("3DES");
 
+        [ActiveIssue(41610)]
         [OuterLoop(/* Creates/Deletes a persisted key, limit exposure to key leaking */)]
         [ConditionalTheory(nameof(SupportsPersistedSymmetricKeys))]
         // 3DES192-ECB-NoPadding 2 blocks.
         [InlineData(2 * BlockSizeBytes, CipherMode.ECB, PaddingMode.None)]
         // 3DES192-CBC-NoPadding at 2 blocks
         [InlineData(2 * BlockSizeBytes, CipherMode.CBC, PaddingMode.None)]
-        // 3DES192-CBC-Zeros at 1.5 blocks 
+        // 3DES192-CBC-Zeros at 1.5 blocks
         [InlineData(BlockSizeBytes + BlockSizeBytes / 2, CipherMode.CBC, PaddingMode.Zeros)]
-        // 3DES192-CBC-PKCS7 at 1.5 blocks 
+        // 3DES192-CBC-PKCS7 at 1.5 blocks
         [InlineData(BlockSizeBytes + BlockSizeBytes / 2, CipherMode.CBC, PaddingMode.PKCS7)]
         public static void VerifyPersistedKey(
             int plainBytesCount,
@@ -46,6 +47,7 @@ namespace System.Security.Cryptography.Cng.Tests
                 keyName => new TripleDESCng(keyName));
         }
 
+        [ActiveIssue(41610)]
         [OuterLoop(/* Creates/Deletes a persisted key, limit exposure to key leaking */)]
         [ConditionalFact(nameof(SupportsPersistedSymmetricKeys))]
         public static void SetKey_DetachesFromPersistedKey()
@@ -72,6 +74,7 @@ namespace System.Security.Cryptography.Cng.Tests
             }
         }
 
+        [ActiveIssue(41610)]
         [OuterLoop(/* Creates/Deletes a persisted key, limit exposure to key leaking */)]
         [ConditionalFact(nameof(SupportsPersistedSymmetricKeys), nameof(IsAdministrator))]
         public static void VerifyMachineKey()
@@ -79,7 +82,7 @@ namespace System.Security.Cryptography.Cng.Tests
             SymmetricCngTestHelpers.VerifyMachineKey(
                 s_cngAlgorithm,
                 8 * BlockSizeBytes,
-                keyName => new TripleDESCng(keyName, CngProvider.MicrosoftSoftwareKeyStorageProvider, CngKeyOpenOptions.MachineKey), 
+                keyName => new TripleDESCng(keyName, CngProvider.MicrosoftSoftwareKeyStorageProvider, CngKeyOpenOptions.MachineKey),
                 () => new TripleDESCng());
         }
 

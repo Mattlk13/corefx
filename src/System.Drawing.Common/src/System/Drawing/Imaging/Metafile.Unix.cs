@@ -18,10 +18,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -40,16 +40,8 @@ using System.Runtime.Serialization;
 
 namespace System.Drawing.Imaging
 {
-#if !NETCORE
-    [Editor ("System.Drawing.Design.MetafileEditor, " + Consts.AssemblySystem_Drawing_Design, typeof (System.Drawing.Design.UITypeEditor))]
-#endif
     public sealed partial class Metafile : Image
     {
-
-        // constructors
-
-        internal Metafile(IntPtr ptr) => SetNativeImage(ptr);
-
         // Usually called when cloning images that need to have
         // not only the handle saved, but also the underlying stream
         // (when using MS GDI+ and IStream we must ensure the stream stays alive for all the life of the Image)
@@ -79,17 +71,17 @@ namespace System.Drawing.Imaging
         }
 
         public Metafile(IntPtr referenceHdc, EmfType emfType, string description) :
-            this(referenceHdc, new RectangleF(), MetafileFrameUnit.GdiCompatible, emfType, description)
+            this(referenceHdc, default(RectangleF), MetafileFrameUnit.GdiCompatible, emfType, description)
         {
         }
 
         public Metafile(Stream stream, IntPtr referenceHdc, EmfType type, string description) :
-            this(stream, referenceHdc, new RectangleF(), MetafileFrameUnit.GdiCompatible, type, description)
+            this(stream, referenceHdc, default(RectangleF), MetafileFrameUnit.GdiCompatible, type, description)
         {
         }
 
         public Metafile(string fileName, IntPtr referenceHdc, EmfType type, string description) :
-            this(fileName, referenceHdc, new RectangleF(), MetafileFrameUnit.GdiCompatible, type, description)
+            this(fileName, referenceHdc, default(RectangleF), MetafileFrameUnit.GdiCompatible, type, description)
         {
         }
 
@@ -125,7 +117,7 @@ namespace System.Drawing.Imaging
         {
             if (stream == null)
                 throw new NullReferenceException(nameof(stream));
-            
+
             // With libgdiplus we use a custom API for this, because there's no easy way
             // to get the Stream down to libgdiplus. So, we wrap the stream with a set of delegates.
             GdiPlusStreamHelper sh = new GdiPlusStreamHelper(stream, false);

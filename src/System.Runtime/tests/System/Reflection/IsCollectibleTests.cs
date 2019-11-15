@@ -23,16 +23,16 @@ namespace System.Reflection.Tests
         public static string asmNameString = "TestCollectibleAssembly";
         public static string asmPath = Path.Combine(Environment.CurrentDirectory, "TestCollectibleAssembly.dll");
 
-        public static Func<AssemblyName, Assembly> assemblyResolver = (asmName) => 
+        public static Func<AssemblyName, Assembly> assemblyResolver = (asmName) =>
             asmName.Name == asmNameString ? Assembly.LoadFrom(asmPath) : null;
-        
-        public static Func<AssemblyName, Assembly> collectibleAssemblyResolver(AssemblyLoadContext alc) => 
-            (asmName) => 
+
+        public static Func<AssemblyName, Assembly> collectibleAssemblyResolver(AssemblyLoadContext alc) =>
+            (asmName) =>
                 asmName.Name == asmNameString ? alc.LoadFromAssemblyPath(asmPath) : null;
 
-        public static Func<Assembly, string, bool, Type> typeResolver(bool shouldThrowIfNotFound) => 
-            (asm, simpleTypeName, isCaseSensitive) => asm == null ? 
-                Type.GetType(simpleTypeName, shouldThrowIfNotFound, isCaseSensitive) : 
+        public static Func<Assembly, string, bool, Type> typeResolver(bool shouldThrowIfNotFound) =>
+            (asm, simpleTypeName, isCaseSensitive) => asm == null ?
+                Type.GetType(simpleTypeName, shouldThrowIfNotFound, isCaseSensitive) :
                 asm.GetType(simpleTypeName, shouldThrowIfNotFound, isCaseSensitive);
 
         [Fact]
@@ -53,8 +53,6 @@ namespace System.Reflection.Tests
                 Assert.Contains("System.Runtime.Loader.DefaultAssemblyLoadContext", alc.ToString());
                 Assert.Contains(alc, AssemblyLoadContext.All);
                 Assert.Contains(asm, alc.Assemblies);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -76,8 +74,6 @@ namespace System.Reflection.Tests
                 Assert.Contains("System.Runtime.Loader.AssemblyLoadContext", alc.ToString());
                 Assert.Contains(alc, AssemblyLoadContext.All);
                 Assert.Contains(asm, alc.Assemblies);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -99,8 +95,6 @@ namespace System.Reflection.Tests
                 Assert.Contains("System.Reflection.Tests.TestAssemblyLoadContext", alc.ToString());
                 Assert.Contains(alc, AssemblyLoadContext.All);
                 Assert.Contains(asm, alc.Assemblies);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -114,12 +108,12 @@ namespace System.Reflection.Tests
         [InlineData("MyStaticGenericMethod")]
         public void MemberInfo_IsCollectibleFalse_WhenUsingAssemblyLoad(string memberName)
         {
-            RemoteExecutor.Invoke((marshalledName) => 
+            RemoteExecutor.Invoke((marshalledName) =>
             {
                 Type t1 = Type.GetType(
-                    "TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0", 
-                    assemblyResolver, 
-                    typeResolver(false), 
+                    "TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0",
+                    assemblyResolver,
+                    typeResolver(false),
                     true
                 );
 
@@ -130,8 +124,6 @@ namespace System.Reflection.Tests
                 Assert.NotNull(member);
 
                 Assert.False(member.IsCollectible);
-
-                return RemoteExecutor.SuccessExitCode;
             }, memberName).Dispose();
         }
 
@@ -145,12 +137,12 @@ namespace System.Reflection.Tests
         [InlineData("MyGenericMethod")]
         public void MemberInfoGeneric_IsCollectibleFalse_WhenUsingAssemblyLoad(string memberName)
         {
-            RemoteExecutor.Invoke((marshalledName) => 
+            RemoteExecutor.Invoke((marshalledName) =>
             {
                 Type t1 = Type.GetType(
-                    "TestCollectibleAssembly.MyGenericTestClass`1[System.Int32], TestCollectibleAssembly, Version=1.0.0.0", 
-                    assemblyResolver, 
-                    typeResolver(false), 
+                    "TestCollectibleAssembly.MyGenericTestClass`1[System.Int32], TestCollectibleAssembly, Version=1.0.0.0",
+                    assemblyResolver,
+                    typeResolver(false),
                     true
                 );
 
@@ -161,8 +153,6 @@ namespace System.Reflection.Tests
                 Assert.NotNull(member);
 
                 Assert.False(member.IsCollectible);
-
-                return RemoteExecutor.SuccessExitCode;
             }, memberName).Dispose();
         }
 
@@ -176,14 +166,14 @@ namespace System.Reflection.Tests
         [InlineData("MyStaticGenericMethod")]
         public void MemberInfo_IsCollectibleTrue_WhenUsingAssemblyLoadContext(string memberName)
         {
-            RemoteExecutor.Invoke((marshalledName) => 
+            RemoteExecutor.Invoke((marshalledName) =>
             {
                 AssemblyLoadContext alc = new TestAssemblyLoadContext();
 
                 Type t1 = Type.GetType(
-                    "TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0", 
-                    collectibleAssemblyResolver(alc), 
-                    typeResolver(false), 
+                    "TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0",
+                    collectibleAssemblyResolver(alc),
+                    typeResolver(false),
                     true
                 );
 
@@ -194,8 +184,6 @@ namespace System.Reflection.Tests
                 Assert.NotNull(member);
 
                 Assert.True(member.IsCollectible);
-
-                return RemoteExecutor.SuccessExitCode;
             }, memberName).Dispose();
         }
 
@@ -209,14 +197,14 @@ namespace System.Reflection.Tests
         [InlineData("MyGenericMethod")]
         public void MemberInfoGeneric_IsCollectibleTrue_WhenUsingAssemblyLoadContext(string memberName)
         {
-            RemoteExecutor.Invoke((marshalledName) => 
+            RemoteExecutor.Invoke((marshalledName) =>
             {
                 AssemblyLoadContext alc = new TestAssemblyLoadContext();
 
                 Type t1 = Type.GetType(
-                    "TestCollectibleAssembly.MyGenericTestClass`1[System.Int32], TestCollectibleAssembly, Version=1.0.0.0", 
-                    collectibleAssemblyResolver(alc), 
-                    typeResolver(false), 
+                    "TestCollectibleAssembly.MyGenericTestClass`1[System.Int32], TestCollectibleAssembly, Version=1.0.0.0",
+                    collectibleAssemblyResolver(alc),
+                    typeResolver(false),
                     true
                 );
 
@@ -227,30 +215,26 @@ namespace System.Reflection.Tests
                 Assert.NotNull(member);
 
                 Assert.True(member.IsCollectible);
-
-                return RemoteExecutor.SuccessExitCode;
             }, memberName).Dispose();
         }
 
         [Fact]
         public void GenericWithCollectibleTypeParameter_IsCollectibleTrue_WhenUsingAssemblyLoadContext()
         {
-            RemoteExecutor.Invoke(() => 
+            RemoteExecutor.Invoke(() =>
             {
                 AssemblyLoadContext alc = new TestAssemblyLoadContext();
 
                 Type t1 = Type.GetType(
-                    "System.Collections.Generic.Dictionary`2[[System.Int32],[TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0]]", 
-                    collectibleAssemblyResolver(alc), 
-                    typeResolver(false), 
+                    "System.Collections.Generic.Dictionary`2[[System.Int32],[TestCollectibleAssembly.MyTestClass, TestCollectibleAssembly, Version=1.0.0.0]]",
+                    collectibleAssemblyResolver(alc),
+                    typeResolver(false),
                     true
                 );
 
                 Assert.NotNull(t1);
 
                 Assert.True(t1.IsCollectible);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
     }

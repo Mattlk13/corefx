@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -143,7 +143,6 @@ namespace System.Net.Http.Functional.Tests
                 });
         }
 
-        [ActiveIssue(30051, TargetFrameworkMonikers.Uap)]
         [Fact]
         public async Task GetAsync_AddMultipleCookieHeaders_CookiesSent()
         {
@@ -164,7 +163,7 @@ namespace System.Net.Http.Functional.Tests
                 {
                     HttpRequestData requestData = await server.HandleRequestAsync();
 
-                    // Multiple Cookie header values are treated as any other header values and are 
+                    // Multiple Cookie header values are treated as any other header values and are
                     // concatenated using ", " as the separator.
 
                     string cookieHeaderValue = requestData.GetSingleHeaderValue("Cookie");
@@ -207,13 +206,6 @@ namespace System.Net.Http.Functional.Tests
         [ConditionalFact]
         public async Task GetAsync_SetCookieContainerAndCookieHeader_BothCookiesSent()
         {
-            if (IsCurlHandler)
-            {
-                // CurlHandler ignores container cookies when custom Cookie header is set.
-                // SocketsHttpHandler behaves the expected way. Not worth fixing in CurlHandler as it is going away.
-                throw new SkipTestException("Platform limitation with curl");
-            }
-
             await LoopbackServerFactory.CreateServerAsync(async (server, url) =>
             {
                 HttpClientHandler handler = CreateHttpClientHandler();
@@ -238,17 +230,9 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [ActiveIssue(30051, TargetFrameworkMonikers.Uap)]
         [ConditionalFact]
         public async Task GetAsync_SetCookieContainerAndMultipleCookieHeaders_BothCookiesSent()
         {
-            if (IsCurlHandler)
-            {
-                // CurlHandler ignores container cookies when custom Cookie header is set.
-                // SocketsHttpHandler behaves the expected way. Not worth fixing in CurlHandler as it is going away.
-                throw new SkipTestException("Platform limitation with curl");
-            }
-
             await LoopbackServerFactory.CreateServerAsync(async (server, url) =>
             {
                 HttpClientHandler handler = CreateHttpClientHandler();
@@ -429,7 +413,6 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [ActiveIssue(30051, TargetFrameworkMonikers.Uap)] // fails to remove cookie
         [Fact]
         public async Task GetAsync_ReceiveSetCookieHeader_CookieRemoved()
         {
@@ -453,16 +436,9 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [ActiveIssue(30051, TargetFrameworkMonikers.Uap)] // only adds one cookie
         [Fact]
         public async Task GetAsync_ReceiveInvalidSetCookieHeader_ValidCookiesAdded()
         {
-            if (IsNetfxHandler)
-            {
-                // NetfxHandler incorrectly only processes one valid cookie 
-                return;
-            }
-
             await LoopbackServerFactory.CreateServerAsync(async (server, url) =>
             {
                 HttpClientHandler handler = CreateHttpClientHandler();
@@ -547,7 +523,6 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [ActiveIssue(30050, TargetFrameworkMonikers.Uap)]
         [Fact]
         public async Task GetAsyncWithBasicAuth_ReceiveSetCookie_CookieSent()
         {
@@ -603,7 +578,7 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        // 
+        //
         // MemberData stuff
         //
 

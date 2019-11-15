@@ -2,7 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 // Copyright (c) 2004 Mainsoft Co.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -10,10 +10,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -42,7 +42,7 @@ namespace System.Data.Tests
             int index = 0;
             foreach (DataRow dr in dt.Rows)
             {
-                Assert.Equal(dr, arr[index]);
+                Assert.Same(dr, arr[index]);
                 index++;
             }
         }
@@ -66,7 +66,7 @@ namespace System.Data.Tests
             int index = 0;
             while (myEnumerator.MoveNext())
             {
-                Assert.Equal(dt.Rows[index], (DataRow)myEnumerator.Current);
+                Assert.Same(dt.Rows[index], (DataRow)myEnumerator.Current);
                 index++;
             }
             Assert.Equal(index, dt.Rows.Count);
@@ -432,7 +432,7 @@ namespace System.Data.Tests
 
             foreach (DataRow dr in dt.Rows)
             {
-                Assert.Equal(dr, dt.Rows[index]);
+                Assert.Same(dr, dt.Rows[index]);
                 index++;
             }
         }

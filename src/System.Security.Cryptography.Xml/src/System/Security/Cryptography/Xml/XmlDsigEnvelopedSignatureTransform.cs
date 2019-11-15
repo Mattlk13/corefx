@@ -1,25 +1,18 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
 using System.Xml;
-using System.Xml.XPath;
-using System.Xml.Xsl;
 
 namespace System.Security.Cryptography.Xml
 {
     public class XmlDsigEnvelopedSignatureTransform : Transform
     {
-        private Type[] _inputTypes = { typeof(Stream), typeof(XmlNodeList), typeof(XmlDocument) };
-        private Type[] _outputTypes = { typeof(XmlNodeList), typeof(XmlDocument) };
+        private readonly Type[] _inputTypes = { typeof(Stream), typeof(XmlNodeList), typeof(XmlDocument) };
+        private readonly Type[] _outputTypes = { typeof(XmlNodeList), typeof(XmlDocument) };
         private XmlNodeList _inputNodeList;
-        private bool _includeComments = false;
+        private readonly bool _includeComments = false;
         private XmlNamespaceManager _nsm = null;
         private XmlDocument _containingDocument = null;
         private int _signaturePosition = 0;
@@ -147,7 +140,7 @@ namespace System.Security.Cryptography.Xml
                         // SelectSingleNode throws an exception for xmldecl PI for example, so we will just ignore those exceptions
                         try
                         {
-                            // Find the nearest signature ancestor tag 
+                            // Find the nearest signature ancestor tag
                             XmlNode result = node.SelectSingleNode("ancestor-or-self::dsig:Signature[1]", _nsm);
                             int position = 0;
                             foreach (XmlNode node1 in signatureList)

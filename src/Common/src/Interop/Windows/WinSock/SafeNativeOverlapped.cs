@@ -32,12 +32,8 @@ namespace System.Net.Sockets
             _socketHandle = socketHandle;
 
             if (NetEventSource.IsEnabled) NetEventSource.Info(this, $"socketHandle:{socketHandle}");
-
-#if DEBUG
-            _socketHandle.AddRef();
-#endif
         }
-        
+
         public override bool IsInvalid
         {
             get { return handle == IntPtr.Zero; }
@@ -49,9 +45,6 @@ namespace System.Net.Sockets
 
             FreeNativeOverlapped();
 
-#if DEBUG
-            _socketHandle.Release();
-#endif
             return true;
         }
 

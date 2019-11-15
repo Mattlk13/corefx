@@ -44,7 +44,7 @@ namespace System.Security.Cryptography.Pkcs
         internal SubjectIdentifier(SignerIdentifierAsn signerIdentifierAsn)
             : this(signerIdentifierAsn.IssuerAndSerialNumber, signerIdentifierAsn.SubjectKeyIdentifier)
         {
-            
+
         }
 
         internal SubjectIdentifier(
@@ -127,7 +127,40 @@ namespace System.Security.Cryptography.Pkcs
                     throw new CryptographicException();
             }
         }
+
+        internal bool IsEquivalentTo(SubjectIdentifier other)
+        {
+            SubjectIdentifier currentId = other;
+
+            if (currentId.Type != Type)
+            {
+                return false;
+            }
+
+            X509IssuerSerial issuerSerial = default;
+
+            if (Type == SubjectIdentifierType.IssuerAndSerialNumber)
+            {
+                issuerSerial = (X509IssuerSerial)Value;
+            }
+
+            switch (Type)
+            {
+                case SubjectIdentifierType.IssuerAndSerialNumber:
+                    {
+                        X509IssuerSerial currentIssuerSerial = (X509IssuerSerial)currentId.Value;
+
+                        return currentIssuerSerial.IssuerName == issuerSerial.IssuerName &&
+                            currentIssuerSerial.SerialNumber == issuerSerial.SerialNumber;
+                    }
+                case SubjectIdentifierType.SubjectKeyIdentifier:
+                    return (string)Value == (string)currentId.Value;
+                case SubjectIdentifierType.NoSignature:
+                    return true;
+                default:
+                    Debug.Fail($"No match logic for SubjectIdentifierType {Type}");
+                    throw new CryptographicException();
+            }
+        }
     }
 }
-
-

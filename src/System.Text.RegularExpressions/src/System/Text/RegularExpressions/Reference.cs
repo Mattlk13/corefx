@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -11,24 +11,24 @@ namespace System.Text.RegularExpressions
     /// </summary>
     internal sealed class ExclusiveReference
     {
-        private RegexRunner _ref;
-        private RegexRunner _obj;
+        private RegexRunner? _ref;
+        private RegexRunner? _obj;
         private volatile int _locked;
 
         /// <summary>
         /// Return an object and grab an exclusive lock.
-        /// 
+        ///
         /// If the exclusive lock can't be obtained, null is returned;
         /// if the object can't be returned, the lock is released.
         /// </summary>
-        public RegexRunner Get()
+        public RegexRunner? Get()
         {
             // try to obtain the lock
 
             if (0 == Interlocked.Exchange(ref _locked, 1))
             {
                 // grab reference
-                RegexRunner obj = _ref;
+                RegexRunner? obj = _ref;
 
                 // release the lock and return null if no reference
                 if (obj == null)
@@ -49,7 +49,7 @@ namespace System.Text.RegularExpressions
 
         /// <summary>
         /// Release an object back to the cache.
-        /// 
+        ///
         /// If the object is the one that's under lock, the lock is released.
         /// If there is no cached object, then the lock is obtained and the object is placed in the cache.
         /// </summary>

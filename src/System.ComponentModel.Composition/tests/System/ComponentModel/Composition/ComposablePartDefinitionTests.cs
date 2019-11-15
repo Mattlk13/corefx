@@ -36,9 +36,9 @@ namespace System.ComponentModel.Composition
 
         public const string ComImportAvailable = nameof(Helpers) + "." + nameof(CheckComImportAvailable);
 
-        private static bool CheckComImportAvailable() => PlatformDetection.IsWindows && PlatformDetection.IsNotWindowsNanoServer && !PlatformDetection.IsUap;
+        private static bool CheckComImportAvailable() => PlatformDetection.IsWindows && PlatformDetection.IsNotWindowsNanoServer && !PlatformDetection.IsInAppContainer;
     }
-    
+
     public class ComposablePartDefinitionTests
     {
         [Fact]
@@ -67,4 +67,3 @@ namespace System.ComponentModel.Composition
         }
     }
 }
-

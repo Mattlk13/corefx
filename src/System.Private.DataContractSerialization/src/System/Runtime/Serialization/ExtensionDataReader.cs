@@ -27,7 +27,7 @@ namespace System.Runtime.Serialization
         private ElementData _nextElement;
 
         private ReadState _readState = ReadState.Initial;
-        private ExtensionDataNodeType _internalNodeType;
+        private readonly ExtensionDataNodeType _internalNodeType;
         private XmlNodeType _nodeType;
         private int _depth;
         private string _localName;
@@ -37,13 +37,13 @@ namespace System.Runtime.Serialization
         private int _attributeCount;
         private int _attributeIndex;
 
-        private static object s_prefixLock = new object();
+        private static readonly object s_prefixLock = new object();
 
 #pragma warning disable 0649
-        private XmlNodeReader _xmlNodeReader;
+        private readonly XmlNodeReader _xmlNodeReader;
 #pragma warning restore 0649
 
-        private XmlObjectSerializerReadContext _context;
+        private readonly XmlObjectSerializerReadContext _context;
 
         private static readonly Hashtable s_nsToPrefixTable = new Hashtable();
 
@@ -465,7 +465,7 @@ namespace System.Runtime.Serialization
             else if (_elements.Length == _depth)
             {
                 ElementData[] newElements = new ElementData[_elements.Length * 2];
-                Array.Copy(_elements, 0, newElements, 0, _elements.Length);
+                Array.Copy(_elements, newElements, _elements.Length);
                 _elements = newElements;
             }
         }
@@ -481,12 +481,12 @@ namespace System.Runtime.Serialization
         {
             ns = ns ?? string.Empty;
             string prefix = (string)s_nsToPrefixTable[ns];
-            if (prefix == null) 
+            if (prefix == null)
             {
                 lock (s_prefixLock)
                 {
                     prefix = (string)s_nsToPrefixTable[ns];
-                    if (prefix == null) 
+                    if (prefix == null)
                     {
                         prefix = (ns == null || ns.Length == 0) ? string.Empty : "p" + s_nsToPrefixTable.Count;
                         AddPrefix(prefix, ns);
@@ -549,7 +549,7 @@ namespace System.Runtime.Serialization
             else if (attributes.Length == attributeCount)
             {
                 AttributeData[] newAttributes = new AttributeData[attributes.Length * 2];
-                Array.Copy(attributes, 0, newAttributes, 0, attributes.Length);
+                Array.Copy(attributes, newAttributes, attributes.Length);
                 attributes = newAttributes;
             }
         }

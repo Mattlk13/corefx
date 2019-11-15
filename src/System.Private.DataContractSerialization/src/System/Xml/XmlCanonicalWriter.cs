@@ -164,7 +164,7 @@ namespace System.Xml
             else if (_depth == _scopes.Length)
             {
                 Scope[] newScopes = new Scope[_depth * 2];
-                Array.Copy(_scopes, 0, newScopes, 0, _depth);
+                Array.Copy(_scopes, newScopes, _depth);
                 _scopes = newScopes;
             }
             _scopes[_depth].xmlnsAttributeCount = _xmlnsAttributeCount;
@@ -198,7 +198,7 @@ namespace System.Xml
             _element.localNameLength = Encoding.UTF8.GetByteCount(localName);
             _elementWriter.WriteStartElement(prefix, localName);
 
-            // If we have a inclusivenamespace prefix list and the namespace declaration is in the 
+            // If we have a inclusivenamespace prefix list and the namespace declaration is in the
             // outer context, then Add it to the root element.
             if (isRootElement && (_inclusivePrefixes != null))
             {
@@ -247,7 +247,7 @@ namespace System.Xml
             _element.localNameLength = localNameLength;
             _elementWriter.WriteStartElement(prefixBuffer, prefixOffset, prefixLength, localNameBuffer, localNameOffset, localNameLength);
 
-            // If we have a inclusivenamespace prefix list and the namespace declaration is in the 
+            // If we have a inclusivenamespace prefix list and the namespace declaration is in the
             // outer context, then Add it to the root element.
             if (isRootElement && (_inclusivePrefixes != null))
             {
@@ -303,7 +303,7 @@ namespace System.Xml
                             // referred.
                             if (_xmlnsAttributes[j].referred)
                             {
-                                // This has been referred previously. So we don't have 
+                                // This has been referred previously. So we don't have
                                 // to output the namespace again.
                                 alreadyReferred = true;
                                 break;
@@ -311,7 +311,7 @@ namespace System.Xml
                         }
                         else
                         {
-                            // The prefix is the same, but the namespace value has changed. So we have to 
+                            // The prefix is the same, but the namespace value has changed. So we have to
                             // output this namespace.
                             break;
                         }
@@ -736,7 +736,7 @@ namespace System.Xml
             else if (_attributeCount == _attributes.Length)
             {
                 Attribute[] newAttributes = new Attribute[_attributeCount * 2];
-                Array.Copy(_attributes, 0, newAttributes, 0, _attributeCount);
+                Array.Copy(_attributes, newAttributes, _attributeCount);
                 _attributes = newAttributes;
             }
 
@@ -746,7 +746,7 @@ namespace System.Xml
 
         private void AddXmlnsAttribute(ref XmlnsAttribute xmlnsAttribute)
         {
-            //            Console.WriteLine("{0}={1}", Encoding.UTF8.GetString(xmlnsBuffer, xmlnsAttribute.prefixOffset, xmlnsAttribute.prefixLength), 
+            //            Console.WriteLine("{0}={1}", Encoding.UTF8.GetString(xmlnsBuffer, xmlnsAttribute.prefixOffset, xmlnsAttribute.prefixLength),
             //                                Encoding.UTF8.GetString(xmlnsBuffer, xmlnsAttribute.nsOffset, xmlnsAttribute.nsLength));
 
             if (_xmlnsAttributes == null)
@@ -756,11 +756,11 @@ namespace System.Xml
             else if (_xmlnsAttributes.Length == _xmlnsAttributeCount)
             {
                 XmlnsAttribute[] newXmlnsAttributes = new XmlnsAttribute[_xmlnsAttributeCount * 2];
-                Array.Copy(_xmlnsAttributes, 0, newXmlnsAttributes, 0, _xmlnsAttributeCount);
+                Array.Copy(_xmlnsAttributes, newXmlnsAttributes, _xmlnsAttributeCount);
                 _xmlnsAttributes = newXmlnsAttributes;
             }
 
-            // If the prefix is in the inclusive prefix list, then mark it as 
+            // If the prefix is in the inclusive prefix list, then mark it as
             // to be rendered. Depth 0 is outer context and those can be ignored
             // for now.
             if ((_depth > 0) && (_inclusivePrefixes != null))
@@ -944,7 +944,7 @@ namespace System.Xml
 
         private class AttributeSorter : IComparer
         {
-            private XmlCanonicalWriter _writer;
+            private readonly XmlCanonicalWriter _writer;
 
             public AttributeSorter(XmlCanonicalWriter writer)
             {

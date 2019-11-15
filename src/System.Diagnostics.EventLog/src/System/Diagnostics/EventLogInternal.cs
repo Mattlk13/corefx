@@ -67,7 +67,7 @@ namespace System.Diagnostics
         private const int Flag_disposed = 0x100;
         private const int Flag_sourceVerified = 0x200;
 
-        private BitVector32 boolFlags = new BitVector32();
+        private BitVector32 boolFlags;
 
         private Hashtable messageLibraries;
         private static readonly Hashtable listenerInfos = new Hashtable(StringComparer.OrdinalIgnoreCase);
@@ -134,8 +134,6 @@ namespace System.Diagnostics
         {
             get
             {
-                string currentMachineName = this.machineName;
-
                 if (entriesCollection == null)
                     entriesCollection = new EventLogEntryCollection(this);
                 return entriesCollection;
@@ -335,7 +333,6 @@ namespace System.Diagnostics
         {
             get
             {
-                string currentMachineName = this.machineName;
                 return boolFlags[Flag_monitoring];
             }
             set
@@ -386,7 +383,6 @@ namespace System.Diagnostics
         {
             get
             {
-                string currentMachineName = this.machineName;
                 if (this.synchronizingObject == null && parent.ComponentDesignMode)
                 {
                     IDesignerHost host = (IDesignerHost)parent.ComponentGetService(typeof(IDesignerHost));
@@ -411,7 +407,6 @@ namespace System.Diagnostics
         {
             get
             {
-                string currentMachineName = this.machineName;
                 return sourceName;
             }
         }
@@ -420,12 +415,9 @@ namespace System.Diagnostics
         {
             lock (InternalSyncObject)
             {
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::AddListenerComponent(" + compLogName + ")");
-
                 LogListeningInfo info = (LogListeningInfo)listenerInfos[compLogName];
                 if (info != null)
                 {
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::AddListenerComponent: listener already active.");
                     info.listeningComponents.Add(component);
                     return;
                 }
@@ -449,12 +441,10 @@ namespace System.Diagnostics
         {
             add
             {
-                string currentMachineName = this.machineName;
                 onEntryWrittenHandler += value;
             }
             remove
             {
-                string currentMachineName = this.machineName;
                 onEntryWrittenHandler -= value;
             }
         }
@@ -480,7 +470,7 @@ namespace System.Diagnostics
             if (!success)
             {
                 // Ignore file not found errors.  ClearEventLog seems to try to delete the file where the event log is
-                // stored.  If it can't find it, it gives an error. 
+                // stored.  If it can't find it, it gives an error.
                 int error = Marshal.GetLastWin32Error();
                 if (error != Interop.Errors.ERROR_FILE_NOT_FOUND)
                     throw new Win32Exception();
@@ -497,8 +487,6 @@ namespace System.Diagnostics
 
         private void Close(string currentMachineName)
         {
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::Close");
-            //Trace("Close", "Closing the event log");
             if (readHandle != null)
             {
                 try
@@ -510,8 +498,6 @@ namespace System.Diagnostics
                     throw new Win32Exception();
                 }
                 readHandle = null;
-                //Trace("Close", "Closed read handle");
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::Close: closed read handle");
             }
 
             if (writeHandle != null)
@@ -525,8 +511,6 @@ namespace System.Diagnostics
                     throw new Win32Exception();
                 }
                 writeHandle = null;
-                //Trace("Close", "Closed write handle");
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::Close: closed write handle");
             }
 
             if (boolFlags[Flag_monitoring])
@@ -551,13 +535,11 @@ namespace System.Diagnostics
                 return;
             }
 
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: starting at " + lastSeenCount.ToString(CultureInfo.InvariantCulture));
             lock (InstanceLockObject)
             {
                 if (boolFlags[Flag_notifying])
                 {
                     // don't do double notifications.
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: aborting because we're already notifying.");
                     return;
                 }
 
@@ -577,7 +559,6 @@ namespace System.Diagnostics
                     i = lastSeenCount;
                 }
 
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: OldestEntryNumber is " + OldestEntryNumber + ", EntryCount is " + EntryCount);
                 while (i < count)
                 {
                     while (i < count)
@@ -594,25 +575,22 @@ namespace System.Diagnostics
                     count = EntryCount + oldest;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: Caught exception notifying event handlers: " + e.ToString());
             }
 
             try
             {
-                // if the user cleared the log while we were receiving events, the call to GetEntryWithOldest above could have 
+                // if the user cleared the log while we were receiving events, the call to GetEntryWithOldest above could have
                 // thrown an exception and i could be too large.  Make sure we don't set lastSeenCount to something bogus.
                 int newCount = EntryCount + OldestEntryNumber;
                 if (i > newCount)
                     lastSeenCount = newCount;
                 else
                     lastSeenCount = i;
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: finishing at " + lastSeenCount.ToString(CultureInfo.InvariantCulture));
             }
-            catch (Win32Exception e)
+            catch (Win32Exception)
             {
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::CompletionStatusChanged: Caught exception updating last entry number: " + e.ToString());
             }
 
             lock (InstanceLockObject)
@@ -750,7 +728,6 @@ namespace System.Diagnostics
                 if (!success)
                 {
                     error = Marshal.GetLastWin32Error();
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "Error from ReadEventLog is " + error.ToString(CultureInfo.InvariantCulture));
 
                     if (error == Interop.Errors.ERROR_INSUFFICIENT_BUFFER || error == Interop.Errors.ERROR_EVENTLOG_FILE_CHANGED)
                     {
@@ -761,7 +738,6 @@ namespace System.Diagnostics
                         // try again with a bigger buffer if necessary
                         else if (minBytesNeeded > buf.Length)
                         {
-                            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "Increasing buffer size from " + buf.Length.ToString(CultureInfo.InvariantCulture) + " to " + minBytesNeeded.ToString(CultureInfo.InvariantCulture) + " bytes");
                             buf = new byte[minBytesNeeded];
                         }
                         success = Interop.Advapi32.ReadEventLog(readHandle, Interop.Advapi32.FORWARDS_READ | Interop.Advapi32.SEEK_READ,
@@ -927,7 +903,6 @@ namespace System.Diagnostics
             if (!success)
             {
                 int error = Marshal.GetLastWin32Error();
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "Error from ReadEventLog is " + error.ToString(CultureInfo.InvariantCulture));
                 if (error == Interop.Errors.ERROR_INSUFFICIENT_BUFFER || error == Interop.Errors.ERROR_EVENTLOG_FILE_CHANGED)
                 {
                     if (error == Interop.Errors.ERROR_EVENTLOG_FILE_CHANGED)
@@ -1077,8 +1052,6 @@ namespace System.Diagnostics
 
         private void OpenForRead(string currentMachineName)
         {
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::OpenForRead");
-
             if (this.boolFlags[Flag_disposed])
                 throw new ObjectDisposedException(GetType().Name);
 
@@ -1118,7 +1091,6 @@ namespace System.Diagnostics
             if (this.boolFlags[Flag_disposed])
                 throw new ObjectDisposedException(GetType().Name);
 
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::OpenForWrite");
             if (sourceName == null || sourceName.Length == 0)
                 throw new ArgumentException(SR.NeedSourceToOpen);
 
@@ -1148,7 +1120,6 @@ namespace System.Diagnostics
 
         private void Reset(string currentMachineName)
         {
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::Reset");
             // save the state we're in now
             bool openRead = IsOpenForRead;
             bool openWrite = IsOpenForWrite;
@@ -1172,8 +1143,6 @@ namespace System.Diagnostics
         {
             lock (InternalSyncObject)
             {
-                Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::RemoveListenerComponent(" + compLogName + ")");
-
                 LogListeningInfo info = (LogListeningInfo)listenerInfos[compLogName];
                 Debug.Assert(info != null);
                 // remove the requested component from the list.
@@ -1195,7 +1164,6 @@ namespace System.Diagnostics
             // make sure we don't fire events for entries that are already there
             Debug.Assert(!boolFlags[Flag_registeredAsListener], "StartListening called with boolFlags[Flag_registeredAsListener] true.");
             lastSeenCount = EntryCount + OldestEntryNumber;
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::StartListening: lastSeenCount = " + lastSeenCount);
             AddListenerComponent(this, currentMachineName, currentLogName);
             boolFlags[Flag_registeredAsListener] = true;
         }
@@ -1221,8 +1189,6 @@ namespace System.Diagnostics
                 interestedComponents = (EventLogInternal[])info.listeningComponents.ToArray(typeof(EventLogInternal));
             }
 
-            Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::StaticCompletionCallback: notifying " + interestedComponents.Length + " components.");
-
             for (int i = 0; i < interestedComponents.Length; i++)
             {
                 try
@@ -1237,7 +1203,6 @@ namespace System.Diagnostics
                     // The EventLog that was registered to listen has been disposed.  Nothing much we can do here
                     // we don't want to propigate this error up as it will likely be unhandled and will cause the app
                     // to crash.
-                    Debug.WriteLineIf(CompModSwitches.EventLog.TraceVerbose, "EventLog::StaticCompletionCallback: ignored an ObjectDisposedException");
                 }
             }
         }
@@ -1403,7 +1368,7 @@ namespace System.Diagnostics
                 if (strings[i] == null)
                     strings[i] = string.Empty;
 
-                // make sure the strings aren't too long.  MSDN says each string has a limit of 32k (32768) characters, but 
+                // make sure the strings aren't too long.  MSDN says each string has a limit of 32k (32768) characters, but
                 // experimentation shows that it doesn't like anything larger than 32766
                 if (strings[i].Length > 32766)
                     throw new ArgumentException(SR.LogEntryTooLong);
@@ -1435,7 +1400,6 @@ namespace System.Diagnostics
                                                      sid, (short)strings.Length, rawData.Length, stringsRootHandle.AddrOfPinnedObject(), rawData);
                 if (!success)
                 {
-                    // Trace("WriteEvent", "Throwing Win32Exception");
                     throw new Win32Exception();
                 }
             }

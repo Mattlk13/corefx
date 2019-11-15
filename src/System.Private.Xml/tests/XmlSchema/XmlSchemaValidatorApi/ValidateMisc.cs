@@ -947,8 +947,8 @@ namespace System.Xml.Tests
             if (string.IsNullOrEmpty(path))
                 throw new ArgumentException();
 
-            return path[path.Length - 1] == Path.DirectorySeparatorChar ? 
-                path : 
+            return path[path.Length - 1] == Path.DirectorySeparatorChar ?
+                path :
                 path + Path.DirectorySeparatorChar;
         }
 
@@ -1093,7 +1093,7 @@ namespace System.Xml.Tests
         {
             Initialize();
 
-            Regex regex = new Regex(@"^\w+$", RegexOptions.None);
+            Regex regex = new Regex(@"^\w+$");
             string schemaContent = @"<xs:schema elementFormDefault='qualified' xmlns:xs='http://www.w3.org/2001/XMLSchema'>
 <xs:element name='validationTest'>
 <xs:simpleType>

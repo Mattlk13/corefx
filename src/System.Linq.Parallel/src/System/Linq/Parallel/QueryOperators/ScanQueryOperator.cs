@@ -33,8 +33,7 @@ namespace System.Linq.Parallel
         {
             Debug.Assert(data != null);
 
-            ParallelEnumerableWrapper<TElement> wrapper = data as ParallelEnumerableWrapper<TElement>;
-            if (wrapper != null)
+            if (data is ParallelEnumerableWrapper<TElement> wrapper)
             {
                 data = wrapper.WrappedEnumerable;
             }
@@ -60,8 +59,7 @@ namespace System.Linq.Parallel
         {
             Debug.Assert(settings.DegreeOfParallelism.HasValue);
 
-            IList<TElement> dataAsList = _data as IList<TElement>;
-            if (dataAsList != null)
+            if (_data is IList<TElement> dataAsList)
             {
                 return new ListQueryResults<TElement>(dataAsList, settings.DegreeOfParallelism.GetValueOrDefault(), preferStriping);
             }
@@ -119,7 +117,7 @@ namespace System.Linq.Parallel
 
         private class ScanEnumerableQueryOperatorResults : QueryResults<TElement>
         {
-            private IEnumerable<TElement> _data; // The data source for the query
+            private readonly IEnumerable<TElement> _data; // The data source for the query
 
             private QuerySettings _settings; // Settings collected from the query
 
@@ -131,6 +129,7 @@ namespace System.Linq.Parallel
 
             internal override void GivePartitionedStream(IPartitionedStreamRecipient<TElement> recipient)
             {
+                Debug.Assert(_settings.DegreeOfParallelism != null);
                 // Since we are not using _data as an IList, we can pass useStriping = false.
                 PartitionedStream<TElement, int> partitionedStream = ExchangeUtilities.PartitionDataSource(
                     _data, _settings.DegreeOfParallelism.Value, false);

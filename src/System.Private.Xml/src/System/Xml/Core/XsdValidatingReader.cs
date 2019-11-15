@@ -57,22 +57,22 @@ namespace System.Xml
         }
         //Validation
         private XmlReader _coreReader;
-        private IXmlNamespaceResolver _coreReaderNSResolver;
-        private IXmlNamespaceResolver _thisNSResolver;
+        private readonly IXmlNamespaceResolver _coreReaderNSResolver;
+        private readonly IXmlNamespaceResolver _thisNSResolver;
         private XmlSchemaValidator _validator;
-        private XmlResolver _xmlResolver;
-        private ValidationEventHandler _validationEvent;
+        private readonly XmlResolver _xmlResolver;
+        private readonly ValidationEventHandler _validationEvent;
         private ValidatingReaderState _validationState;
         private XmlValueGetter _valueGetter;
 
         // namespace management
-        private XmlNamespaceManager _nsManager;
-        private bool _manageNamespaces;
-        private bool _processInlineSchema;
+        private readonly XmlNamespaceManager _nsManager;
+        private readonly bool _manageNamespaces;
+        private readonly bool _processInlineSchema;
         private bool _replayCache;
 
         //Current Node handling
-        private ValidatingReaderNodeData _cachedNode; //Used to cache current node when looking ahead or default attributes                           
+        private ValidatingReaderNodeData _cachedNode; //Used to cache current node when looking ahead or default attributes
         private AttributePSVIInfo _attributePSVI;
 
         //Attributes
@@ -93,7 +93,7 @@ namespace System.Xml
         private string _originalAtomicValueString;
 
         //cached coreReader information
-        private XmlNameTable _coreReaderNameTable;
+        private readonly XmlNameTable _coreReaderNameTable;
         private XsdCachingReader _cachingReader;
 
         //ReadAttributeValue TextNode
@@ -371,7 +371,7 @@ namespace System.Xml
             }
         }
 
-        // Gets the current xml:space scope. 
+        // Gets the current xml:space scope.
         public override XmlSpace XmlSpace
         {
             get
@@ -713,7 +713,7 @@ namespace System.Xml
             {
                 if (xmlType != null)
                 {
-                    // special-case convertions to DateTimeOffset; typedValue is by default a DateTime 
+                    // special-case convertions to DateTimeOffset; typedValue is by default a DateTime
                     // which cannot preserve time zone, so we need to convert from the original string
                     if (returnType == typeof(DateTimeOffset) && xmlType.Datatype is Datatype_dateTimeBase)
                     {
@@ -1046,7 +1046,7 @@ namespace System.Xml
             {
                 if (xmlType != null)
                 {
-                    // special-case convertions to DateTimeOffset; typedValue is by default a DateTime 
+                    // special-case convertions to DateTimeOffset; typedValue is by default a DateTime
                     // which cannot preserve time zone, so we need to convert from the original string
                     if (returnType == typeof(DateTimeOffset) && xmlType.Datatype is Datatype_dateTimeBase)
                     {
@@ -1377,7 +1377,7 @@ namespace System.Xml
                         goto case ValidatingReaderState.Read;
                     }
 
-                case ValidatingReaderState.ReadAhead: //Will enter here on calling Skip() 
+                case ValidatingReaderState.ReadAhead: //Will enter here on calling Skip()
                     ClearAttributesInfo();
                     ProcessReaderEvent();
                     _validationState = ValidatingReaderState.Read;
@@ -2180,7 +2180,7 @@ namespace System.Xml
             if (attIndex >= _attributePSVINodes.Length - 1)
             { //reached capacity of PSVIInfo array, Need to increase capacity to twice the initial
                 AttributePSVIInfo[] newPSVINodes = new AttributePSVIInfo[_attributePSVINodes.Length * 2];
-                Array.Copy(_attributePSVINodes, 0, newPSVINodes, 0, _attributePSVINodes.Length);
+                Array.Copy(_attributePSVINodes, newPSVINodes, _attributePSVINodes.Length);
                 _attributePSVINodes = newPSVINodes;
             }
             attInfo = _attributePSVINodes[attIndex];
@@ -2322,7 +2322,7 @@ namespace System.Xml
                     typedValue = _atomicValue;
                 }
                 originalString = _originalAtomicValueString;
-                xmlType = ElementXmlType; //Set this for default values 
+                xmlType = ElementXmlType; //Set this for default values
                 this.Read();
 
                 return typedValue;
@@ -2626,4 +2626,3 @@ namespace System.Xml
         }
     }
 }
-

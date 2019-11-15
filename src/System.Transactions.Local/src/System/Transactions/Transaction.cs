@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -12,11 +13,11 @@ namespace System.Transactions
 {
     public class TransactionEventArgs : EventArgs
     {
-        internal Transaction _transaction;
-        public Transaction Transaction => _transaction;
+        internal Transaction? _transaction;
+        public Transaction? Transaction => _transaction;
     }
 
-    public delegate void TransactionCompletedEventHandler(object sender, TransactionEventArgs e);
+    public delegate void TransactionCompletedEventHandler(object? sender, TransactionEventArgs e);
 
     public enum IsolationLevel
     {
@@ -67,7 +68,7 @@ namespace System.Transactions
         // This property figures out the current interop mode based on the
         // top of the transaction scope stack as well as the default mode
         // from config.
-        internal static EnterpriseServicesInteropOption InteropMode(TransactionScope currentScope)
+        internal static EnterpriseServicesInteropOption InteropMode(TransactionScope? currentScope)
         {
             if (currentScope != null)
             {
@@ -77,9 +78,9 @@ namespace System.Transactions
             return EnterpriseServicesInteropOption.None;
         }
 
-        internal static Transaction FastGetTransaction(TransactionScope currentScope, ContextData contextData, out Transaction contextTransaction)
+        internal static Transaction? FastGetTransaction(TransactionScope? currentScope, ContextData contextData, out Transaction? contextTransaction)
         {
-            Transaction current = null;
+            Transaction? current = null;
             contextTransaction = null;
 
             contextTransaction = contextData.CurrentTransaction;
@@ -97,7 +98,7 @@ namespace System.Transactions
                         // Otherwise check for an external current.
                         if (TransactionManager.s_currentDelegateSet)
                         {
-                            current = TransactionManager.s_currentDelegate();
+                            current = TransactionManager.s_currentDelegate!();
                         }
                         else
                         {
@@ -132,9 +133,9 @@ namespace System.Transactions
         // in TransactionScope because it is required to get both of them in several cases.
         internal static void GetCurrentTransactionAndScope(
             TxLookup defaultLookup,
-            out Transaction current,
-            out TransactionScope currentScope,
-            out Transaction contextTransaction)
+            out Transaction? current,
+            out TransactionScope? currentScope,
+            out Transaction? contextTransaction)
         {
             current = null;
             currentScope = null;
@@ -148,7 +149,7 @@ namespace System.Transactions
             }
         }
 
-        public static Transaction Current
+        public static Transaction? Current
         {
             get
             {
@@ -158,10 +159,7 @@ namespace System.Transactions
                     etwLog.MethodEnter(TraceSourceType.TraceSourceBase, "Transaction.get_Current");
                 }
 
-                Transaction current = null;
-                TransactionScope currentScope = null;
-                Transaction contextValue = null;
-                GetCurrentTransactionAndScope(TxLookup.Default, out current, out currentScope, out contextValue);
+                GetCurrentTransactionAndScope(TxLookup.Default, out Transaction? current, out TransactionScope? currentScope, out Transaction? contextValue);
 
                 if (currentScope != null)
                 {
@@ -187,7 +185,7 @@ namespace System.Transactions
                     etwLog.MethodEnter(TraceSourceType.TraceSourceBase, "Transaction.set_Current");
                 }
 
-                // Bring your own Transaction(BYOT) is supported only for legacy scenarios. 
+                // Bring your own Transaction(BYOT) is supported only for legacy scenarios.
                 // This transaction won't be flown across thread continuations.
                 if (InteropMode(ContextData.TLSCurrentData.CurrentScope) != EnterpriseServicesInteropOption.None)
                 {
@@ -199,7 +197,7 @@ namespace System.Transactions
                     throw new InvalidOperationException(SR.CannotSetCurrent);
                 }
 
-                // Support only legacy scenarios using TLS. 
+                // Support only legacy scenarios using TLS.
                 ContextData.TLSCurrentData.CurrentTransaction = value;
                 // Clear CallContext data.
                 CallContextCurrentData.ClearCurrentData(null, false);
@@ -239,10 +237,10 @@ namespace System.Transactions
             }
         }
 
-        // Internal synchronization object for transactions.  It is not safe to lock on the 
-        // transaction object because it is public and users of the object may lock it for 
+        // Internal synchronization object for transactions.  It is not safe to lock on the
+        // transaction object because it is public and users of the object may lock it for
         // other purposes.
-        internal InternalTransaction _internalTransaction;
+        internal InternalTransaction _internalTransaction = null!;
 
         // The TransactionTraceIdentifier for the transaction instance.
         internal TransactionTraceIdentifier _traceIdentifier;
@@ -252,7 +250,7 @@ namespace System.Transactions
 
         // Create a transaction with the given settings
         //
-        internal Transaction(IsolationLevel isoLevel, InternalTransaction internalTransaction)
+        internal Transaction(IsolationLevel isoLevel, InternalTransaction? internalTransaction)
         {
             TransactionManager.ValidateIsolationLevel(isoLevel);
 
@@ -319,37 +317,29 @@ namespace System.Transactions
 
         // Don't allow equals to get the identifier
         //
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            Transaction transaction = obj as Transaction;
-
             // If we can't cast the object as a Transaction, it must not be equal
-            // to this, which is a Transaction.
-            if (null == transaction)
-            {
-                return false;
-            }
-
-            // Check the internal transaction object for equality.
-            return _internalTransaction.TransactionHash == transaction._internalTransaction.TransactionHash;
+            // to this, which is a Transaction. Check the internal transaction object for equality.
+            return obj is Transaction transaction && _internalTransaction.TransactionHash == transaction._internalTransaction.TransactionHash;
         }
 
-        public static bool operator ==(Transaction x, Transaction y)
+        public static bool operator ==(Transaction? x, Transaction? y)
         {
-            if (((object)x) != null)
+            if (((object?)x) != null)
             {
                 return x.Equals(y);
             }
-            return ((object)y) == null;
+            return ((object?)y) == null;
         }
 
-        public static bool operator !=(Transaction x, Transaction y)
+        public static bool operator !=(Transaction? x, Transaction? y)
         {
-            if (((object)x) != null)
+            if (((object?)x) != null)
             {
                 return !x.Equals(y);
             }
-            return ((object)y) != null;
+            return ((object?)y) != null;
         }
 
 
@@ -370,7 +360,7 @@ namespace System.Transactions
                     throw new ObjectDisposedException(nameof(Transaction));
                 }
 
-                TransactionInformation txInfo = _internalTransaction._transactionInformation;
+                TransactionInformation? txInfo = _internalTransaction._transactionInformation;
                 if (txInfo == null)
                 {
                     // A race would only result in an extra allocation
@@ -419,10 +409,10 @@ namespace System.Transactions
         /// <value>
         /// If the transaction has not yet been promoted and does not yet have a promotable single phase enlistment,
         /// this property value will be Guid.Empty.
-        /// 
+        ///
         /// If the transaction has been promoted or has a promotable single phase enlistment, this will return the
         /// promoter type specified by the transaction promoter.
-        /// 
+        ///
         /// If the transaction is, or will be, promoted to MSDTC, the value will be TransactionInterop.PromoterTypeDtc.
         /// </value>
         public Guid PromoterType
@@ -449,18 +439,18 @@ namespace System.Transactions
 
         /// <summary>
         /// Gets the PromotedToken for the transaction.
-        /// 
+        ///
         /// If the transaction has not already been promoted, retrieving this value will cause promotion. Before retrieving the
         /// PromotedToken, the Transaction.PromoterType value should be checked to see if it is a promoter type (Guid) that the
         /// caller understands. If the caller does not recognize the PromoterType value, retrieving the PromotedToken doesn't
         /// have much value because the caller doesn't know how to utilize it. But if the PromoterType is recognized, the
         /// caller should know how to utilize the PromotedToken to communicate with the promoting distributed transaction
         /// coordinator to enlist on the distributed transaction.
-        /// 
+        ///
         /// If the value of a transaction's PromoterType is TransactionInterop.PromoterTypeDtc, then that transaction's
         /// PromotedToken will be an MSDTC-based TransmitterPropagationToken.
         /// </summary>
-        /// <returns> 
+        /// <returns>
         /// The byte[] that can be used to enlist with the distributed transaction coordinator used to promote the transaction.
         /// The format of the byte[] depends upon the value of Transaction.PromoterType.
         /// </returns>
@@ -483,11 +473,12 @@ namespace System.Transactions
             byte[] internalPromotedToken;
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 internalPromotedToken = _internalTransaction.State.PromotedToken(_internalTransaction);
             }
 
             byte[] toReturn = new byte[internalPromotedToken.Length];
-            Array.Copy(internalPromotedToken, 0, toReturn, 0, toReturn.Length);
+            Array.Copy(internalPromotedToken, toReturn, toReturn.Length);
             return toReturn;
         }
 
@@ -529,6 +520,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 Enlistment enlistment = _internalTransaction.State.EnlistDurable(_internalTransaction,
                     resourceManagerIdentifier, enlistmentNotification, enlistmentOptions, this);
 
@@ -582,6 +574,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 Enlistment enlistment = _internalTransaction.State.EnlistDurable(_internalTransaction,
                     resourceManagerIdentifier, singlePhaseNotification, enlistmentOptions, this);
 
@@ -621,7 +614,7 @@ namespace System.Transactions
         }
 
 
-        public void Rollback(Exception e)
+        public void Rollback(Exception? e)
         {
             TransactionsEtwProvider etwLog = TransactionsEtwProvider.Log;
             if (etwLog.IsEnabled())
@@ -657,7 +650,7 @@ namespace System.Transactions
             {
                 etwLog.MethodEnter(TraceSourceType.TraceSourceLtm, this);
             }
- 
+
             if (Disposed)
             {
                 throw new ObjectDisposedException(nameof(Transaction));
@@ -680,6 +673,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 Enlistment enlistment = _internalTransaction.State.EnlistVolatile(_internalTransaction,
                     enlistmentNotification, enlistmentOptions, this);
 
@@ -724,6 +718,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 Enlistment enlistment = _internalTransaction.State.EnlistVolatile(_internalTransaction,
                     singlePhaseNotification, enlistmentOptions, this);
 
@@ -842,7 +837,7 @@ namespace System.Transactions
 
         // Forward request to the state machine to take the appropriate action.
         //
-        public event TransactionCompletedEventHandler TransactionCompleted
+        public event TransactionCompletedEventHandler? TransactionCompleted
         {
             add
             {
@@ -853,6 +848,7 @@ namespace System.Transactions
 
                 lock (_internalTransaction)
                 {
+                    Debug.Assert(_internalTransaction.State != null);
                     // Register for completion with the inner transaction
                     _internalTransaction.State.AddOutcomeRegistrant(_internalTransaction, value);
                 }
@@ -862,7 +858,7 @@ namespace System.Transactions
             {
                 lock (_internalTransaction)
                 {
-                    _internalTransaction._transactionCompletedDelegate = (TransactionCompletedEventHandler)
+                    _internalTransaction._transactionCompletedDelegate = (TransactionCompletedEventHandler?)
                         System.Delegate.Remove(_internalTransaction._transactionCompletedDelegate, value);
                 }
             }
@@ -948,7 +944,7 @@ namespace System.Transactions
         /// <param name="promotableSinglePhaseNotification">The object that implements the IPromotableSinglePhaseNotification interface.</param>
         /// <returns>
         /// True if the enlistment is successful.
-        /// 
+        ///
         /// False if the transaction already has a durable enlistment or promotable single phase enlistment or
         /// if the transaction has already promoted. In this case, the caller will need to enlist in the transaction through other
         /// means, such as Transaction.EnlistDurable or retrieve the MSDTC export cookie or propagation token to enlist with MSDTC.
@@ -969,11 +965,11 @@ namespace System.Transactions
         /// </param>
         /// <returns>
         /// True if the enlistment is successful.
-        /// 
+        ///
         /// False if the transaction already has a durable enlistment or promotable single phase enlistment or
         /// if the transaction has already promoted. In this case, the caller will need to enlist in the transaction through other
         /// means.
-        /// 
+        ///
         /// If the Transaction.PromoterType matches the promoter type supported by the caller, then the
         /// Transaction.PromotedToken can be retrieved and used to enlist directly with the identified distributed transaction manager.
         ///
@@ -1012,6 +1008,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 succeeded = _internalTransaction.State.EnlistPromotableSinglePhase(_internalTransaction, promotableSinglePhaseNotification, this, promoterType);
             }
 
@@ -1066,6 +1063,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 Enlistment enlistment = _internalTransaction.State.PromoteAndEnlistDurable(_internalTransaction,
                     resourceManagerIdentifier, promotableNotification, enlistmentNotification, enlistmentOptions, this);
 
@@ -1109,6 +1107,7 @@ namespace System.Transactions
 
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 _internalTransaction.State.SetDistributedTransactionId(_internalTransaction,
                     promotableNotification,
                     distributedTransactionIdentifier);
@@ -1121,10 +1120,11 @@ namespace System.Transactions
             }
         }
 
-        internal DistributedTransaction Promote()
+        internal DistributedTransaction? Promote()
         {
             lock (_internalTransaction)
             {
+                Debug.Assert(_internalTransaction.State != null);
                 // This method is only called when we expect to be promoting to MSDTC.
                 _internalTransaction.ThrowIfPromoterTypeIsNotMSDTC();
                 _internalTransaction.State.Promote(_internalTransaction);
@@ -1145,10 +1145,10 @@ namespace System.Transactions
     }
 
     //
-    //  The TxLookup enum is used internally to detect where the ambient context needs to be stored or looked up. 
-    //  Default                  - Used internally when looking up Transaction.Current.  
+    //  The TxLookup enum is used internally to detect where the ambient context needs to be stored or looked up.
+    //  Default                  - Used internally when looking up Transaction.Current.
     //  DefaultCallContext - Used when TransactionScope with async flow option is enabled. Internally we will use CallContext to store the ambient transaction.
-    //  Default TLS            - Used for legacy/syncronous TransactionScope. Internally we will use TLS to store the ambient transaction.  
+    //  Default TLS            - Used for legacy/syncronous TransactionScope. Internally we will use TLS to store the ambient transaction.
     //
     internal enum TxLookup
     {
@@ -1160,39 +1160,39 @@ namespace System.Transactions
     //
     //  CallContextCurrentData holds the ambient transaction and uses CallContext and ConditionalWeakTable to track the ambient transaction.
     //  For async flow scenarios, we should not allow flowing of transaction across app domains. To prevent transaction from flowing across
-    //  AppDomain/Remoting boundaries, we are using ConditionalWeakTable to hold the actual ambient transaction and store only a object reference 
-    //  in CallContext. When TransactionScope is used to invoke a call across AppDomain/Remoting boundaries, only the object reference will be sent   
-    //  across and not the actual ambient transaction which is stashed away in the ConditionalWeakTable. 
+    //  AppDomain/Remoting boundaries, we are using ConditionalWeakTable to hold the actual ambient transaction and store only a object reference
+    //  in CallContext. When TransactionScope is used to invoke a call across AppDomain/Remoting boundaries, only the object reference will be sent
+    //  across and not the actual ambient transaction which is stashed away in the ConditionalWeakTable.
     //
     internal static class CallContextCurrentData
     {
-        private static AsyncLocal<ContextKey> s_currentTransaction = new AsyncLocal<ContextKey>();
+        private static readonly AsyncLocal<ContextKey?> s_currentTransaction = new AsyncLocal<ContextKey?>();
 
         // ConditionalWeakTable is used to automatically remove the entries that are no longer referenced. This will help prevent leaks in async nested TransactionScope
-        // usage and when child nested scopes are not syncronized properly. 
+        // usage and when child nested scopes are not syncronized properly.
         private static readonly ConditionalWeakTable<ContextKey, ContextData> s_contextDataTable = new ConditionalWeakTable<ContextKey, ContextData>();
 
-        // 
-        //  Set CallContext data with the given contextKey. 
-        //  return the ContextData if already present in contextDataTable, otherwise return the default value. 
-        // 
+        //
+        //  Set CallContext data with the given contextKey.
+        //  return the ContextData if already present in contextDataTable, otherwise return the default value.
+        //
         public static ContextData CreateOrGetCurrentData(ContextKey contextKey)
         {
             s_currentTransaction.Value = contextKey;
             return s_contextDataTable.GetValue(contextKey, (env) => new ContextData(true));
         }
 
-        public static void ClearCurrentData(ContextKey contextKey, bool removeContextData)
+        public static void ClearCurrentData(ContextKey? contextKey, bool removeContextData)
         {
             // Get the current ambient CallContext.
-            ContextKey key = s_currentTransaction.Value;
+            ContextKey? key = s_currentTransaction.Value;
             if (contextKey != null || key != null)
             {
-                // removeContextData flag is used for perf optimization to avoid removing from the table in certain nested TransactionScope usage. 
+                // removeContextData flag is used for perf optimization to avoid removing from the table in certain nested TransactionScope usage.
                 if (removeContextData)
                 {
-                    // if context key is passed in remove that from the contextDataTable, otherwise remove the default context key. 
-                    s_contextDataTable.Remove(contextKey ?? key);
+                    // if context key is passed in remove that from the contextDataTable, otherwise remove the default context key.
+                    s_contextDataTable.Remove(contextKey ?? key!);
                 }
 
                 if (key != null)
@@ -1202,10 +1202,10 @@ namespace System.Transactions
             }
         }
 
-        public static bool TryGetCurrentData(out ContextData currentData)
+        public static bool TryGetCurrentData([NotNullWhen(true)] out ContextData? currentData)
         {
             currentData = null;
-            ContextKey contextKey = s_currentTransaction.Value;
+            ContextKey? contextKey = s_currentTransaction.Value;
             if (contextKey == null)
             {
                 return false;
@@ -1226,27 +1226,28 @@ namespace System.Transactions
 
     internal class ContextData
     {
-        internal TransactionScope CurrentScope;
-        internal Transaction CurrentTransaction;
+        internal TransactionScope? CurrentScope;
+        internal Transaction? CurrentTransaction;
 
         internal DefaultComContextState DefaultComContextState;
-        internal WeakReference WeakDefaultComContext;
+        internal WeakReference? WeakDefaultComContext;
 
         internal bool _asyncFlow;
 
         [ThreadStatic]
-        private static ContextData t_staticData;
+        private static ContextData? t_staticData;
 
         internal ContextData(bool asyncFlow)
         {
             _asyncFlow = asyncFlow;
         }
 
+        [AllowNull]
         internal static ContextData TLSCurrentData
         {
             get
             {
-                ContextData data = t_staticData;
+                ContextData? data = t_staticData;
                 if (data == null)
                 {
                     data = new ContextData(false);
@@ -1274,7 +1275,7 @@ namespace System.Transactions
 
         internal static ContextData LookupContextData(TxLookup defaultLookup)
         {
-            ContextData currentData = null;
+            ContextData? currentData = null;
             if (CallContextCurrentData.TryGetCurrentData(out currentData))
             {
                 if (currentData.CurrentScope == null && currentData.CurrentTransaction == null && defaultLookup != TxLookup.DefaultCallContext)

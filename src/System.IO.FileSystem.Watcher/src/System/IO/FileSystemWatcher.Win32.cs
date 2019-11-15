@@ -43,7 +43,7 @@ namespace System.IO
             AsyncReadState state;
             try
             {
-                // Start ignoring all events that were initiated before this, and 
+                // Start ignoring all events that were initiated before this, and
                 // allocate the buffer to be pinned and used for the duration of the operation
                 int session = Interlocked.Increment(ref _currentSession);
                 byte[] buffer = AllocateBuffer();
@@ -51,8 +51,19 @@ namespace System.IO
                 // Store all state, including a preallocated overlapped, into the state object that'll be
                 // passed from iteration to iteration during the lifetime of the operation.  The buffer will be pinned
                 // from now until the end of the operation.
-                state = new AsyncReadState(session, buffer, _directoryHandle, ThreadPoolBoundHandle.BindHandle(_directoryHandle));
-                unsafe { state.PreAllocatedOverlapped = new PreAllocatedOverlapped(ReadDirectoryChangesCallback, state, buffer); }
+                state = new AsyncReadState(session, buffer, _directoryHandle, ThreadPoolBoundHandle.BindHandle(_directoryHandle), this);
+                unsafe
+                {
+                    state.PreAllocatedOverlapped = new PreAllocatedOverlapped((errorCode, numBytes, overlappedPointer) =>
+                    {
+                        AsyncReadState state = (AsyncReadState)ThreadPoolBoundHandle.GetNativeOverlappedState(overlappedPointer);
+                        state.ThreadPoolBinding.FreeNativeOverlapped(overlappedPointer);
+                        if (state.WeakWatcher.TryGetTarget(out FileSystemWatcher watcher))
+                        {
+                            watcher.ReadDirectoryChangesCallback(errorCode, numBytes, state);
+                        }
+                    }, state, buffer);
+                }
             }
             catch
             {
@@ -84,7 +95,7 @@ namespace System.IO
 
             // Close the directory handle.  This will cause the async operation to stop processing.
             // This operation doesn't need to be atomic because the API will deal with a closed
-            // handle appropriately. If we get here while asynchronously waiting on a change notification, 
+            // handle appropriately. If we get here while asynchronously waiting on a change notification,
             // closing the directory handle should cause ReadDirectoryChangesCallback be called,
             // cleaning up the operation.  Note that it's critical to also null out the handle.  If the
             // handle is currently in use in a P/Invoke, it will have its reference count temporarily
@@ -127,9 +138,9 @@ namespace System.IO
         private unsafe void Monitor(AsyncReadState state)
         {
             // This method should only ever access the directory handle via the state object passed in, and not access it
-            // via _directoryHandle.  While this function is executing asynchronously, another thread could set 
-            // EnableRaisingEvents to false and then back to true, restarting the FSW and causing a new directory handle 
-            // and thread pool binding to be stored.  This function could then get into an inconsistent state by doing some 
+            // via _directoryHandle.  While this function is executing asynchronously, another thread could set
+            // EnableRaisingEvents to false and then back to true, restarting the FSW and causing a new directory handle
+            // and thread pool binding to be stored.  This function could then get into an inconsistent state by doing some
             // operations against the old handles and some against the new.
 
             NativeOverlapped* overlappedPointer = null;
@@ -180,7 +191,7 @@ namespace System.IO
                     state.PreAllocatedOverlapped.Dispose();
                     state.ThreadPoolBinding.Dispose();
 
-                    // Finally, if the handle was for some reason changed or closed during this call, 
+                    // Finally, if the handle was for some reason changed or closed during this call,
                     // then don't throw an exception.  Otherwise, it's a valid error.
                     if (!IsHandleInvalid(state.DirectoryHandle))
                     {
@@ -191,9 +202,8 @@ namespace System.IO
         }
 
         /// <summary>Callback invoked when an asynchronous read on the directory handle completes.</summary>
-        private unsafe void ReadDirectoryChangesCallback(uint errorCode, uint numBytes, NativeOverlapped* overlappedPointer)
+        private void ReadDirectoryChangesCallback(uint errorCode, uint numBytes, AsyncReadState state)
         {
-            AsyncReadState state = (AsyncReadState)ThreadPoolBoundHandle.GetNativeOverlappedState(overlappedPointer);
             try
             {
                 if (IsHandleInvalid(state.DirectoryHandle))
@@ -215,7 +225,7 @@ namespace System.IO
 
                 // Ignore any events that occurred before this "session",
                 // so we don't get changed or error events after we
-                // told FSW to stop.  Even with this check, though, there's a small 
+                // told FSW to stop.  Even with this check, though, there's a small
                 // race condition, as immediately after we do the check, raising
                 // events could be disabled.
                 if (state.Session != Volatile.Read(ref _currentSession))
@@ -232,11 +242,7 @@ namespace System.IO
             }
             finally
             {
-                // Clean up state associated with this one iteration
-                state.ThreadPoolBinding.FreeNativeOverlapped(overlappedPointer);
-
-                // Then call Monitor again to either start the next iteration or
-                // clean up the whole operation.
+                // Call Monitor again to either start the next iteration or clean up the whole operation.
                 Monitor(state);
             }
         }
@@ -338,7 +344,7 @@ namespace System.IO
         /// </summary>
         private sealed class AsyncReadState
         {
-            internal AsyncReadState(int session, byte[] buffer, SafeFileHandle handle, ThreadPoolBoundHandle binding)
+            internal AsyncReadState(int session, byte[] buffer, SafeFileHandle handle, ThreadPoolBoundHandle binding, FileSystemWatcher parent)
             {
                 Debug.Assert(buffer != null);
                 Debug.Assert(buffer.Length > 0);
@@ -349,13 +355,15 @@ namespace System.IO
                 Buffer = buffer;
                 DirectoryHandle = handle;
                 ThreadPoolBinding = binding;
+                WeakWatcher = new WeakReference<FileSystemWatcher>(parent);
             }
 
-            internal int Session { get; private set; }
-            internal byte[] Buffer { get; private set; }
-            internal SafeFileHandle DirectoryHandle { get; private set; }
-            internal ThreadPoolBoundHandle ThreadPoolBinding { get; private set; }
-            internal PreAllocatedOverlapped PreAllocatedOverlapped { get; set; }
+            internal int Session { get; }
+            internal byte[] Buffer { get; }
+            internal SafeFileHandle DirectoryHandle { get; }
+            internal ThreadPoolBoundHandle ThreadPoolBinding { get; }
+            internal PreAllocatedOverlapped PreAllocatedOverlapped { get; set;  }
+            internal WeakReference<FileSystemWatcher> WeakWatcher { get; }
         }
     }
 }

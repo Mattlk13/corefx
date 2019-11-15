@@ -15,13 +15,13 @@ namespace System.Runtime.Serialization.Json
 {
     internal class XmlObjectSerializerWriteContextComplexJson : XmlObjectSerializerWriteContextComplex
     {
-        private DataContractJsonSerializer _jsonSerializer;
-        private EmitTypeInformation _emitXsiType;
+        private readonly DataContractJsonSerializer _jsonSerializer;
+        private readonly EmitTypeInformation _emitXsiType;
         private bool _perCallXsiTypeAlreadyEmitted;
-        private bool _useSimpleDictionaryFormat;
+        private readonly bool _useSimpleDictionaryFormat;
 
         public XmlObjectSerializerWriteContextComplexJson(DataContractJsonSerializer serializer, DataContract rootTypeDataContract)
-            : base(null, int.MaxValue, new StreamingContext(), true)
+            : base(null, int.MaxValue, default(StreamingContext), true)
 
         {
             _jsonSerializer = serializer;
@@ -40,7 +40,7 @@ namespace System.Runtime.Serialization.Json
         }
 
         internal XmlObjectSerializerWriteContextComplexJson(DataContractJsonSerializerImpl serializer, DataContract rootTypeDataContract)
-            : base(serializer, serializer.MaxItemsInObjectGraph, new StreamingContext(), false)
+            : base(serializer, serializer.MaxItemsInObjectGraph, default(StreamingContext), false)
         {
             _emitXsiType = serializer.EmitTypeInformation;
             this.rootTypeDataContract = rootTypeDataContract;
@@ -126,7 +126,7 @@ namespace System.Runtime.Serialization.Json
                  (_emitXsiType != EmitTypeInformation.Never))
             {
                 // We always deserialize collections assigned to System.Object as object[]
-                // Because of its common and JSON-specific nature, 
+                // Because of its common and JSON-specific nature,
                 //    we don't want to validate known type information for object[]
 
                 // Don't validate known type information when emitXsiType == Never because

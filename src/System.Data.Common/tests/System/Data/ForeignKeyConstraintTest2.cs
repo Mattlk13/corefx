@@ -2,7 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 // Copyright (c) 2004 Mainsoft Co.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -10,10 +10,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -137,34 +137,24 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void acceptRejectRule()
+        public void AcceptRejectRule()
         {
-            DataSet ds = getNewDataSet();
+            DataSet ds = GetNewDataSet();
 
             ForeignKeyConstraint fc = new ForeignKeyConstraint(ds.Tables[0].Columns[0], ds.Tables[1].Columns[0]);
-            fc.AcceptRejectRule = AcceptRejectRule.Cascade;
+            fc.AcceptRejectRule = Data.AcceptRejectRule.Cascade;
             ds.Tables[1].Constraints.Add(fc);
 
-            //Update the parent 
+            //Update the parent
 
             ds.Tables[0].Rows[0]["ParentId"] = 777;
             Assert.True(ds.Tables[1].Select("ParentId=777").Length > 0);
             ds.Tables[0].RejectChanges();
             Assert.Equal(0, ds.Tables[1].Select("ParentId=777").Length);
         }
-        private DataSet getNewDataSet()
-        {
-            DataSet ds1 = new DataSet();
-            ds1.Tables.Add(DataProvider.CreateParentDataTable());
-            ds1.Tables.Add(DataProvider.CreateChildDataTable());
-            //    ds1.Tables.Add(DataProvider.CreateChildDataTable());
-            ds1.Tables[0].PrimaryKey = new DataColumn[] { ds1.Tables[0].Columns[0] };
-
-            return ds1;
-        }
 
         [Fact]
-        public void constraintName()
+        public void ConstraintName()
         {
             var ds = new DataSet();
             DataTable dtParent = DataProvider.CreateParentDataTable();
@@ -175,17 +165,17 @@ namespace System.Data.Tests
             ForeignKeyConstraint fc = null;
             fc = new ForeignKeyConstraint(dtParent.Columns[0], dtChild.Columns[0]);
 
-            // default 
+            // default
             Assert.Equal(string.Empty, fc.ConstraintName);
 
             fc.ConstraintName = "myConstraint";
 
-            // set/get 
+            // set/get
             Assert.Equal("myConstraint", fc.ConstraintName);
         }
 
         [Fact]
-        public void ctor_ParentColChildCol()
+        public void Ctor_ParentColChildCol()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
             DataTable dtChild = DataProvider.CreateChildDataTable();
@@ -223,7 +213,6 @@ namespace System.Data.Tests
 
             fc = new ForeignKeyConstraint(new DataColumn[] { dtParent.Columns[0] }, new DataColumn[] { dtChild.Columns[0] });
             // Ctor
-            Assert.False(fc == null);
 
             // Child Table Constraints Count
             Assert.Equal(0, dtChild.Constraints.Count);
@@ -275,39 +264,33 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_NameParentColChildCol()
+        public void Ctor_NameParentColChildCol()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
             DataTable dtChild = DataProvider.CreateChildDataTable();
 
             ForeignKeyConstraint fc = null;
             fc = new ForeignKeyConstraint("myForeignKey", dtParent.Columns[0], dtChild.Columns[0]);
-
             // Ctor
-            Assert.False(fc == null);
 
             // Ctor - name
             Assert.Equal("myForeignKey", fc.ConstraintName);
         }
 
         [Fact]
-        public void ctor_NameParentColsChildCols()
+        public void Ctor_NameParentColsChildCols()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
             DataTable dtChild = DataProvider.CreateChildDataTable();
-
-            ForeignKeyConstraint fc = null;
-            fc = new ForeignKeyConstraint("myForeignKey", new DataColumn[] { dtParent.Columns[0] }, new DataColumn[] { dtChild.Columns[0] });
-
+            ForeignKeyConstraint fc = new ForeignKeyConstraint("myForeignKey", new DataColumn[] { dtParent.Columns[0] }, new DataColumn[] { dtChild.Columns[0] });
             // Ctor
-            Assert.False(fc == null);
 
             // Ctor - name
             Assert.Equal("myForeignKey", fc.ConstraintName);
         }
 
         [Fact]
-        public void deleteRule()
+        public void DeleteRule()
         {
             var ds = new DataSet();
             DataTable dtParent = DataProvider.CreateParentDataTable();
@@ -374,7 +357,6 @@ namespace System.Data.Tests
             ds1.Tables[1].AcceptChanges();
 
             DataRow[] arr = ds1.Tables[1].Select("ChildId is null");
-
             /*foreach (DataRow dr in arr)
                     {
                         Assert.Null(dr["ChildId"]);
@@ -404,7 +386,7 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void extendedProperties()
+        public void ExtendedProperties()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
             DataTable dtChild = DataProvider.CreateParentDataTable();
@@ -414,26 +396,22 @@ namespace System.Data.Tests
 
             PropertyCollection pc = fc.ExtendedProperties;
 
-            // Checking ExtendedProperties default 
-            Assert.True(fc != null);
+            // Checking ExtendedProperties default
+            Assert.NotNull(pc);
 
-            // Checking ExtendedProperties count 
+            // Checking ExtendedProperties count
             Assert.Equal(0, pc.Count);
         }
 
         [Fact]
-        public void ctor_DclmDclm()
+        public void Ctor_DclmDclm()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
             DataTable dtChild = DataProvider.CreateChildDataTable();
             var ds = new DataSet();
             ds.Tables.Add(dtChild);
             ds.Tables.Add(dtParent);
-
-            ForeignKeyConstraint fc = null;
-            fc = new ForeignKeyConstraint(dtParent.Columns[0], dtChild.Columns[0]);
-
-            Assert.False(fc == null);
+            ForeignKeyConstraint fc = new ForeignKeyConstraint(dtParent.Columns[0], dtChild.Columns[0]);
 
             Assert.Equal(0, dtChild.Constraints.Count);
 
@@ -471,7 +449,7 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DclmDclm1()
+        public void Ctor_DclmDclm1()
         {
             Assert.Throws<NullReferenceException>(() =>
             {
@@ -480,7 +458,7 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DclmDclm2()
+        public void Ctor_DclmDclm2()
         {
             AssertExtensions.Throws<ArgumentException>(null, () =>
             {
@@ -494,7 +472,7 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DclmDclm3()
+        public void Ctor_DclmDclm3()
         {
             AssertExtensions.Throws<ArgumentException>(null, () =>
             {
@@ -540,7 +518,6 @@ namespace System.Data.Tests
                 //Changing parent row
 
                 ds.Tables[0].Rows[0]["ParentId"] = 5;
-
                 /*ds.Tables[0].AcceptChanges();
                 ds.Tables[1].AcceptChanges();
                 //Checking the table
@@ -613,18 +590,13 @@ namespace System.Data.Tests
             t2.Columns.Add("col", typeof(DateTime));
             t2.Columns[0].DateTimeMode = DataSetDateTime.Unspecified;
 
-            // DataColumn type shud match, and no exception shud be raised 
+            // DataColumn type shud match, and no exception shud be raised
             t2.Constraints.Add("fk", t1.Columns[0], t2.Columns[0]);
 
             t2.Constraints.Clear();
             t2.Columns[0].DateTimeMode = DataSetDateTime.Local;
-            try
-            {
-                // DataColumn type shud not match, and exception shud be raised 
-                t2.Constraints.Add("fk", t1.Columns[0], t2.Columns[0]);
-                Assert.False(true);
-            }
-            catch (InvalidOperationException e) { }
+            // DataColumn type should not match, and exception should be raised
+            Assert.Throws<InvalidOperationException>(() => t2.Constraints.Add("fk", t1.Columns[0], t2.Columns[0]));
         }
 
         [Fact]

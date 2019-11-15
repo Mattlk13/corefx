@@ -19,7 +19,7 @@ using System.Diagnostics;
 
 namespace System.Linq.Parallel
 {
-    class OrderPreservingPipeliningSpoolingTask<TOutput, TKey> : SpoolingTaskBase
+    internal class OrderPreservingPipeliningSpoolingTask<TOutput, TKey> : SpoolingTaskBase
     {
         private readonly QueryTaskGroupState _taskGroupState; // State shared among tasks.
         private readonly QueryOperatorEnumerator<TOutput, TKey> _partition; // The source partition.
@@ -39,9 +39,9 @@ namespace System.Linq.Parallel
         private readonly bool _autoBuffered;
 
         /// <summary>
-        /// The number of elements to accumulate on the producer before copying the elements to the 
+        /// The number of elements to accumulate on the producer before copying the elements to the
         /// producer-consumer buffer. This constant is only used in the AutoBuffered mode.
-        /// 
+        ///
         /// Experimentally, 16 appears to be sufficient buffer size to compensate for the synchronization
         /// cost.
         /// </summary>
@@ -87,8 +87,8 @@ namespace System.Linq.Parallel
         /// </summary>
         protected override void SpoolingWork()
         {
-            TOutput element = default(TOutput);
-            TKey key = default(TKey);
+            TOutput element = default(TOutput)!;
+            TKey key = default(TKey)!;
 
             int chunkSize = _autoBuffered ? PRODUCER_BUFFER_AUTO_SIZE : 1;
             Pair<TKey, TOutput>[] chunk = new Pair<TKey, TOutput>[chunkSize];
@@ -99,7 +99,7 @@ namespace System.Linq.Parallel
             do
             {
                 lastChunkSize = 0;
-                while (lastChunkSize < chunkSize && partition.MoveNext(ref element, ref key))
+                while (lastChunkSize < chunkSize && partition.MoveNext(ref element!, ref key))
                 {
                     chunk[lastChunkSize] = new Pair<TKey, TOutput>(key, element);
                     lastChunkSize++;

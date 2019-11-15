@@ -8,18 +8,18 @@ internal partial class Interop
 {
     internal partial class NtDll
     {
-        [DllImport(Libraries.NtDll, ExactSpelling=true)]
+        [DllImport(Libraries.NtDll, ExactSpelling = true)]
         private static extern int RtlGetVersion(ref RTL_OSVERSIONINFOEX lpVersionInformation);
 
         internal static unsafe int RtlGetVersionEx(out RTL_OSVERSIONINFOEX osvi)
         {
-            osvi = new RTL_OSVERSIONINFOEX();
+            osvi = default;
             osvi.dwOSVersionInfoSize = (uint)sizeof(RTL_OSVERSIONINFOEX);
             return RtlGetVersion(ref osvi);
         }
 
         internal static unsafe string RtlGetVersion()
-        {            
+        {
             const string Version = "Microsoft Windows";
             if (RtlGetVersionEx(out RTL_OSVERSIONINFOEX osvi) == 0)
             {

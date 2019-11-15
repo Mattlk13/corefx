@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -10,7 +10,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
 {
     public class ECDsaImportExportTests : ECDsaTestsBase
     {
-#if netcoreapp
+#if NETCOREAPP
         [Fact]
         public static void DiminishedCoordsRoundtrip()
         {
@@ -24,13 +24,13 @@ namespace System.Security.Cryptography.EcDsa.Tests
                 privateParams = ecdsa.ExportParameters(true);
                 publicParams = ecdsa.ExportParameters(false);
             }
-            
+
             ComparePublicKey(toImport.Q, privateParams.Q);
             ComparePrivateKey(toImport, privateParams);
             ComparePublicKey(toImport.Q, publicParams.Q);
             Assert.Null(publicParams.D);
         }
-        
+
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows/* "parameters.Curve.Hash doesn't round trip on Unix." */)]
         public static void ImportExplicitWithHashButNoSeed()

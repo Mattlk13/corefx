@@ -99,7 +99,6 @@ namespace System.IO.FileSystem.DriveInfoTests
 
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Accessing drive format is not permitted inside an AppContainer.")]
         public void TestDriveFormat()
         {
             DriveInfo validDrive = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed).First();
@@ -140,7 +139,6 @@ namespace System.IO.FileSystem.DriveInfoTests
 
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "GetDiskFreeSpaceEx blocked in AC")]
         public void TestValidDiskSpaceProperties()
         {
             bool win32Result;
@@ -216,12 +214,12 @@ namespace System.IO.FileSystem.DriveInfoTests
                     var name = validDrive.VolumeLabel;
                 }
             };
-            
+
             if (PlatformDetection.IsInAppContainer)
             {
                 Assert.Throws<UnauthorizedAccessException>(() => DoDriveCheck());
             }
-            else 
+            else
             {
                 DoDriveCheck();
             }
@@ -260,7 +258,7 @@ namespace System.IO.FileSystem.DriveInfoTests
                 {
                     Exception e = Assert.ThrowsAny<Exception>(() => { adrive.VolumeLabel = null; });
                     Assert.True(
-                        e is UnauthorizedAccessException || 
+                        e is UnauthorizedAccessException ||
                         e is IOException ||
                         e is SecurityException);
                 }

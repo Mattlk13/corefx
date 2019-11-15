@@ -24,8 +24,10 @@ We use GitHub [labels](https://github.com/dotnet/corefx/labels) on our issues in
   * [documentation](https://github.com/dotnet/corefx/labels/documentation): Issues related to documentation (e.g. incorrect documentation, enhancement requests).
   * [question](https://github.com/dotnet/corefx/labels/question): Questions about the product, source code, etc.
 * **Other**:
+  * [easy](https://github.com/dotnet/corefx/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20label%3Aeasy%20no%3Aassignee) - Good for starting contributors.
   * [up-for-grabs](https://github.com/dotnet/corefx/labels/up-for-grabs): Small sections of work which we believe are well scoped.  These sorts of issues are a good place to start if you are new.  Anyone is free to work on these issues.
   * [needs more info](https://github.com/dotnet/corefx/labels/needs%20more%20info): Issues which need more information to be actionable.  Usually this will be because we can't reproduce a reported bug.  We'll close these issues after a little bit if we haven't gotten actionable information, but we welcome folks who have acquired more information to reopen the issue.
+ * [wishlist](https://github.com/dotnet/corefx/issues?q=is%3Aissue+is%3Aopen+label%3Awishlist) - Issues on top of our backlog we won't likely get to. Warning: Might not be easy.
 
 In addition to the above, we have a handful of other labels we use to help classify our issues.  Some of these tag cross cutting concerns (e.g. [tenet-performance](https://github.com/dotnet/corefx/labels/tenet-performance)), whereas others are used to help us track additional work needed before closing an issue (e.g. [api-needs-exposed](https://github.com/dotnet/corefx/labels/api-needs-exposed)).
 
@@ -40,7 +42,7 @@ Areas are tracked by labels area-&#42; (e.g. area-System.Collections). Each area
 
 | Area                                                                                          | Owners / experts | Description |
 |-----------------------------------------------------------------------------------------------|------------------|-------------|
-| [area-Infrastructure](https://github.com/dotnet/corefx/labels/area-Infrastructure)            | [@ericstj](https://github.com/ericstj), [@karelz](https://github.com/karelz), [@wtgodbe](https://github.com/wtgodbe) | Covers:<ul><li>Packaging</li><li>Build and test infra for CoreFX repo</li><li>VS integration</li></ul><br/> |
+| [area-Infrastructure](https://github.com/dotnet/corefx/labels/area-Infrastructure)            | [@ViktorHofer](https://github.com/ViktorHofer), [@ericstj](https://github.com/ericstj), [@wtgodbe](https://github.com/wtgodbe), [@safern](https://github.com/safern), [@Anipik](https://github.com/Anipik) | Covers:<ul><li>Packaging</li><li>Build and test infra for CoreFX repo</li><li>VS integration</li></ul><br/> |
 | [area-Meta](https://github.com/dotnet/corefx/labels/area-Meta)                                | [@joperezr](https://github.com/joperezr) | Issues without clear association to any specific API/contract, e.g. <ul><li>new contract proposals</li><li>cross-cutting code/test pattern changes (e.g. FxCop failures)</li><li>project-wide docs</li></ul><br/> |
 | [area-Serialization](https://github.com/dotnet/corefx/labels/area-Serialization)              | [StephenMolloy](https://github.com/StephenMolloy), [@HongGit](https://github.com/HongGit) | Packages:<ul><li>System.Runtime.Serialization.Xml</li><li>System.Runtime.Serialization.Json</li><li>System.Private.DataContractSerialization</li><li>System.Xml.XmlSerializer</li></ul> Excluded:<ul><li>System.Runtime.Serialization.Formatters</li></ul> |
 | **System contract assemblies** | | |
@@ -49,16 +51,16 @@ Areas are tracked by labels area-&#42; (e.g. area-System.Collections). Each area
 | [System.CodeDom](https://github.com/dotnet/corefx/labels/area-System.CodeDom)                 | **[@buyaa-n](https://github.com/buyaa-n)**, [@krwq](https://github.com/krwq) |  |
 | [System.Collections](https://github.com/dotnet/corefx/labels/area-System.Collections)         | [@safern](https://github.com/safern) | </ul>Excluded:<ul><li>System.Array -> System.Runtime</li></ul> |
 | [System.ComponentModel](https://github.com/dotnet/corefx/labels/area-System.ComponentModel)   | **[@maryamariyan](https://github.com/maryamariyan)**, [@safern](https://github.com/safern) |  |
-| [System.ComponentModel.DataAnnotations](https://github.com/dotnet/corefx/labels/area-System.ComponentModel.DataAnnotations) | [@lajones](https://github.com/lajones), [@divega](https://github.com/divega), [@ajcvickers](https://github.com/ajcvickers) | |
+| [System.ComponentModel.DataAnnotations](https://github.com/dotnet/corefx/labels/area-System.ComponentModel.DataAnnotations) | [@lajones](https://github.com/lajones), [@ajcvickers](https://github.com/ajcvickers) | |
 | [System.Composition](https://github.com/dotnet/corefx/labels/area-System.Composition)         | **[@maryamariyan](https://github.com/maryamariyan)**, [@ViktorHofer](https://github.com/ViktorHofer) |  |
 | [System.Configuration](https://github.com/dotnet/corefx/labels/area-System.Configuration)     | **[@maryamariyan](https://github.com/maryamariyan)**, [@safern](https://github.com/safern) |  |
 | [System.Console](https://github.com/dotnet/corefx/labels/area-System.Console)                 | [@wtgodbe](https://github.com/wtgodbe) |  |
-| [System.Data](https://github.com/dotnet/corefx/labels/area-System.Data)                       | **[@divega](https://github.com/divega)**, [@ajcvickers](https://github.com/ajcvickers),[@cheenamalhotra](https://github.com/cheenamalhotra), [@david-engel](https://github.com/david-engel), [@Gary-Zh ](https://github.com/Gary-Zh) | <ul><li>Odbc, OleDb - [@saurabh](https://github.com/saurabh)</li></ul> |
-| [System.Data.SqlClient](https://github.com/dotnet/corefx/labels/area-System.Data.SqlClient)   | **[@cheenamalhotra](https://github.com/cheenamalhotra)**, [@Gary-Zh ](https://github.com/Gary-Zh), [@david-engel](https://github.com/david-engel) | |
+| [System.Data](https://github.com/dotnet/corefx/labels/area-System.Data)                       | [@ajcvickers](https://github.com/ajcvickers),[@cheenamalhotra](https://github.com/cheenamalhotra), [@david-engel](https://github.com/david-engel) | <ul><li>Odbc, OleDb - [@saurabh500](https://github.com/saurabh500)</li></ul> |
+| [System.Data.SqlClient](https://github.com/dotnet/corefx/labels/area-System.Data.SqlClient)   | **[@cheenamalhotra](https://github.com/cheenamalhotra)**, **[@karinazhou](https://github.com/karinazhou)**, [@david-engel](https://github.com/david-engel) | Archived component - limited churn/contributions (see https://devblogs.microsoft.com/dotnet/introducing-the-new-microsoftdatasqlclient/) |
 | [System.Diagnostics](https://github.com/dotnet/corefx/labels/area-System.Diagnostics)         | **[@wtgodbe](https://github.com/wtgodbe)**, [@krwq](https://github.com/krwq) | <ul><li>System.Diagnostics.EventLog - [@Anipik](https://github.com/Anipik)</li></ul> |
 | [System.Diagnostics.Process](https://github.com/dotnet/corefx/labels/area-System.Diagnostics.Process) | **[@wtgodbe](https://github.com/wtgodbe)**, [@krwq](https://github.com/krwq) |  |
 | [System.Diagnostics.Tracing](https://github.com/dotnet/corefx/labels/area-System.Diagnostics.Tracing) | [@noahfalk](https://github.com/noahfalk), [@tommcdon](https://github.com/tommcdon), [@Anipik](https://github.com/Anipik) | Packages:<ul><li>System.Diagnostics.DiagnosticSource</li><li>System.Diagnostics.PerformanceCounter - [@Anipik](https://github.com/Anipik)</li><li>System.Diagnostics.Tracing</li><li>System.Diagnostics.TraceSource - [@Anipik](https://github.com/Anipik)</li></ul><br/> |
-| [System.DirectoryServices](https://github.com/dotnet/corefx/labels/area-System.DirectoryServices) | [@tquerec](https://github.com/tquerec), [@josephisenhour](https://github.com/josephisenhour), [@bongiovimatthew-microsoft](https://github.com/bongiovimatthew-microsoft) |  |
+| [System.DirectoryServices](https://github.com/dotnet/corefx/labels/area-System.DirectoryServices) | [@tquerec](https://github.com/tquerec), [@josephisenhour](https://github.com/josephisenhour) |  |
 | [System.Drawing](https://github.com/dotnet/corefx/labels/area-System.Drawing)                 | **[@safern](https://github.com/safern)**, [@maryamariyan](https://github.com/maryamariyan) |  |
 | [System.Dynamic.Runtime](https://github.com/dotnet/corefx/labels/area-System.Dynamic.Runtime) | [@cston](https://github.com/cston), [@333fred](https://github.com/333fred) | Archived component - limited churn/contributions (see [#33170](https://github.com/dotnet/corefx/issues/33170)) |
 | [System.Globalization](https://github.com/dotnet/corefx/labels/area-System.Globalization)     | **[@krwq](https://github.com/krwq)**, [@tarekgh](https://github.com/tarekgh) |  |
@@ -140,6 +142,7 @@ Feel free to use other labels if it helps your triage efforts (e.g. **needs more
     * Motivation: Helps communicate desire/timeline to community. Can spark further priority/impact discussion.
 1. Each issue has exactly one "*issue type*" label (**bug**, **enhancement**, **api-needs-work**, **test bug**, **test enhancement**, **question**, **documentation**, etc.)
     * Don't be afraid to be wrong when deciding 'bug' vs. 'test bug' (flip a coin if you must). The most useful values for tracking are 'api-&#42;' vs. 'enhancement', 'question', and 'documentation'.
+    * Note: The **api-\*** labels are important for tracking API approvals, the other *issue type* labels are in practice optional.
 1. Don't be afraid to say no, or close issues - just explain why and be polite
 1. Don't be afraid to be wrong - just be flexible when new information appears
 
@@ -150,8 +153,8 @@ Feel free to use other labels if it helps your triage efforts (e.g. **needs more
 1. PR has **Assignee** set to author of the PR, if it is non-CoreFX engineer, then area owners are co-assignees
     * Motivation #1: Area owners are responsible to do code reviews for PRs from external contributors. CoreFX engineers know how to get code reviews from others.
     * Motivation #2: Assignees will get notifications for anything happening on the PR.
-1. [Optional] Set milestone according to the branch (master = 2.1, release/2.0.0 = 2.0, release/1.0.0 = 1.0.x, release/1.1.0 = 1.1.x)
-    * Motivation: Easier to track where which fix ended and if it needs to be ported into another branch
+1. [Optional] Set milestone according to the branch the PR is against (master = 5.0, release/3.0 = 3.0, release/2.1 = 2.1.x, etc.)
+    * Motivation: Easier to track and audit where which fix ended up and if it needs to be ported into another branch (hence reflecting branch the specific PR ended up and not the abstract issue).
     * Note: This is easily done after merge via simple queries & bulk-edits, you don't have to do this one.
 1. Any other labels on PRs are superfluous and not needed (exceptions: **blocked**, **NO MERGE**)
     * Motivation: All the important info (*issue type* label, api approval label, OS label, etc.) is already captured on the associated issue.

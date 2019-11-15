@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Text;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Xunit;
 
@@ -1243,6 +1244,52 @@ namespace System.Data.SqlClient.ManualTesting.Tests
             }
         }
 
+        [ConditionalFact(typeof(DataTestUtility), nameof(DataTestUtility.AreConnStringsSetup))]
+        public void TestReadOnlyColumnMetadata()
+        {
+            using (SqlConnection connection = new SqlConnection(DataTestUtility.TcpConnStr))
+            {
+                connection.Open();
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "Create table #t (ID int identity(1,1), sText varchar(12), sMemo as (convert(varchar,ID) + ' ' + sText))";
+                    command.ExecuteNonQuery();
+                }
+                using (SqlDataAdapter dataAdapter = new SqlDataAdapter("Select * from #t", connection))
+                {
+                    using (SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter))
+                    {
+                        using (SqlCommand cmd = commandBuilder.GetInsertCommand())
+                        {
+                            DataTestUtility.AssertEqualsWithDescription("INSERT INTO [#t] ([sText]) VALUES (@p1)", cmd.CommandText, "Unexpected insert command.");
+                        }
+                    }
+
+                    using (DataTable dataTable = new DataTable())
+                    {
+                        dataAdapter.FillSchema(dataTable, SchemaType.Mapped);
+                        Dictionary<string, bool> expAutoIncrement = new Dictionary<string, bool>()
+                        {
+                            {"ID", true},
+                            {"sText", false},
+                            {"sMemo", false}
+                        };
+                        Dictionary<string, bool> expReadOnly = new Dictionary<string, bool>()
+                        {
+                            {"ID", true},
+                            {"sText", false},
+                            {"sMemo", true}
+                        };
+                        foreach (DataColumn dataColumn in dataTable.Columns)
+                        {
+                            DataTestUtility.AssertEqualsWithDescription(dataColumn.AutoIncrement, expAutoIncrement[dataColumn.ColumnName], "Unexpected AutoIncrement metadata.");
+                            DataTestUtility.AssertEqualsWithDescription(dataColumn.ReadOnly, expReadOnly[dataColumn.ColumnName], "Unexpected ReadOnly metadata.");
+                        }
+                    }
+                }
+            }
+        }
+
         #region Utility_Methods
         private void CheckParameters(SqlCommand cmd, string expectedResults)
         {
@@ -1762,5 +1809,3 @@ namespace System.Data.SqlClient.ManualTesting.Tests
         #endregion
     }
 }
-
-

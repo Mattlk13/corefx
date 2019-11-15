@@ -7,11 +7,11 @@ using System.Diagnostics;
 
 namespace System.Net.Http.Headers
 {
-    // Don't derive from BaseHeaderParser since parsing is delegated to Uri.TryCreate() 
+    // Don't derive from BaseHeaderParser since parsing is delegated to Uri.TryCreate()
     // which will remove leading and trailing whitespace.
     internal class UriHeaderParser : HttpHeaderParser
     {
-        private UriKind _uriKind;
+        private readonly UriKind _uriKind;
 
         internal static readonly UriHeaderParser RelativeOrAbsoluteUriParser =
             new UriHeaderParser(UriKind.RelativeOrAbsolute);
@@ -95,12 +95,8 @@ namespace System.Net.Http.Headers
                 try
                 {
                     // We don't want '?' replacement characters, just fail.
-#if uap
-                    System.Text.Encoding decoder = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true, throwOnInvalidBytes: true);
-#else
                     System.Text.Encoding decoder = System.Text.Encoding.GetEncoding("utf-8", System.Text.EncoderFallback.ExceptionFallback,
                         System.Text.DecoderFallback.ExceptionFallback);
-#endif
                     return decoder.GetString(rawBytes, 0, rawBytes.Length);
                 }
                 catch (ArgumentException) { } // Not actually Utf-8

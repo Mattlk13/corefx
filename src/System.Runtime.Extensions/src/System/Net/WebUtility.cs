@@ -47,10 +47,10 @@ namespace System.Net
                 return value;
             }
 
-            // For small inputs we allocate on the stack. In most cases a buffer three 
-            // times larger the original string should be sufficient as usually not all 
+            // For small inputs we allocate on the stack. In most cases a buffer three
+            // times larger the original string should be sufficient as usually not all
             // characters need to be encoded.
-            // For larger string we rent the input string's length plus a fixed 
+            // For larger string we rent the input string's length plus a fixed
             // conservative amount of chars from the ArrayPool.
             Span<char> buffer = value.Length < 80 ?
                 stackalloc char[256] :
@@ -87,10 +87,10 @@ namespace System.Net
                 return;
             }
 
-            // For small inputs we allocate on the stack. In most cases a buffer three 
-            // times larger the original string should be sufficient as usually not all 
+            // For small inputs we allocate on the stack. In most cases a buffer three
+            // times larger the original string should be sufficient as usually not all
             // characters need to be encoded.
-            // For larger string we rent the input string's length plus a fixed 
+            // For larger string we rent the input string's length plus a fixed
             // conservative amount of chars from the ArrayPool.
             Span<char> buffer = value.Length < 80 ?
                 stackalloc char[256] :
@@ -264,8 +264,8 @@ namespace System.Net
                     // if we find another '&' before finding a ';', then this is not an entity,
                     // and the next '&' might start a real entity (VSWhidbey 275184)
                     ReadOnlySpan<char> inputSlice = input.Slice(i + 1);
-                    int entityLength = inputSlice.IndexOf(';');
-                    if (entityLength >= 0)
+                    int entityLength = inputSlice.IndexOfAny(';', '&');
+                    if (entityLength >= 0 && inputSlice[entityLength] == ';')
                     {
                         int entityEndPosition = (i + 1) + entityLength;
                         if (entityLength > 1 && inputSlice[0] == '#')
@@ -444,7 +444,7 @@ namespace System.Net
             int byteIndex = unsafeByteCount * 2;
 
             // Instead of allocating one array of length `byteCount` to store
-            // the UTF-8 encoded bytes, and then a second array of length 
+            // the UTF-8 encoded bytes, and then a second array of length
             // `3 * byteCount - 2 * unexpandedCount`
             // to store the URL-encoded UTF-8 bytes, we allocate a single array of
             // the latter and encode the data in place, saving the first allocation.
@@ -639,17 +639,17 @@ namespace System.Net
         private static int GetNextUnicodeScalarValueFromUtf16Surrogate(ReadOnlySpan<char> input, ref int index)
         {
             // invariants
-            Debug.Assert(input.Length >= 1);
-            Debug.Assert(char.IsSurrogate(input[0]));
+            Debug.Assert(input.Length - index >= 1);
+            Debug.Assert(char.IsSurrogate(input[index]));
 
-            if (input.Length <= 1)
+            if (input.Length - index <= 1)
             {
                 // not enough characters remaining to resurrect the original scalar value
                 return UnicodeReplacementChar;
             }
 
-            char leadingSurrogate = input[0];
-            char trailingSurrogate = input[1];
+            char leadingSurrogate = input[index];
+            char trailingSurrogate = input[index + 1];
 
             if (!char.IsSurrogatePair(leadingSurrogate, trailingSurrogate))
             {
@@ -765,7 +765,7 @@ namespace System.Net
         // Internal struct to facilitate URL decoding -- keeps char buffer and byte buffer, allows appending of either chars or bytes
         private struct UrlDecoder
         {
-            private int _bufferSize;
+            private readonly int _bufferSize;
 
             // Accumulate characters in a special array
             private int _numChars;
@@ -776,7 +776,7 @@ namespace System.Net
             private byte[]? _byteBuffer;
 
             // Encoding to convert chars to bytes
-            private Encoding _encoding;
+            private readonly Encoding _encoding;
 
             private void FlushBytes()
             {

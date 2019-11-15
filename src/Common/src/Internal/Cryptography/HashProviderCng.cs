@@ -12,7 +12,7 @@ using BCryptCreateHashFlags = Interop.BCrypt.BCryptCreateHashFlags;
 namespace Internal.Cryptography
 {
     //
-    // Provides hash services via the native provider (CNG). 
+    // Provides hash services via the native provider (CNG).
     //
     internal sealed class HashProviderCng : HashProvider
     {
@@ -21,12 +21,16 @@ namespace Internal.Cryptography
         //
         //   - "key" activates MAC hashing if present. If null, this HashProvider performs a regular old hash.
         //
-        public HashProviderCng(string hashAlgId, byte[] key)
+        public HashProviderCng(string hashAlgId, byte[] key) : this(hashAlgId, key, isHmac: key != null)
+        {
+        }
+
+        internal HashProviderCng(string hashAlgId, ReadOnlySpan<byte> key, bool isHmac)
         {
             BCryptOpenAlgorithmProviderFlags dwFlags = BCryptOpenAlgorithmProviderFlags.None;
-            if (key != null)
+            if (isHmac)
             {
-                _key = key.CloneByteArray();
+                _key = key.ToArray();
                 dwFlags |= BCryptOpenAlgorithmProviderFlags.BCRYPT_ALG_HANDLE_HMAC_FLAG;
             }
 
@@ -39,7 +43,7 @@ namespace Internal.Cryptography
                 NTSTATUS ntStatus = Interop.BCrypt.BCryptCreateHash(_hAlgorithm, out hHash, IntPtr.Zero, 0, key, key == null ? 0 : key.Length, BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG);
                 if (ntStatus == NTSTATUS.STATUS_INVALID_PARAMETER)
                 {
-                    // If we got here, we're running on a downlevel OS (pre-Win8) that doesn't support reusable CNG hash objects. Fall back to creating a 
+                    // If we got here, we're running on a downlevel OS (pre-Win8) that doesn't support reusable CNG hash objects. Fall back to creating a
                     // new HASH object each time.
                     ResetHashObject();
                 }
@@ -63,7 +67,6 @@ namespace Internal.Cryptography
                     throw Interop.BCrypt.CreateCryptographicException(ntStatus);
                 _hashSize = hashSize;
             }
-            return;
         }
 
         public sealed override unsafe void AppendHashData(ReadOnlySpan<byte> source)
@@ -153,5 +156,3 @@ namespace Internal.Cryptography
         private readonly int _hashSize;
     }
 }
-
-

@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,6 +36,17 @@ namespace System.Net.Http.Functional.Tests
             Assert.Equal(0, stream.Length);
         }
 
+        [Theory]
+        [InlineData('F', ushort.MaxValue + 10)]
+        [InlineData('/', ushort.MaxValue + 10)]
+        public async Task Ctor_LongSource_Succeed(char c, int length)
+        {
+            const string Key = "test";
+            var value = new string(c, length);
+            var content = new FormUrlEncodedContent(new Dictionary<string, string> { { Key, value } });
+            Assert.Equal($"{Key}={Uri.EscapeDataString(value)}", await content.ReadAsStringAsync());
+        }
+
         [Fact]
         public async Task Ctor_OneEntry_SeparatedByEquals()
         {
@@ -54,7 +64,7 @@ namespace System.Net.Http.Functional.Tests
         public async Task Ctor_OneUnicodeEntry_Encoded()
         {
             var data = new Dictionary<string, string>();
-            data.Add("key", "valueク");
+            data.Add("key", "value\u30AF");
             var content = new FormUrlEncodedContent(data);
 
             Stream stream = await content.ReadAsStreamAsync();

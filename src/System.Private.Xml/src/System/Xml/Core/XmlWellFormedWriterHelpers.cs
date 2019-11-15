@@ -16,7 +16,7 @@ namespace System.Xml
         //
         private class NamespaceResolverProxy : IXmlNamespaceResolver
         {
-            private XmlWellFormedWriter _wfWriter;
+            private readonly XmlWellFormedWriter _wfWriter;
 
             internal NamespaceResolverProxy(XmlWellFormedWriter wfWriter)
             {
@@ -511,7 +511,7 @@ namespace System.Xml
                 else if (_items.Length == newItemIndex)
                 {
                     Item[] newItems = new Item[newItemIndex * 2];
-                    Array.Copy(_items, 0, newItems, 0, newItemIndex);
+                    Array.Copy(_items, newItems, newItemIndex);
                     _items = newItems;
                 }
                 if (_items[newItemIndex] == null)

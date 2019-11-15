@@ -20,17 +20,17 @@ namespace System.Xml.Schema
     {
         private struct FacetsCompiler
         {
-            private DatatypeImplementation _datatype;
-            private RestrictionFacets _derivedRestriction;
+            private readonly DatatypeImplementation _datatype;
+            private readonly RestrictionFacets _derivedRestriction;
 
-            private RestrictionFlags _baseFlags;
-            private RestrictionFlags _baseFixedFlags;
-            private RestrictionFlags _validRestrictionFlags;
+            private readonly RestrictionFlags _baseFlags;
+            private readonly RestrictionFlags _baseFixedFlags;
+            private readonly RestrictionFlags _validRestrictionFlags;
 
             //Helpers
-            private XmlSchemaDatatype _nonNegativeInt;
-            private XmlSchemaDatatype _builtInType;
-            private XmlTypeCode _builtInEnum;
+            private readonly XmlSchemaDatatype _nonNegativeInt;
+            private readonly XmlSchemaDatatype _builtInType;
+            private readonly XmlTypeCode _builtInEnum;
 
             private bool _firstPattern;
             private StringBuilder _regStr;
@@ -364,7 +364,7 @@ namespace System.Xml.Schema
                             _regStr.Insert(0, "(");
                             _regStr.Append(")");
                         }
-                        _derivedRestriction.Patterns.Add(new Regex(Preprocess(_regStr.ToString()), RegexOptions.None));
+                        _derivedRestriction.Patterns.Add(new Regex(Preprocess(_regStr.ToString())));
                     }
                     catch (Exception e)
                     {
@@ -505,7 +505,7 @@ namespace System.Xml.Schema
                         throw new XmlSchemaException(SR.Sch_MinLengthGtMaxLength, string.Empty);
                     }
                 }
-                
+
                 if (
                     (_derivedRestriction.Flags & RestrictionFlags.MinInclusive) != 0 &&
                     (_derivedRestriction.Flags & RestrictionFlags.MaxInclusive) != 0
@@ -988,8 +988,8 @@ namespace System.Xml.Schema
 
     internal class Numeric10FacetsChecker : FacetsChecker
     {
-        private decimal _maxValue;
-        private decimal _minValue;
+        private readonly decimal _maxValue;
+        private readonly decimal _minValue;
 
         internal Numeric10FacetsChecker(decimal minVal, decimal maxVal)
         {
@@ -1348,7 +1348,7 @@ namespace System.Xml.Schema
             {
                 if (s_languagePattern == null)
                 {
-                    Regex langRegex = new Regex("^([a-zA-Z]{1,8})(-[a-zA-Z0-9]{1,8})*$", RegexOptions.None);
+                    Regex langRegex = new Regex("^([a-zA-Z]{1,8})(-[a-zA-Z0-9]{1,8})*$");
                     Interlocked.CompareExchange(ref s_languagePattern, langRegex, null);
                 }
                 return s_languagePattern;

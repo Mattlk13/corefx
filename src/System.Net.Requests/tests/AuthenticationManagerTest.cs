@@ -36,9 +36,7 @@ namespace System.Net.Tests
                 AuthenticationManager.Register(module);
                 AuthenticationManager.Unregister(module);
                 Assert.Equal(initialCount, GetModuleCount());
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();           
+            }).Dispose();
         }
 
         [Fact]
@@ -51,8 +49,6 @@ namespace System.Net.Tests
                 AuthenticationManager.Register(module);
                 AuthenticationManager.Unregister("custom");
                 Assert.Equal(initialCount, GetModuleCount());
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -78,8 +74,6 @@ namespace System.Net.Tests
 
                 AuthenticationManager.CredentialPolicy = null;
                 Assert.Null(AuthenticationManager.CredentialPolicy);
-
-                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -99,9 +93,7 @@ namespace System.Net.Tests
 
                 AuthenticationManager.CustomTargetNameDictionary.Clear();
                 Assert.Equal(0, AuthenticationManager.CustomTargetNameDictionary.Count);
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();            
+            }).Dispose();
         }
 
         private static int GetModuleCount()
@@ -145,6 +137,6 @@ namespace System.Net.Tests
             {
                 throw new NotImplementedException();
             }
-        }    
-    }    
+        }
+    }
 }

@@ -392,7 +392,7 @@ namespace System.Xml.Serialization
                 if (_elements == null)
                     return null;
                 _sortedElements = new ElementAccessor[_elements.Length];
-                Array.Copy(_elements, 0, _sortedElements, 0, _elements.Length);
+                Array.Copy(_elements, _sortedElements, _elements.Length);
                 AccessorMapping.SortMostToLeastDerived(_sortedElements);
                 return _sortedElements;
             }
@@ -784,7 +784,7 @@ namespace System.Xml.Serialization
                 if (_elements == null)
                     return null;
                 _sortedElements = new ElementAccessor[_elements.Length];
-                Array.Copy(_elements, 0, _sortedElements, 0, _elements.Length);
+                Array.Copy(_elements, _sortedElements, _elements.Length);
                 SortMostToLeastDerived(_sortedElements);
                 return _sortedElements;
             }
@@ -1065,7 +1065,7 @@ namespace System.Xml.Serialization
         private bool _needSchema = true;
 
         // new implementation of the IXmlSerializable
-        private MethodInfo _getSchemaMethod;
+        private readonly MethodInfo _getSchemaMethod;
         private XmlQualifiedName _xsiType;
         private XmlSchemaType _xsdType;
         private XmlSchemaSet _schemas;
@@ -1378,4 +1378,3 @@ namespace System.Xml.Serialization
         }
     }
 }
-

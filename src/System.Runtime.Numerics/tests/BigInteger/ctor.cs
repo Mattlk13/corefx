@@ -1060,7 +1060,7 @@ namespace System.Numerics.Tests
                 tempBigInteger = bigInteger - (new BigInteger(tempByteArray));
 
                 tempByteArray = new byte[8];
-                Array.Copy(value, 0, tempByteArray, 0, 8);
+                Array.Copy(value, tempByteArray, 8);
 
                 if (!(((tempByteArray[7] & 0x80) == 0) ^ isNeg))
                 {
@@ -1092,7 +1092,7 @@ namespace System.Numerics.Tests
                 tempBigInteger = bigInteger - (new BigInteger(tempByteArray));
 
                 tempByteArray = new byte[8];
-                Array.Copy(value, 0, tempByteArray, 0, 8);
+                Array.Copy(value, tempByteArray, 8);
 
                 if ((tempByteArray[7] & 0x80) != 0)
                 {
@@ -1161,7 +1161,7 @@ namespace System.Numerics.Tests
             // 1 * x = x
             Assert.Equal(bigInteger, (BigInteger.One * bigInteger));
         }
-        
+
         private static bool IsOutOfRangeUInt64(byte[] value)
         {
             if (value.Length == 0)

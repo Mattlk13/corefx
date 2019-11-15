@@ -22,37 +22,34 @@ namespace System
             return version.Major == 6 && version.Minor == 1;
         }
 
-        public static Stream OpenStandardInput()
-        {
-            return GetStandardFile(Interop.Kernel32.HandleTypes.STD_INPUT_HANDLE, FileAccess.Read);
-        }
+        public static Stream OpenStandardInput() =>
+            GetStandardFile(
+                Interop.Kernel32.HandleTypes.STD_INPUT_HANDLE,
+                FileAccess.Read,
+                useFileAPIs: Console.InputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsInputRedirected);
 
-        public static Stream OpenStandardOutput()
-        {
-            return GetStandardFile(Interop.Kernel32.HandleTypes.STD_OUTPUT_HANDLE, FileAccess.Write);
-        }
+        public static Stream OpenStandardOutput() =>
+            GetStandardFile(
+                Interop.Kernel32.HandleTypes.STD_OUTPUT_HANDLE,
+                FileAccess.Write,
+                useFileAPIs: Console.OutputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsOutputRedirected);
 
-        public static Stream OpenStandardError()
-        {
-            return GetStandardFile(Interop.Kernel32.HandleTypes.STD_ERROR_HANDLE, FileAccess.Write);
-        }
+        public static Stream OpenStandardError() =>
+            GetStandardFile(
+                Interop.Kernel32.HandleTypes.STD_ERROR_HANDLE,
+                FileAccess.Write,
+                useFileAPIs: Console.OutputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsErrorRedirected);
 
-        private static IntPtr InputHandle
-        {
-            get { return Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_INPUT_HANDLE); }
-        }
+        private static IntPtr InputHandle =>
+            Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_INPUT_HANDLE);
 
-        private static IntPtr OutputHandle
-        {
-            get { return Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_OUTPUT_HANDLE); }
-        }
+        private static IntPtr OutputHandle =>
+            Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_OUTPUT_HANDLE);
 
-        private static IntPtr ErrorHandle
-        {
-            get { return Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_ERROR_HANDLE); }
-        }
+        private static IntPtr ErrorHandle =>
+            Interop.Kernel32.GetStdHandle(Interop.Kernel32.HandleTypes.STD_ERROR_HANDLE);
 
-        private static Stream GetStandardFile(int handleType, FileAccess access)
+        private static Stream GetStandardFile(int handleType, FileAccess access, bool useFileAPIs)
         {
             IntPtr handle = Interop.Kernel32.GetStdHandle(handleType);
 
@@ -60,30 +57,31 @@ namespace System
             // stderr, & stdin could independently be set to INVALID_HANDLE_VALUE.
             // Additionally they might use 0 as an invalid handle.  We also need to
             // ensure that if the handle is meant to be writable it actually is.
-            if (handle == IntPtr.Zero || handle == InvalidHandleValue ||
+            if (handle == IntPtr.Zero ||
+                handle == InvalidHandleValue ||
                 (access != FileAccess.Read && !ConsoleHandleIsWritable(handle)))
             {
                 return Stream.Null;
             }
 
-            return new WindowsConsoleStream(handle, access, GetUseFileAPIs(handleType));
+            return new WindowsConsoleStream(handle, access, useFileAPIs);
         }
 
         // Checks whether stdout or stderr are writable.  Do NOT pass
-        // stdin here! The console handles are set to values like 3, 7, 
+        // stdin here! The console handles are set to values like 3, 7,
         // and 11 OR if you've been created via CreateProcess, possibly -1
         // or 0.  -1 is definitely invalid, while 0 is probably invalid.
         // Also note each handle can independently be invalid or good.
-        // For Windows apps, the console handles are set to values like 3, 7, 
+        // For Windows apps, the console handles are set to values like 3, 7,
         // and 11 but are invalid handles - you may not write to them.  However,
         // you can still spawn a Windows app via CreateProcess and read stdout
         // and stderr. So, we always need to check each handle independently for validity
         // by trying to write or read to it, unless it is -1.
         private static unsafe bool ConsoleHandleIsWritable(IntPtr outErrHandle)
         {
-            // Windows apps may have non-null valid looking handle values for 
-            // stdin, stdout and stderr, but they may not be readable or 
-            // writable.  Verify this by calling WriteFile in the 
+            // Windows apps may have non-null valid looking handle values for
+            // stdin, stdout and stderr, but they may not be readable or
+            // writable.  Verify this by calling WriteFile in the
             // appropriate modes. This must handle console-less Windows apps.
             int bytesWritten;
             byte junkByte = 0x41;
@@ -116,26 +114,6 @@ namespace System
             {
                 if (!Interop.Kernel32.SetConsoleOutputCP(enc.CodePage))
                     throw Win32Marshal.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
-            }
-        }
-
-        private static bool GetUseFileAPIs(int handleType)
-        {
-            switch (handleType)
-            {
-                case Interop.Kernel32.HandleTypes.STD_INPUT_HANDLE:
-                    return Console.InputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsInputRedirected;
-
-                case Interop.Kernel32.HandleTypes.STD_OUTPUT_HANDLE:
-                    return Console.OutputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsOutputRedirected;
-
-                case Interop.Kernel32.HandleTypes.STD_ERROR_HANDLE:
-                    return Console.OutputEncoding.CodePage != Encoding.Unicode.CodePage || Console.IsErrorRedirected;
-
-                default:
-                    // This can never happen.
-                    Debug.Fail("Unexpected handleType value (" + handleType + ")");
-                    return true;
             }
         }
 
@@ -188,15 +166,15 @@ namespace System
         // ReadLine & Read can't use this because they need to use ReadFile
         // to be able to handle redirected input.  We have to accept that
         // we will lose repeated keystrokes when someone switches from
-        // calling ReadKey to calling Read or ReadLine.  Those methods should 
+        // calling ReadKey to calling Read or ReadLine.  Those methods should
         // ideally flush this cache as well.
         private static Interop.InputRecord _cachedInputRecord;
 
-        // Skip non key events. Generally we want to surface only KeyDown event 
+        // Skip non key events. Generally we want to surface only KeyDown event
         // and suppress KeyUp event from the same Key press but there are cases
-        // where the assumption of KeyDown-KeyUp pairing for a given key press 
+        // where the assumption of KeyDown-KeyUp pairing for a given key press
         // is invalid. For example in IME Unicode keyboard input, we often see
-        // only KeyUp until the key is released.  
+        // only KeyUp until the key is released.
         private static bool IsKeyDownEvent(Interop.InputRecord ir)
         {
             return (ir.eventType == Interop.KEY_EVENT && ir.keyEvent.keyDown != Interop.BOOL.FALSE);
@@ -205,7 +183,7 @@ namespace System
         private static bool IsModKey(Interop.InputRecord ir)
         {
             // We should also skip over Shift, Control, and Alt, as well as caps lock.
-            // Apparently we don't need to check for 0xA0 through 0xA5, which are keys like 
+            // Apparently we don't need to check for 0xA0 through 0xA5, which are keys like
             // Left Control & Right Control. See the ConsoleKey enum for these values.
             short keyCode = ir.keyEvent.virtualKeyCode;
             return ((keyCode >= 0x10 && keyCode <= 0x12)
@@ -226,11 +204,11 @@ namespace System
             EnhancedKey = 0x0100
         }
 
-        // For tracking Alt+NumPad unicode key sequence. When you press Alt key down 
+        // For tracking Alt+NumPad unicode key sequence. When you press Alt key down
         // and press a numpad unicode decimal sequence and then release Alt key, the
-        // desired effect is to translate the sequence into one Unicode KeyPress. 
+        // desired effect is to translate the sequence into one Unicode KeyPress.
         // We need to keep track of the Alt+NumPad sequence and surface the final
-        // unicode char alone when the Alt key is released. 
+        // unicode char alone when the Alt key is released.
         private static bool IsAltKeyDown(Interop.InputRecord ir)
         {
             return (((ControlKeyState)ir.keyEvent.controlKeyState)
@@ -285,7 +263,7 @@ namespace System
                 if (_cachedInputRecord.eventType == Interop.KEY_EVENT)
                     return true;
 
-                Interop.InputRecord ir = new Interop.InputRecord();
+                Interop.InputRecord ir = default;
                 int numEventsRead = 0;
                 while (true)
                 {
@@ -349,8 +327,8 @@ namespace System
                         r = Interop.Kernel32.ReadConsoleInput(InputHandle, out ir, 1, out numEventsRead);
                         if (!r || numEventsRead == 0)
                         {
-                            // This will fail when stdin is redirected from a file or pipe. 
-                            // We could theoretically call Console.Read here, but I 
+                            // This will fail when stdin is redirected from a file or pipe.
+                            // We could theoretically call Console.Read here, but I
                             // think we might do some things incorrectly then.
                             throw new InvalidOperationException(SR.InvalidOperation_ConsoleReadKeyOnFile);
                         }
@@ -358,9 +336,9 @@ namespace System
                         short keyCode = ir.keyEvent.virtualKeyCode;
 
                         // First check for non-keyboard events & discard them. Generally we tap into only KeyDown events and ignore the KeyUp events
-                        // but it is possible that we are dealing with a Alt+NumPad unicode key sequence, the final unicode char is revealed only when 
-                        // the Alt key is released (i.e when the sequence is complete). To avoid noise, when the Alt key is down, we should eat up 
-                        // any intermediate key strokes (from NumPad) that collectively forms the Unicode character.  
+                        // but it is possible that we are dealing with a Alt+NumPad unicode key sequence, the final unicode char is revealed only when
+                        // the Alt key is released (i.e when the sequence is complete). To avoid noise, when the Alt key is down, we should eat up
+                        // any intermediate key strokes (from NumPad) that collectively forms the Unicode character.
 
                         if (!IsKeyDownEvent(ir))
                         {
@@ -371,10 +349,10 @@ namespace System
 
                         char ch = (char)ir.keyEvent.uChar;
 
-                        // In a Alt+NumPad unicode sequence, when the alt key is released uChar will represent the final unicode character, we need to 
-                        // surface this. VirtualKeyCode for this event will be Alt from the Alt-Up key event. This is probably not the right code, 
-                        // especially when we don't expose ConsoleKey.Alt, so this will end up being the hex value (0x12). VK_PACKET comes very 
-                        // close to being useful and something that we could look into using for this purpose... 
+                        // In a Alt+NumPad unicode sequence, when the alt key is released uChar will represent the final unicode character, we need to
+                        // surface this. VirtualKeyCode for this event will be Alt from the Alt-Up key event. This is probably not the right code,
+                        // especially when we don't expose ConsoleKey.Alt, so this will end up being the hex value (0x12). VK_PACKET comes very
+                        // close to being useful and something that we could look into using for this purpose...
 
                         if (ch == 0)
                         {
@@ -728,8 +706,8 @@ namespace System
             Interop.Kernel32.CHAR_INFO[] data = new Interop.Kernel32.CHAR_INFO[sourceWidth * sourceHeight];
             bufferSize.X = (short)sourceWidth;
             bufferSize.Y = (short)sourceHeight;
-            Interop.Kernel32.COORD bufferCoord = new Interop.Kernel32.COORD();
-            Interop.Kernel32.SMALL_RECT readRegion = new Interop.Kernel32.SMALL_RECT();
+            Interop.Kernel32.COORD bufferCoord = default;
+            Interop.Kernel32.SMALL_RECT readRegion = default;
             readRegion.Left = (short)sourceLeft;
             readRegion.Right = (short)(sourceLeft + sourceWidth - 1);
             readRegion.Top = (short)sourceTop;
@@ -742,7 +720,7 @@ namespace System
                 throw Win32Marshal.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
 
             // Overwrite old section
-            Interop.Kernel32.COORD writeCoord = new Interop.Kernel32.COORD();
+            Interop.Kernel32.COORD writeCoord = default;
             writeCoord.X = (short)sourceLeft;
             Interop.Kernel32.Color c = ConsoleColorToColorAttribute(sourceBackColor, true);
             c |= ConsoleColorToColorAttribute(sourceForeColor, false);
@@ -762,7 +740,7 @@ namespace System
             }
 
             // Write text to new location
-            Interop.Kernel32.SMALL_RECT writeRegion = new Interop.Kernel32.SMALL_RECT();
+            Interop.Kernel32.SMALL_RECT writeRegion = default;
             writeRegion.Left = (short)targetLeft;
             writeRegion.Right = (short)(targetLeft + sourceWidth);
             writeRegion.Top = (short)targetTop;
@@ -774,7 +752,7 @@ namespace System
 
         public static void Clear()
         {
-            Interop.Kernel32.COORD coordScreen = new Interop.Kernel32.COORD();
+            Interop.Kernel32.COORD coordScreen = default;
             Interop.Kernel32.CONSOLE_SCREEN_BUFFER_INFO csbi;
             bool success;
             int conSize;
@@ -815,7 +793,7 @@ namespace System
         public static void SetCursorPosition(int left, int top)
         {
             IntPtr hConsole = OutputHandle;
-            Interop.Kernel32.COORD coords = new Interop.Kernel32.COORD();
+            Interop.Kernel32.COORD coords = default;
             coords.X = (short)left;
             coords.Y = (short)top;
             if (!Interop.Kernel32.SetConsoleCursorPosition(hConsole, coords))
@@ -868,7 +846,7 @@ namespace System
             if (height < srWindow.Bottom + 1 || height >= short.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(height), height, SR.ArgumentOutOfRange_ConsoleBufferLessThanWindowSize);
 
-            Interop.Kernel32.COORD size = new Interop.Kernel32.COORD();
+            Interop.Kernel32.COORD size = default;
             size.X = (short)width;
             size.Y = (short)height;
             if (!Interop.Kernel32.SetConsoleScreenBufferSize(OutputHandle, size))
@@ -881,7 +859,7 @@ namespace System
         {
             get
             {
-                // Note this varies based on current screen resolution and 
+                // Note this varies based on current screen resolution and
                 // current console font.  Do not cache this value.
                 Interop.Kernel32.COORD bounds = Interop.Kernel32.GetLargestConsoleWindowSize(OutputHandle);
                 return bounds.X;
@@ -892,7 +870,7 @@ namespace System
         {
             get
             {
-                // Note this varies based on current screen resolution and 
+                // Note this varies based on current screen resolution and
                 // current console font.  Do not cache this value.
                 Interop.Kernel32.COORD bounds = Interop.Kernel32.GetLargestConsoleWindowSize(OutputHandle);
                 return bounds.Y;
@@ -991,7 +969,7 @@ namespace System
             // If the buffer is smaller than this new window size, resize the
             // buffer to be large enough.  Include window position.
             bool resizeBuffer = false;
-            Interop.Kernel32.COORD size = new Interop.Kernel32.COORD();
+            Interop.Kernel32.COORD size = default;
             size.X = csbi.dwSize.X;
             size.Y = csbi.dwSize.Y;
             if (csbi.dwSize.X < csbi.srWindow.Left + width)
@@ -1030,7 +1008,7 @@ namespace System
                 }
 
                 // Try to give a better error message here
-               Interop.Kernel32.COORD bounds = Interop.Kernel32.GetLargestConsoleWindowSize(OutputHandle);
+                Interop.Kernel32.COORD bounds = Interop.Kernel32.GetLargestConsoleWindowSize(OutputHandle);
                 if (width > bounds.X)
                     throw new ArgumentOutOfRangeException(nameof(width), width, SR.Format(SR.ArgumentOutOfRange_ConsoleWindowSize_Size, bounds.X));
                 if (height > bounds.Y)
@@ -1084,10 +1062,10 @@ namespace System
                 {
                     throw new IOException(SR.IO_NoConsole);
                 }
-                return new Interop.Kernel32.CONSOLE_SCREEN_BUFFER_INFO();
+                return default;
             }
 
-            // Note that if stdout is redirected to a file, the console handle may be a file.  
+            // Note that if stdout is redirected to a file, the console handle may be a file.
             // First try stdout; if this fails, try stderr and then stdin.
             Interop.Kernel32.CONSOLE_SCREEN_BUFFER_INFO csbi;
             if (!Interop.Kernel32.GetConsoleScreenBufferInfo(outputHandle, out csbi) &&
@@ -1096,7 +1074,7 @@ namespace System
             {
                 int errorCode = Marshal.GetLastWin32Error();
                 if (errorCode == Interop.Errors.ERROR_INVALID_HANDLE && !throwOnNoConsole)
-                    return new Interop.Kernel32.CONSOLE_SCREEN_BUFFER_INFO();
+                    return default;
                 throw Win32Marshal.GetExceptionForWin32Error(errorCode);
             }
 
@@ -1115,8 +1093,8 @@ namespace System
         private sealed class WindowsConsoleStream : ConsoleStream
         {
             // We know that if we are using console APIs rather than file APIs, then the encoding
-            // is Encoding.Unicode implying 2 bytes per character:                
-            const int BytesPerWChar = 2;
+            // is Encoding.Unicode implying 2 bytes per character:
+            private const int BytesPerWChar = 2;
 
             private readonly bool _isPipe; // When reading from pipes, we need to properly handle EOF cases.
             private IntPtr _handle;
@@ -1136,7 +1114,7 @@ namespace System
                 // We're probably better off not closing the OS handle here.  First,
                 // we allow a program to get multiple instances of ConsoleStreams
                 // around the same OS handle, so closing one handle would invalidate
-                // them all.  Additionally, we want a second AppDomain to be able to 
+                // them all.  Additionally, we want a second AppDomain to be able to
                 // write to stdout if a second AppDomain quits.
                 _handle = IntPtr.Zero;
                 base.Dispose(disposing);
@@ -1267,7 +1245,7 @@ namespace System
         internal sealed class ControlCHandlerRegistrar
         {
             private bool _handlerRegistered;
-            private Interop.Kernel32.ConsoleCtrlHandlerRoutine _handler;
+            private readonly Interop.Kernel32.ConsoleCtrlHandlerRoutine _handler;
 
             internal ControlCHandlerRegistrar()
             {

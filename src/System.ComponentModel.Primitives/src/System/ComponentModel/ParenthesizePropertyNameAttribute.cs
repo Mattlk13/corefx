@@ -22,7 +22,7 @@ namespace System.ComponentModel
         }
 
         /// <summary>
-        /// Initializes a new instance of the System.ComponentModel.Design.ParenthesizePropertyNameAttribute 
+        /// Initializes a new instance of the System.ComponentModel.Design.ParenthesizePropertyNameAttribute
         /// class, using the specified value to indicate whether the attribute is
         /// marked for display with parentheses.
         /// </summary>
@@ -40,16 +40,8 @@ namespace System.ComponentModel
         /// <summary>
         /// Compares the specified object to this object and tests for equality.
         /// </summary>
-        public override bool Equals(object obj)
-        {
-            if (obj == this)
-            {
-                return true;
-            }
-
-            ParenthesizePropertyNameAttribute other = obj as ParenthesizePropertyNameAttribute;
-            return other?.NeedParenthesis == NeedParenthesis;
-        }
+        public override bool Equals(object? obj) =>
+            obj is ParenthesizePropertyNameAttribute other && other.NeedParenthesis == NeedParenthesis;
 
         public override int GetHashCode() => base.GetHashCode();
 

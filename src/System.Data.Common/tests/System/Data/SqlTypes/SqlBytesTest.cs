@@ -9,10 +9,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -25,7 +25,6 @@ using Xunit;
 using System.IO;
 using System.Xml;
 using System.Data.SqlTypes;
-using System.Globalization;
 
 namespace System.Data.Tests.SqlTypes
 {
@@ -36,72 +35,28 @@ namespace System.Data.Tests.SqlTypes
         public void SqlBytesItem()
         {
             SqlBytes bytes = new SqlBytes();
-            try
-            {
-                Assert.Equal(0, bytes[0]);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes[0]);
+
             byte[] b = null;
             bytes = new SqlBytes(b);
-            try
-            {
-                Assert.Equal(0, bytes[0]);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes[0]);
+
             b = new byte[10];
             bytes = new SqlBytes(b);
             Assert.Equal(0, bytes[0]);
-            try
-            {
-                Assert.Equal(0, bytes[-1]);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(ArgumentOutOfRangeException), ex.GetType());
-            }
-            try
-            {
-                Assert.Equal(0, bytes[10]);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(ArgumentOutOfRangeException), ex.GetType());
-            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => bytes[-1]);
+            Assert.Throws<ArgumentOutOfRangeException>(() => bytes[10]);
         }
         [Fact]
         public void SqlBytesLength()
         {
             byte[] b = null;
             SqlBytes bytes = new SqlBytes();
-            try
-            {
-                Assert.Equal(0, bytes.Length);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Length);
+
             bytes = new SqlBytes(b);
-            try
-            {
-                Assert.Equal(0, bytes.Length);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Length);
+
             b = new byte[10];
             bytes = new SqlBytes(b);
             Assert.Equal(10, bytes.Length);
@@ -121,7 +76,6 @@ namespace System.Data.Tests.SqlTypes
         [Fact]
         public void SqlBytesNull()
         {
-            byte[] b = null;
             SqlBytes bytes = SqlBytes.Null;
             Assert.True(bytes.IsNull);
         }
@@ -130,39 +84,18 @@ namespace System.Data.Tests.SqlTypes
         {
             byte[] b = null;
             SqlBytes bytes = new SqlBytes();
-            try
-            {
-                Assert.Equal(StorageState.Buffer, bytes.Storage);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Storage);
+
             bytes = new SqlBytes(b);
-            try
-            {
-                Assert.Equal(StorageState.Buffer, bytes.Storage);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Storage);
+
             b = new byte[10];
             bytes = new SqlBytes(b);
             Assert.Equal(StorageState.Buffer, bytes.Storage);
+
             FileStream fs = null;
             bytes = new SqlBytes(fs);
-            try
-            {
-                Assert.Equal(StorageState.Buffer, bytes.Storage);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Storage);
         }
         [Fact]
         public void SqlBytesValue()
@@ -180,35 +113,13 @@ namespace System.Data.Tests.SqlTypes
         {
             byte[] b1 = new byte[10];
             SqlBytes bytes = new SqlBytes();
-            try
-            {
-                bytes.SetLength(20);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlTypeException), ex.GetType());
-            }
+            Assert.Throws<SqlTypeException>(() => bytes.SetLength(20));
+
             bytes = new SqlBytes(b1);
             Assert.Equal(10, bytes.Length);
-            try
-            {
-                bytes.SetLength(-1);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(ArgumentOutOfRangeException), ex.GetType());
-            }
-            try
-            {
-                bytes.SetLength(11);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(ArgumentOutOfRangeException), ex.GetType());
-            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => bytes.SetLength(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => bytes.SetLength(11));
+
             bytes.SetLength(2);
             Assert.Equal(2, bytes.Length);
         }
@@ -219,15 +130,7 @@ namespace System.Data.Tests.SqlTypes
             SqlBytes bytes = new SqlBytes(b1);
             Assert.Equal(10, bytes.Length);
             bytes.SetNull();
-            try
-            {
-                Assert.Equal(10, bytes.Length);
-                Assert.False(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Equal(typeof(SqlNullValueException), ex.GetType());
-            }
+            Assert.Throws<SqlNullValueException>(() => bytes.Length);
             Assert.True(bytes.IsNull);
         }
         [Fact]

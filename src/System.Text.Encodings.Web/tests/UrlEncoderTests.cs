@@ -7,11 +7,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using Xunit;
 
-namespace Microsoft.Framework.WebEncoders
+namespace System.Text.Encodings.Web.Tests
 {
     public class UrlEncoderTests
     {
@@ -27,7 +26,7 @@ namespace Microsoft.Framework.WebEncoders
                 Assert.Equal("%F0%9F%92%A9", writer.GetStringBuilder().ToString());
             }
         }
-        
+
         [Fact]
         public void Ctor_WithTextEncoderSettings()
         {

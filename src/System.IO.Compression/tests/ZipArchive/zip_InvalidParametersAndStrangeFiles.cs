@@ -3,12 +3,9 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Sdk;
 
 namespace System.IO.Compression.Tests
 {
@@ -149,7 +146,7 @@ namespace System.IO.Compression.Tests
                     source.CopyTo(ms);
                     Assert.Equal(e.Length, ms.Length);     // Only allow to decompress up to uncompressed size
                     byte[] buffer = new byte[s_bufferSize];
-                    Assert.Equal(0, source.Read(buffer, 0, buffer.Length)); // shouldn't be able read more                        
+                    Assert.Equal(0, source.Read(buffer, 0, buffer.Length)); // shouldn't be able read more
                     ms.Seek(0, SeekOrigin.Begin);
                     int read;
                     while ((read = ms.Read(buffer, 0, buffer.Length)) != 0)
@@ -182,7 +179,7 @@ namespace System.IO.Compression.Tests
                         ms.Write(buffer, 0, read);
                     }
                     Assert.Equal(e.Length, ms.Length);     // Only allow to decompress up to uncompressed size
-                    Assert.Equal(0, source.Read(buffer, 0, s_bufferSize)); // shouldn't be able read more 
+                    Assert.Equal(0, source.Read(buffer, 0, s_bufferSize)); // shouldn't be able read more
                     ms.Seek(0, SeekOrigin.Begin);
                     while ((read = ms.Read(buffer, 0, buffer.Length)) != 0)
                     { // No need to do anything, just making sure all bytes readable from output stream
@@ -315,7 +312,7 @@ namespace System.IO.Compression.Tests
             using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read))
             {
                 ZipArchiveEntry e = archive.GetEntry("bigFile.bin");
-                
+
                 Assert.Equal(6_442_450_944, e.Length);
                 Assert.Equal(6_261_752, e.CompressedLength);
 
@@ -324,7 +321,7 @@ namespace System.IO.Compression.Tests
                     byte[] buffer = new byte[s_bufferSize];
                     int read = source.Read(buffer, 0, buffer.Length);   // We don't want to inflate this large archive entirely
                                                                         // just making sure it read successfully
-                    Assert.Equal(s_bufferSize, read);                   
+                    Assert.Equal(s_bufferSize, read);
                 }
             }
         }
@@ -367,7 +364,7 @@ namespace System.IO.Compression.Tests
             {
                 var testStream = new WrappedStream(s, false, true, false, null);
                 await CreateFromDir(zfolder("normal"), testStream, ZipArchiveMode.Create);
-              
+
                 PatchDataDescriptorRelativeToFileName(Encoding.ASCII.GetBytes(s_tamperedFileName), s, 8);  // patch uncompressed size in file descriptor
 
                 using (ZipArchive archive = new ZipArchive(s, ZipArchiveMode.Read))
@@ -397,7 +394,7 @@ namespace System.IO.Compression.Tests
                 using (Stream s = e.Open())
                 {
                     Assert.Equal(updatedUncompressedLength, s.Length);
-                    s.Seek(0, SeekOrigin.End);                  
+                    s.Seek(0, SeekOrigin.End);
                     s.Write(data, 0, data.Length);
                     Assert.Equal(updatedUncompressedLength + data.Length, s.Length);
                 }
@@ -468,7 +465,7 @@ namespace System.IO.Compression.Tests
             MemoryStream file = await StreamHelpers.CreateTempCopyStream(zmodified(Path.Combine("addFile", addingFile)));
 
             int nameOffset = PatchDataRelativeToFileName(Encoding.ASCII.GetBytes(s_tamperedFileName), stream, 8);  // patch uncompressed size in file header
-            PatchDataRelativeToFileName(Encoding.ASCII.GetBytes(s_tamperedFileName), stream, 22, nameOffset + s_tamperedFileName.Length); // patch in central directory too          
+            PatchDataRelativeToFileName(Encoding.ASCII.GetBytes(s_tamperedFileName), stream, 22, nameOffset + s_tamperedFileName.Length); // patch in central directory too
 
             using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Update, true))
             {
@@ -505,7 +502,7 @@ namespace System.IO.Compression.Tests
                         file.Read(buffer2, 0, buffer2.Length);
                         Assert.Equal(buffer1, buffer2);
                     }
-                }     
+                }
             }
         }
 
@@ -723,9 +720,9 @@ namespace System.IO.Compression.Tests
 
         /// <summary>
         /// This test checks behavior of ZipArchive with unexpected zip files:
-        /// 1. EmptyFileCompressedWithEOT has 
+        /// 1. EmptyFileCompressedWithEOT has
         /// Deflate 0x08, _uncompressedSize 0, _compressedSize 2, compressed data: 0x0300 (\u0003 ETX)
-        /// 2. EmptyFileCompressedWrongSize has 
+        /// 2. EmptyFileCompressedWrongSize has
         /// Deflate 0x08, _uncompressedSize 0, _compressedSize 4, compressed data: 0xBAAD0300 (just bad data)
         /// ZipArchive is expected to change compression method to Stored (0x00) and ignore "bad" compressed size
         /// </summary>
@@ -760,6 +757,94 @@ namespace System.IO.Compression.Tests
                 }
             }
         }
+
+        /// <summary>
+        /// Opens an empty file that has a 64KB EOCD comment.
+        /// Adds two 64KB text entries. Verifies they can be read correctly.
+        /// Appends 64KB of garbage at the end of the file. Verifies we throw.
+        /// Prepends 64KB of garbage at the beginning of the file. Verifies we throw.
+        /// </summary>
+        [Fact]
+        public static void ReadArchive_WithEOCDComment_TrailingPrecedingGarbage()
+        {
+            void InsertEntry(ZipArchive archive, string name, string contents)
+            {
+                ZipArchiveEntry entry = archive.CreateEntry(name);
+                using (StreamWriter writer = new StreamWriter(entry.Open()))
+                {
+                    writer.WriteLine(contents);
+                }
+            }
+
+            int GetEntryContentsLength(ZipArchiveEntry entry)
+            {
+                int length = 0;
+                using (Stream stream = entry.Open())
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        length = reader.ReadToEnd().Length;
+                    }
+                }
+                return length;
+            }
+
+            void VerifyValidEntry(ZipArchiveEntry entry, string expectedName, int expectedMinLength)
+            {
+                Assert.NotNull(entry);
+                Assert.Equal(expectedName, entry.Name);
+                // The file has a few more bytes, but should be at least as large as its contents
+                Assert.True(GetEntryContentsLength(entry) >= expectedMinLength);
+            }
+
+            string name0 = "huge0.txt";
+            string name1 = "huge1.txt";
+            string str64KB = new string('x', ushort.MaxValue);
+            byte[] byte64KB = Text.Encoding.ASCII.GetBytes(str64KB);
+
+            // Open empty file with 64KB EOCD comment
+            string path = strange("extradata/emptyWith64KBComment.zip");
+            using (MemoryStream archiveStream = StreamHelpers.CreateTempCopyStream(path).Result)
+            {
+                // Insert 2 64KB txt entries
+                using (ZipArchive archive = new ZipArchive(archiveStream, ZipArchiveMode.Update, leaveOpen: true))
+                {
+                    InsertEntry(archive, name0, str64KB);
+                    InsertEntry(archive, name1, str64KB);
+                }
+
+                // Open and verify items
+                archiveStream.Seek(0, SeekOrigin.Begin);
+                using (ZipArchive archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true))
+                {
+                    Assert.Equal(2, archive.Entries.Count);
+                    VerifyValidEntry(archive.Entries[0], name0, ushort.MaxValue);
+                    VerifyValidEntry(archive.Entries[1], name1, ushort.MaxValue);
+                }
+
+                // Append 64KB of garbage
+                archiveStream.Seek(0, SeekOrigin.End);
+                archiveStream.Write(byte64KB, 0, byte64KB.Length);
+
+                // Open should not be possible because we can't find the EOCD in the max search length from the end
+                Assert.Throws<InvalidDataException>(() =>
+                {
+                    ZipArchive archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
+                });
+
+                // Create stream with 64KB of prepended garbage, then the above stream appended
+                // Attempting to create a ZipArchive should fail: no EOCD found
+                using (MemoryStream prependStream = new MemoryStream())
+                {
+                    prependStream.Write(byte64KB, 0, byte64KB.Length);
+                    archiveStream.WriteTo(prependStream);
+
+                    Assert.Throws<InvalidDataException>(() =>
+                    {
+                        ZipArchive archive = new ZipArchive(prependStream, ZipArchiveMode.Read);
+                    });
+                }
+            }
+        }
     }
 }
-

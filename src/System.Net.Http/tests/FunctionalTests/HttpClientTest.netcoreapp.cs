@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -32,6 +32,22 @@ namespace System.Net.Http.Functional.Tests
                 IWebProxy proxy = new WebProxy("http://localhost:3128/");
                 HttpClient.DefaultProxy = proxy;
                 Assert.True(Object.ReferenceEquals(proxy, HttpClient.DefaultProxy));
+            }).Dispose();
+        }
+
+        [Fact]
+        public void DefaultProxy_Credentials_SetGet_Roundtrips()
+        {
+            RemoteExecutor.Invoke(() =>
+            {
+                IWebProxy proxy = HttpClient.DefaultProxy;
+                ICredentials nc = proxy.Credentials;
+
+                proxy.Credentials = null;
+                Assert.Null(proxy.Credentials);
+
+                proxy.Credentials = nc;
+                Assert.Same(nc, proxy.Credentials);
 
                 return RemoteExecutor.SuccessExitCode;
             }).Dispose();
@@ -44,11 +60,11 @@ namespace System.Net.Http.Functional.Tests
             {
                 var content = new ByteArrayContent(new byte[1]);
                 var cts = new CancellationTokenSource();
-                
+
                 Task t1 = client.PatchAsync(CreateFakeUri(), content, cts.Token);
 
                 cts.Cancel();
-                
+
                 await Assert.ThrowsAsync<TaskCanceledException>(() => t1);
             }
         }
@@ -56,11 +72,18 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task PatchAsync_Success()
         {
-            Action<HttpResponseMessage> verify = message => { using (message) Assert.Equal(HttpStatusCode.OK, message.StatusCode); };
+            static void Verify(HttpResponseMessage message)
+            {
+                using (message)
+                {
+                    Assert.Equal(HttpStatusCode.OK, message.StatusCode);
+                }
+            }
+
             using (var client = new HttpClient(new CustomResponseHandler((r, c) => Task.FromResult(new HttpResponseMessage()))))
             {
-                verify(await client.PatchAsync(CreateFakeUri(), new ByteArrayContent(new byte[1])));
-                verify(await client.PatchAsync(CreateFakeUri(), new ByteArrayContent(new byte[1]), CancellationToken.None));
+                Verify(await client.PatchAsync(CreateFakeUri(), new ByteArrayContent(new byte[1])));
+                Verify(await client.PatchAsync(CreateFakeUri(), new ByteArrayContent(new byte[1]), CancellationToken.None));
             }
         }
 
@@ -78,7 +101,7 @@ namespace System.Net.Http.Functional.Tests
         {
             using (var client = new HttpClient())
             {
-                Assert.Equal(PlatformDetection.IsUap ? new Version(2, 0) : new Version(1, 1), client.DefaultRequestVersion);
+                Assert.Equal(HttpVersion.Version11, client.DefaultRequestVersion);
                 Assert.Same(client.DefaultRequestVersion, client.DefaultRequestVersion);
             }
         }

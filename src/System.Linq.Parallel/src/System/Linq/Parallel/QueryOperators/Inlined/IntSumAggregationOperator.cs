@@ -16,7 +16,7 @@ namespace System.Linq.Parallel
 {
     /// <summary>
     /// Inlined aggregations for summing up primitives (int, long, float, double, decimal), as
-    /// well as the nullable versions of each (int?, long?, float?, double?, decimal?). 
+    /// well as the nullable versions of each (int?, long?, float?, double?, decimal?).
     /// </summary>
     internal sealed class IntSumAggregationOperator : InlinedAggregationOperator<int, int, int>
     {
@@ -36,9 +36,9 @@ namespace System.Linq.Parallel
         //     The single result of aggregation.
         //
 
-        protected override int InternalAggregate(ref Exception singularExceptionToThrow)
+        protected override int InternalAggregate(ref Exception? singularExceptionToThrow)
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // will do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -63,7 +63,7 @@ namespace System.Linq.Parallel
         //
 
         protected override QueryOperatorEnumerator<int, int> CreateEnumerator<TKey>(
-            int index, int count, QueryOperatorEnumerator<int, TKey> source, object sharedData, CancellationToken cancellationToken)
+            int index, int count, QueryOperatorEnumerator<int, TKey> source, object? sharedData, CancellationToken cancellationToken)
         {
             return new IntSumAggregationOperatorEnumerator<TKey>(source, index, cancellationToken);
         }
@@ -97,7 +97,7 @@ namespace System.Linq.Parallel
             protected override bool MoveNextCore(ref int currentElement)
             {
                 int element = default(int);
-                TKey keyUnused = default(TKey);
+                TKey keyUnused = default(TKey)!;
 
                 QueryOperatorEnumerator<int, TKey> source = _source;
                 if (source.MoveNext(ref element, ref keyUnused))

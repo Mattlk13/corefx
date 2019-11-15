@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace System.Net
 {
     // Schannel SSPI interface.
-    internal class SSPISecureChannelType : SSPIInterface
+    internal sealed class SSPISecureChannelType : ISSPIInterface
     {
         private static volatile SecurityPackageInfoClass[] s_securityPackages;
 
@@ -45,12 +45,12 @@ namespace System.Net
             return SafeFreeCredentials.AcquireCredentialsHandle(moduleName, usage, ref authdata, out outCredential);
         }
 
-        public int AcceptSecurityContext(SafeFreeCredentials credential, ref SafeDeleteContext context, ReadOnlySpan<SecurityBuffer> inputBuffers, Interop.SspiCli.ContextFlags inFlags, Interop.SspiCli.Endianness endianness, ref SecurityBuffer outputBuffer, ref Interop.SspiCli.ContextFlags outFlags)
+        public int AcceptSecurityContext(SafeFreeCredentials credential, ref SafeDeleteSslContext context, ReadOnlySpan<SecurityBuffer> inputBuffers, Interop.SspiCli.ContextFlags inFlags, Interop.SspiCli.Endianness endianness, ref SecurityBuffer outputBuffer, ref Interop.SspiCli.ContextFlags outFlags)
         {
             return SafeDeleteContext.AcceptSecurityContext(ref credential, ref context, inFlags, endianness, inputBuffers, ref outputBuffer, ref outFlags);
         }
 
-        public int InitializeSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteContext context, string targetName, Interop.SspiCli.ContextFlags inFlags, Interop.SspiCli.Endianness endianness, ReadOnlySpan<SecurityBuffer> inputBuffers, ref SecurityBuffer outputBuffer, ref Interop.SspiCli.ContextFlags outFlags)
+        public int InitializeSecurityContext(ref SafeFreeCredentials credential, ref SafeDeleteSslContext context, string targetName, Interop.SspiCli.ContextFlags inFlags, Interop.SspiCli.Endianness endianness, ReadOnlySpan<SecurityBuffer> inputBuffers, ref SecurityBuffer outputBuffer, ref Interop.SspiCli.ContextFlags outFlags)
         {
             return SafeDeleteContext.InitializeSecurityContext(ref credential, ref context, targetName, inFlags, endianness, inputBuffers, ref outputBuffer, ref outFlags);
         }
@@ -99,7 +99,7 @@ namespace System.Net
             refHandle = SafeFreeContextBufferChannelBinding.CreateEmptyHandle();
 
             // Bindings is on the stack, so there's no need for a fixed block.
-            SecPkgContext_Bindings bindings = new SecPkgContext_Bindings();
+            SecPkgContext_Bindings bindings = default;
             return SafeFreeContextBufferChannelBinding.QueryContextChannelBinding(phContext, attribute, &bindings, refHandle);
         }
 
@@ -132,7 +132,7 @@ namespace System.Net
             throw new NotSupportedException();
         }
 
-        public int CompleteAuthToken(ref SafeDeleteContext refContext, in SecurityBuffer inputBuffer)
+        public int CompleteAuthToken(ref SafeDeleteSslContext refContext, in SecurityBuffer inputBuffer)
         {
             throw new NotSupportedException();
         }

@@ -269,7 +269,7 @@ namespace System.Linq.Expressions.Tests
                 bool>), exp.Type);
 
 #if FEATURE_COMPILE
-            // From this point on, the tests require FEATURE_COMPILE (RefEmit) support as SLE needs to create delegate types on the fly. 
+            // From this point on, the tests require FEATURE_COMPILE (RefEmit) support as SLE needs to create delegate types on the fly.
             // You can't instantiate Func<> over 20 arguments or over byrefs.
             ParameterExpression[] paramList = Enumerable.Range(0, 20).Select(_ => Expression.Variable(typeof(int))).ToArray();
             exp = Expression.Lambda(
@@ -757,7 +757,7 @@ namespace System.Linq.Expressions.Tests
                     Assert.Same(pars[i], en.Current);
                     Assert.Same(pars[i], nonGenEn.Current);
                     Assert.Equal(i, parameters.IndexOf(pars[i]));
-                    Assert.True(parameters.Contains(pars[i]));
+                    Assert.Contains(pars[i], parameters);
                 }
 
                 Assert.False(en.MoveNext());
@@ -776,7 +776,7 @@ namespace System.Linq.Expressions.Tests
             AssertExtensions.Throws<ArgumentOutOfRangeException>("index", () => parameters[-1]);
             AssertExtensions.Throws<ArgumentOutOfRangeException>("index", () => parameters[parCount]);
             Assert.Equal(-1, parameters.IndexOf(Expression.Parameter(typeof(int))));
-            Assert.False(parameters.Contains(Expression.Parameter(typeof(int))));
+            Assert.DoesNotContain(Expression.Parameter(typeof(int)), parameters);
         }
 
         [Theory, ClassData(typeof(CompilationTypes))]
@@ -791,8 +791,8 @@ namespace System.Linq.Expressions.Tests
         }
 
 #if FEATURE_COMPILE
-        [Theory, ClassData(typeof(CompilationTypes))]
-        public void AboveByteMaxArityArgIL(bool useInterpreter)
+        [Fact]
+        public void AboveByteMaxArityArgIL()
         {
             ParameterExpression[] pars = Enumerable.Range(0, 300)
                 .Select(_ => Expression.Parameter(typeof(int)))
@@ -804,7 +804,7 @@ namespace System.Linq.Expressions.Tests
   .maxstack 1
 
   IL_0000: ldarg      V_300
-  IL_0004: ret        
+  IL_0004: ret
 }
 ");
         }
@@ -899,7 +899,7 @@ namespace System.Linq.Expressions.Tests
 
   IL_0000: ldarga     V_300
   IL_0004: call       instance valuetype [System.Linq.Expressions.Tests]System.Linq.Expressions.Tests.LambdaTests+Mutable valuetype [System.Linq.Expressions.Tests]System.Linq.Expressions.Tests.LambdaTests+Mutable::Mutate()
-  IL_0009: ret        
+  IL_0009: ret
 }
 ");
         }
@@ -946,5 +946,34 @@ namespace System.Linq.Expressions.Tests
 
 #endif
 
+        [Fact]
+        [SkipOnTargetFramework(~TargetFrameworkMonikers.Netcoreapp, "Optimization in .NET Core")]
+        public void ValidateThatInterpreterWithSimpleTypeUsesNonDynamicThunk()
+        {
+            Expression<Action> action = () => Console.WriteLine("");
+            Assert.True(action.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+            Expression<Action<int>> action1 = (int x) => Console.WriteLine(x.ToString());
+            Assert.True(action1.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+            Expression<Action<int, object>> action2 = (int x, object y) => Console.WriteLine(y);
+            Assert.True(action2.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+
+            Expression<Func<object>> func = () => null;
+            Assert.True(func.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+            Expression<Func<object, object>> func1 = (object o) => null;
+            Assert.True(func1.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+            Expression<Func<object, object, object>> func2 = (object o, object o2) => null;
+            Assert.True(func2.Compile(preferInterpretation:true).Method.GetType().Name == "RuntimeMethodInfo");
+        }
+
+        [Fact]
+        [SkipOnTargetFramework(~TargetFrameworkMonikers.Netcoreapp, "Optimization in .NET Core")]
+        public void ValidateThatInterpreterWithSimpleTypeUsesDynamicThunk()
+        {
+            Expression<Action<object,object,object>> complexaction = (object o1, object o2, object o3) => Console.WriteLine("");
+            Assert.True(complexaction.Compile(preferInterpretation:true).Method.GetType().Name == "RTDynamicMethod");
+
+            Expression<Func<object, object, object,object>> complexfunc = (object o1, object o2, object o3) => null;
+            Assert.True(complexfunc.Compile(preferInterpretation:true).Method.GetType().Name == "RTDynamicMethod");
+        }
     }
 }

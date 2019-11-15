@@ -34,19 +34,44 @@ namespace System.Runtime.Loader.Tests
 
         [Fact]
         public static void GetAssemblyNameTest_AssemblyNotFound()
-        {            
+        {
             Assert.Throws<FileNotFoundException>(() => AssemblyLoadContext.GetAssemblyName("Non.Existing.Assembly.dll"));
         }
 
         [Fact]
         public static void GetAssemblyNameTest_NullParameter()
-        {               
+        {
             Assert.Throws<ArgumentNullException>(() => AssemblyLoadContext.GetAssemblyName(null));
         }
 
         [Fact]
+        public static void LoadFromAssemblyPath_PartiallyQualifiedPath_ThrowsArgumentException()
+        {
+            string path = Path.Combine("foo", "bar.dll");
+            ArgumentException ex = AssertExtensions.Throws<ArgumentException>("assemblyPath", () => (new AssemblyLoadContext("alc")).LoadFromAssemblyPath(path));
+            Assert.Contains(path, ex.Message);
+        }
+
+        [Fact]
+        public static void LoadFromNativeImagePath_PartiallyQualifiedPath_ThrowsArgumentException()
+        {
+            string path = Path.Combine("foo", "bar.dll");
+            ArgumentException ex = AssertExtensions.Throws<ArgumentException>("nativeImagePath", () => (new AssemblyLoadContext("alc")).LoadFromNativeImagePath(path, null));
+            Assert.Contains(path, ex.Message);
+        }
+
+        [Fact]
+        public static void LoadFromNativeImagePath_PartiallyQualifiedPath_ThrowsArgumentException2()
+        {
+            string path = Path.Combine("foo", "bar.dll");
+            string rootedPath = Path.GetFullPath(Guid.NewGuid().ToString("N"));
+            ArgumentException ex = AssertExtensions.Throws<ArgumentException>("assemblyPath", () => (new AssemblyLoadContext("alc")).LoadFromNativeImagePath(rootedPath, path));
+            Assert.Contains(path, ex.Message);
+        }
+
+        [Fact]
         public static void LoadAssemblyByPath_ValidUserAssembly()
-        {            
+        {
             var asmName = new AssemblyName(TestAssembly);
             var loadContext = new ResourceAssemblyLoadContext();
             loadContext.LoadBy = LoadBy.Path;
@@ -55,7 +80,7 @@ namespace System.Runtime.Loader.Tests
 
             Assert.NotNull(asm);
             Assert.Contains(asm.DefinedTypes, t => t.Name == "TestClass");
-        }       
+        }
 
         [Fact]
         public static void LoadAssemblyByStream_ValidUserAssembly()

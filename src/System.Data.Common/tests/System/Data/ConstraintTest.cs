@@ -3,7 +3,7 @@
 
 // (C) 2002 Franklin Wise
 // (C) 2003 Martin Willemoes Hansen
-// 
+//
 
 //
 // Copyright (C) 2004 Novell, Inc (http://www.novell.com)
@@ -15,10 +15,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -59,38 +59,14 @@ namespace System.Data.Tests
         [Fact]
         public void SetConstraintNameNullOrEmptyExceptions()
         {
-            bool exceptionCaught = false;
-            string name = null;
-
             _table.Constraints.Add(_constraint1);
 
-            for (int i = 0; i <= 1; i++)
-            {
-                exceptionCaught = false;
-                if (0 == i)
-                    name = null;
-                if (1 == i)
-                    name = string.Empty;
-
-                try
-                {
-                    //Next line should throw ArgumentException
-                    //Because ConstraintName can't be set to null
-                    //or empty while the constraint is part of the
-                    //collection
-                    _constraint1.ConstraintName = name;
-                }
-                catch (ArgumentException)
-                {
-                    exceptionCaught = true;
-                }
-                catch
-                {
-                    Assert.False(true);
-                }
-
-                Assert.True(exceptionCaught);
-            }
+            // Next line should throw ArgumentException
+            // Because ConstraintName can't be set to null
+            // or empty while the constraint is part of the
+            // collection
+            Assert.Throws<ArgumentException>(() => _constraint1.ConstraintName = null);
+            Assert.Throws<ArgumentException>(() => _constraint1.ConstraintName = string.Empty);
         }
 
         [Fact]
@@ -118,8 +94,7 @@ namespace System.Data.Tests
         [Fact]
         public void GetExtendedProperties()
         {
-            PropertyCollection col = _constraint1.ExtendedProperties as
-                PropertyCollection;
+            PropertyCollection col = _constraint1.ExtendedProperties;
 
             Assert.NotNull(col);
         }

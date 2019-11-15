@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -11,7 +11,7 @@ namespace System.IO.Tests
 {
     public class Directory_CreateDirectory : FileSystemTest
     {
-        public static TheoryData ReservedDeviceNames = IOInputs.GetReservedDeviceNames().ToTheoryData(); 
+        public static TheoryData ReservedDeviceNames = IOInputs.GetReservedDeviceNames().ToTheoryData();
         #region Utilities
 
         public virtual DirectoryInfo Create(string path)
@@ -106,7 +106,7 @@ namespace System.IO.Tests
             Assert.Throws<DirectoryNotFoundException>(() => Create(dirName));
         }
 
-        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotInAppContainer))] // Can't read root in appcontainer        
+        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotInAppContainer))] // Can't read root in appcontainer
         public void RootPath()
         {
             string dirName = Path.GetPathRoot(Directory.GetCurrentDirectory());
@@ -156,7 +156,6 @@ namespace System.IO.Tests
 
         [ConditionalTheory(nameof(UsingNewNormalization)),
             MemberData(nameof(ValidPathComponentNames))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]  // trailing slash
         public void ValidExtendedPathWithTrailingSlash(string component)
         {
@@ -234,7 +233,6 @@ namespace System.IO.Tests
         }
 
         [ConditionalFact(nameof(AreAllLongPathsAvailable))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]  // long directory path succeeds
         public void DirectoryLongerThanMaxPath_Succeeds()
         {
@@ -258,7 +256,6 @@ namespace System.IO.Tests
         }
 
         [ConditionalFact(nameof(LongPathsAreNotBlocked), nameof(UsingNewNormalization))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]
         public void DirectoryLongerThanMaxLongPathWithExtendedSyntax_ThrowsException()
         {
@@ -269,7 +266,6 @@ namespace System.IO.Tests
         }
 
         [ConditionalFact(nameof(LongPathsAreNotBlocked), nameof(UsingNewNormalization))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]  // long directory path with extended syntax succeeds
         public void ExtendedDirectoryLongerThanLegacyMaxPath_Succeeds()
         {
@@ -281,7 +277,6 @@ namespace System.IO.Tests
         }
 
         [ConditionalFact(nameof(AreAllLongPathsAvailable))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]  // long directory path succeeds
         public void DirectoryLongerThanMaxDirectoryAsPath_Succeeds()
         {
@@ -372,7 +367,6 @@ namespace System.IO.Tests
 
         [ConditionalTheory(nameof(UsingNewNormalization)),
             MemberData(nameof(SimpleWhiteSpace))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)]  // extended syntax with whitespace
         public void WindowsExtendedSyntaxWhiteSpace(string path)
         {
@@ -404,7 +398,7 @@ namespace System.IO.Tests
         {
             if (PlatformDetection.IsInAppContainer)
             {
-                AssertExtensions.ThrowsAny<DirectoryNotFoundException, IOException, UnauthorizedAccessException>(() => Create(Path.Combine(TestDirectory, path))); 
+                AssertExtensions.ThrowsAny<DirectoryNotFoundException, IOException, UnauthorizedAccessException>(() => Create(Path.Combine(TestDirectory, path)));
             }
             else
             {
@@ -423,7 +417,6 @@ namespace System.IO.Tests
 
         [ConditionalTheory(nameof(UsingNewNormalization)),
             MemberData(nameof(ReservedDeviceNames))]
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         [PlatformSpecific(TestPlatforms.Windows)] // device name prefixes
         public void PathWithReservedDeviceNameAsExtendedPath(string path)
         {
@@ -447,7 +440,6 @@ namespace System.IO.Tests
 
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows)] // drive labels
-        [ActiveIssue(20117, TargetFrameworkMonikers.Uap)]
         public void CDriveCase()
         {
             DirectoryInfo dir = Create("c:\\");
@@ -488,7 +480,7 @@ namespace System.IO.Tests
             try
             {
                 // If this test is inherited then it's possible this call will fail due to the "C:" directory
-                // being deleted in that other test before this call. What we care about testing (proper path 
+                // being deleted in that other test before this call. What we care about testing (proper path
                 // handling) is unaffected by this race condition.
                 Directory.Delete("C:");
             }
@@ -572,4 +564,3 @@ namespace System.IO.Tests
         #endregion
     }
 }
-

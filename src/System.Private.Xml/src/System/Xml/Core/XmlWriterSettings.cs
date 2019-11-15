@@ -43,6 +43,8 @@ namespace System.Xml
     // XmlWriterSettings class specifies basic features of an XmlWriter.
     public sealed class XmlWriterSettings
     {
+        internal static readonly XmlWriterSettings s_defaultWriterSettings = new XmlWriterSettings() { ReadOnly = true };
+
         //
         // Fields
         //
@@ -604,7 +606,7 @@ namespace System.Xml
                 }
             }
 
-            // Wrap with Xslt/XQuery specific writer if needed; 
+            // Wrap with Xslt/XQuery specific writer if needed;
             // XmlOutputMethod.AutoDetect writer does this lazily when it creates the underlying Xml or Html writer.
             if (this.OutputMethod != XmlOutputMethod.AutoDetect)
             {
@@ -762,7 +764,7 @@ namespace System.Xml
 
             if (baseWriterSettings == null)
             {
-                // assume the V1 writer already do all conformance checking; 
+                // assume the V1 writer already do all conformance checking;
                 // wrap only if NewLineHandling == Replace or CheckCharacters is true
                 if (_newLineHandling == NewLineHandling.Replace)
                 {

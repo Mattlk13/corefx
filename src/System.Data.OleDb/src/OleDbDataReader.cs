@@ -16,7 +16,7 @@ namespace System.Data.OleDb
 {
     public sealed class OleDbDataReader : DbDataReader
     {
-        private CommandBehavior _commandBehavior;
+        private readonly CommandBehavior _commandBehavior;
 
         // object model interaction
         private OleDbConnection _connection;
@@ -33,11 +33,11 @@ namespace System.Data.OleDb
 
         private ChapterHandle _chapterHandle = ChapterHandle.DB_NULL_HCHAPTER;
 
-        private int _depth;
+        private readonly int _depth;
         private bool _isClosed, _isRead, _hasRows, _hasRowsReadCheck;
 
-        long _sequentialBytesRead;
-        int _sequentialOrdinal;
+        private long _sequentialBytesRead;
+        private int _sequentialOrdinal;
 
         private Bindings[] _bindings; // _metdata contains the ColumnBinding
 
@@ -1166,7 +1166,7 @@ namespace System.Data.OleDb
             {
                 throw ADP.ArgumentNull("values");
             }
-            MetaData info = DoValueCheck(0);
+            DoValueCheck(0);
             int count = Math.Min(values.Length, _visibleFieldCount);
             for (int i = 0; (i < _metadata.Length) && (i < count); ++i)
             {
@@ -1337,7 +1337,7 @@ namespace System.Data.OleDb
                 DisposeOpenResults();
                 _hasRows = false;
 
-                for (; ; )
+                while (true)
                 {
                     Debug.Assert(null == _irow, "NextResult: row loop check");
                     Debug.Assert(null == _irowset, "NextResult: rowset loop check");
@@ -2163,7 +2163,6 @@ namespace System.Data.OleDb
                     {
                         bool isPKey = (!dataRow.IsNull(pkeyColumn, DataRowVersion.Default) && (bool)dataRow[pkeyColumn, DataRowVersion.Default]);
                         bool isUniq = (!dataRow.IsNull(uniqCOlumn, DataRowVersion.Default) && (bool)dataRow[uniqCOlumn, DataRowVersion.Default]);
-                        bool nullsVal = (null != nulls) && (dataRow.IsNull(nulls, DataRowVersion.Default) || (ODB.DBPROPVAL_IN_ALLOWNULL == Convert.ToInt32(dataRow[nulls, DataRowVersion.Default], CultureInfo.InvariantCulture)));
 
                         if (isPKey || isUniq)
                         {
@@ -2465,7 +2464,7 @@ namespace System.Data.OleDb
                 {
                     info.isKeyColumn = false;
 
-                    // This is the first key column to be invalidated, scan back through the 
+                    // This is the first key column to be invalidated, scan back through the
                     //  columns we already processed to make sure none of those are marked as keys.
                     disallowKeyColumns = true;
                     for (int index2 = metainfo.Count - 1; index < index2; --index2)

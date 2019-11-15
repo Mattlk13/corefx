@@ -89,7 +89,7 @@ namespace System.Net.Sockets
                     {
                         socketError = SocketError.NotSocket;
                     }
-                    else if (socket.CleanedUp)
+                    else if (socket.Disposed)
                     {
                         socketError = SocketError.OperationAborted;
                     }
@@ -117,7 +117,7 @@ namespace System.Net.Sockets
                         }
                         catch (ObjectDisposedException)
                         {
-                            // CleanedUp check above does not always work since this code is subject to race conditions
+                            // Disposed check above does not always work since this code is subject to race conditions
                             socketError = SocketError.OperationAborted;
                         }
                     }
@@ -130,7 +130,7 @@ namespace System.Net.Sockets
 #endif
         }
 
-        // Called either synchronously from SocketPal async routines or asynchronously via CompletionPortCallback above. 
+        // Called either synchronously from SocketPal async routines or asynchronously via CompletionPortCallback above.
         private void CompletionCallback(int numBytes, SocketError socketError)
         {
             ErrorCode = (int)socketError;
@@ -152,7 +152,7 @@ namespace System.Net.Sockets
                 Socket socket = (Socket)AsyncObject;
                 if (socket.SafeHandle.SkipCompletionPortOnSuccess)
                 {
-                    // The socket handle is configured to skip completion on success, 
+                    // The socket handle is configured to skip completion on success,
                     // so we can complete this asyncResult right now.
                     CompletionCallback(bytesTransferred, SocketError.Success);
                     return SocketError.Success;

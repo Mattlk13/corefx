@@ -23,7 +23,7 @@ public class WindowsIdentityTests
         WindowsIdentity windowsIdentity = WindowsIdentity.GetAnonymous();
         Assert.True(windowsIdentity.IsAnonymous);
         Assert.False(windowsIdentity.IsAuthenticated);
-        CheckDispose(windowsIdentity, true);        
+        CheckDispose(windowsIdentity, true);
     }
 
     [Fact]
@@ -72,7 +72,6 @@ public class WindowsIdentityTests
     }
 
     [Fact]
-    [ActiveIssue(31911, TargetFrameworkMonikers.Uap)]
     public static void CloneAndProperties()
     {
         TestUsingAccessToken((logonToken) =>

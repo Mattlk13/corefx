@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -49,7 +49,6 @@ namespace System.ConfigurationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void Context_SimpleSettings_InNotNull(bool isSynchronized)
         {
             SimpleSettings settings = isSynchronized
@@ -62,7 +61,6 @@ namespace System.ConfigurationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void Providers_SimpleSettings_Empty(bool isSynchronized)
         {
             SimpleSettings settings = isSynchronized
@@ -76,11 +74,10 @@ namespace System.ConfigurationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void GetSetStringProperty_SimpleSettings_Ok(bool isSynchronized)
         {
-            SimpleSettings settings = isSynchronized 
-                ? (SimpleSettings)SettingsBase.Synchronized(new SimpleSettings()) 
+            SimpleSettings settings = isSynchronized
+                ? (SimpleSettings)SettingsBase.Synchronized(new SimpleSettings())
                 : new SimpleSettings();
 
             Assert.Equal(default, settings.StringProperty);
@@ -91,7 +88,6 @@ namespace System.ConfigurationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void GetSetIntProperty_SimpleSettings_Ok(bool isSynchronized)
         {
             SimpleSettings settings = isSynchronized
@@ -106,8 +102,7 @@ namespace System.ConfigurationTests
         [ConditionalTheory(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsNanoServer)),
             InlineData(true),
             InlineData(false)]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
-        [ActiveIssue("https://github.com/dotnet/corefx/issues/35668", TestPlatforms.AnyUnix)]
+        [ActiveIssue("https://github.com/dotnet/corefx/issues/35668")]
         public void Save_SimpleSettings_Ok(bool isSynchronized)
         {
             PersistedSimpleSettings settings = isSynchronized
@@ -149,7 +144,6 @@ namespace System.ConfigurationTests
         }
 
         [Fact]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void Reload_SimpleSettings_Ok()
         {
             var settings = new SimpleSettings
@@ -188,7 +182,6 @@ namespace System.ConfigurationTests
         }
 
         [Fact]
-        [ActiveIssue("dotnet/corefx #18832", TargetFrameworkMonikers.NetFramework)]
         public void SettingsProperty_SettingsWithAttributes_Ok()
         {
             SettingsWithAttributes settings = new SettingsWithAttributes();

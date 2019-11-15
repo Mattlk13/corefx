@@ -435,9 +435,6 @@ namespace System.Xml.Serialization
                 {
                     if (!Cache.Match(dest, o, _shareTypes))
                     {
-                        // UNDONE remove denug only code before shipping
-                        Debug.WriteLineIf(DiagnosticsSwitches.XmlSerialization.TraceVerbose, "XmlSerialization::Failed to Merge " + MergeFailedMessage(o, dest, schema.TargetNamespace)
-                            + "' Plase Compare hash:\r\n" + Cache.looks[dest] + "\r\n" + Cache.looks[o]);
                         throw new InvalidOperationException(MergeFailedMessage(o, dest, schema.TargetNamespace));
                     }
                     matchedItems[i] = true;
@@ -801,7 +798,7 @@ namespace System.Xml.Serialization
             return References.Contains(parent);
         }
 
-        internal const string xmlSchema = @"<?xml version='1.0' encoding='UTF-8' ?> 
+        internal const string xmlSchema = @"<?xml version='1.0' encoding='UTF-8' ?>
 <xs:schema targetNamespace='http://www.w3.org/XML/1998/namespace' xmlns:xs='http://www.w3.org/2001/XMLSchema' xml:lang='en'>
  <xs:attribute name='lang' type='xs:language'/>
  <xs:attribute name='space'>
@@ -824,8 +821,9 @@ namespace System.Xml.Serialization
 
     public class XmlSchemaEnumerator : IEnumerator<XmlSchema>, System.Collections.IEnumerator
     {
-        private XmlSchemas _list;
-        private int _idx, _end;
+        private readonly XmlSchemas _list;
+        private int _idx;
+        private readonly int _end;
 
         public XmlSchemaEnumerator(XmlSchemas list)
         {

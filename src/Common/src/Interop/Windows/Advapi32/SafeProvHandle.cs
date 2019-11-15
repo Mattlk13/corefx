@@ -106,11 +106,11 @@ namespace System.Security.Cryptography
             // Make sure not to delete a key that we want to keep in the key container or an ephemeral key
             if (!_fPersistKeyInCsp && 0 == (_flags & (uint)Interop.Advapi32.CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT))
             {
-                // Delete the key container. 
+                // Delete the key container.
 
                 uint flags = (_flags & (uint)Interop.Advapi32.CryptAcquireContextFlags.CRYPT_MACHINE_KEYSET) | (uint)Interop.Advapi32.CryptAcquireContextFlags.CRYPT_DELETEKEYSET;
                 SafeProvHandle hIgnoredProv;
-                bool ignoredSuccess = Interop.Advapi32.CryptAcquireContext(out hIgnoredProv, _containerName, _providerName, _type, flags);
+                _ = Interop.Advapi32.CryptAcquireContext(out hIgnoredProv, _containerName, _providerName, _type, flags);
                 hIgnoredProv.Dispose();
                 // Ignoring success result code as CryptAcquireContext is being called to delete a key container rather than acquire a context.
                 // If it fails, we can't do anything about it anyway as we're in a dispose method.

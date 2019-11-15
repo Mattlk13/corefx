@@ -16,8 +16,8 @@ namespace System.Net
     {
         private const WebExceptionStatus DefaultStatus = WebExceptionStatus.UnknownError;
 
-        private WebExceptionStatus _status = DefaultStatus;
-        private WebResponse _response = null;
+        private readonly WebExceptionStatus _status = DefaultStatus;
+        private readonly WebResponse _response = null;
 
         public WebException()
         {
@@ -53,7 +53,7 @@ namespace System.Net
             }
         }
 
-        protected WebException(SerializationInfo serializationInfo, StreamingContext streamingContext) 
+        protected WebException(SerializationInfo serializationInfo, StreamingContext streamingContext)
             : base(serializationInfo, streamingContext)
         {
         }
@@ -87,17 +87,12 @@ namespace System.Net
         internal static Exception CreateCompatibleException(Exception exception)
         {
             Debug.Assert(exception != null);
-            if (exception is HttpRequestException)
+            if (exception is HttpRequestException hre)
             {
-                Exception inner = exception.InnerException;
-                string message = inner != null ?
-                    exception.Message + " " + inner.Message :
-                    exception.Message;
-
                 return new WebException(
-                    message,
+                    exception.Message,
                     exception,
-                    GetStatusFromException(exception as HttpRequestException),
+                    GetStatusFromException(hre),
                     null);
             }
             else if (exception is TaskCanceledException)
@@ -111,7 +106,7 @@ namespace System.Net
 
             return exception;
         }
-        
+
         private static WebExceptionStatus GetStatusFromExceptionHelper(HttpRequestException ex)
         {
             SocketException socketEx = ex.InnerException as SocketException;

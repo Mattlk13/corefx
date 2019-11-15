@@ -2,12 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.Asn1;
-using System.Security.Cryptography.Pkcs.Asn1;
+using System.Security.Cryptography.Asn1.Pkcs12;
+using System.Security.Cryptography.Asn1.Pkcs7;
 using System.Security.Cryptography.X509Certificates;
 using Internal.Cryptography;
 
@@ -237,7 +237,7 @@ namespace System.Security.Cryptography.Pkcs
 
             List<Pkcs12SafeBag> bags;
             int encryptedValueLength = encryptedData.EncryptedContentInfo.EncryptedContent.Value.Length;
-            
+
             // Don't use the array pool because the parsed bags are going to have ReadOnlyMemory projections
             // over this data.
             byte[] destination = new byte[encryptedValueLength];

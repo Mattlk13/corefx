@@ -305,12 +305,12 @@ namespace System.Net.Http
 
             if (settings._allowAutoRedirect)
             {
-                // Just as with WinHttpHandler and CurlHandler, for security reasons, we do not support authentication on redirects
+                // Just as with WinHttpHandler, for security reasons, we do not support authentication on redirects
                 // if the credential is anything other than a CredentialCache.
                 // We allow credentials in a CredentialCache since they are specifically tied to URIs.
-                HttpMessageHandler redirectHandler = 
-                    (settings._credentials == null || settings._credentials is CredentialCache) ? 
-                    handler : 
+                HttpMessageHandler redirectHandler =
+                    (settings._credentials == null || settings._credentials is CredentialCache) ?
+                    handler :
                     new HttpConnectionHandler(poolManager);        // will not authenticate
 
                 handler = new RedirectHandler(settings._maxAutomaticRedirections, handler, redirectHandler);

@@ -25,8 +25,8 @@ namespace System.Linq.Parallel
     /// <typeparam name="TKey"></typeparam>
     internal class OrderPreservingSpoolingTask<TInputOutput, TKey> : SpoolingTaskBase
     {
-        private Shared<TInputOutput[]> _results; // The destination array cell into which data is placed.
-        private SortHelper<TInputOutput> _sortHelper; // A helper that performs the sorting.
+        private readonly Shared<TInputOutput[]?> _results; // The destination array cell into which data is placed.
+        private readonly SortHelper<TInputOutput> _sortHelper; // A helper that performs the sorting.
 
         //-----------------------------------------------------------------------------------
         // Creates, but does not execute, a new spooling task.
@@ -43,7 +43,7 @@ namespace System.Linq.Parallel
 
         private OrderPreservingSpoolingTask(
             int taskIndex, QueryTaskGroupState groupState,
-            Shared<TInputOutput[]> results, SortHelper<TInputOutput> sortHelper) :
+            Shared<TInputOutput[]?> results, SortHelper<TInputOutput> sortHelper) :
             base(taskIndex, groupState)
         {
             Debug.Assert(groupState != null);
@@ -70,7 +70,7 @@ namespace System.Linq.Parallel
 
         internal static void Spool(
             QueryTaskGroupState groupState, PartitionedStream<TInputOutput, TKey> partitions,
-            Shared<TInputOutput[]> results, TaskScheduler taskScheduler)
+            Shared<TInputOutput[]?> results, TaskScheduler taskScheduler)
         {
             Debug.Assert(groupState != null);
             Debug.Assert(partitions != null);

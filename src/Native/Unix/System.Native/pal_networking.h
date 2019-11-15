@@ -22,6 +22,7 @@ typedef enum
     GetAddrInfoErrorFlags_EAI_NONAME = 5,   // NAME or SERVICE is unknown.
     GetAddrInfoErrorFlags_EAI_BADARG = 6,   // One or more input arguments were invalid.
     GetAddrInfoErrorFlags_EAI_NOMORE = 7,   // No more entries are present in the list.
+    GetAddrInfoErrorFlags_EAI_MEMORY = 8,   // Out of memory.
 } GetAddrInfoErrorFlags;
 
 /**
@@ -53,6 +54,8 @@ typedef enum
  *
  * NOTE: these values are taken from System.Net.AddressFamily. If you add
  *       new entries, be sure that the values are chosen accordingly.
+ *       Unix specific values have distinct offset to avoid conflict with
+ *       Windows values.
  */
 typedef enum
 {
@@ -60,9 +63,8 @@ typedef enum
     AddressFamily_AF_UNIX = 1,     // System.Net.AddressFamily.Unix
     AddressFamily_AF_INET = 2,     // System.Net.AddressFamily.InterNetwork
     AddressFamily_AF_INET6 = 23,   // System.Net.AddressFamily.InterNetworkV6
-    AddressFamily_AF_NETLINK = 30, // System.Net.AddressFamily.Netlink
-    AddressFamily_AF_PACKET = 31,  // System.Net.AddressFamily.Packet
-    AddressFamily_AF_CAN = 32,     // System.Net.AddressFamily.ControllerAreaNetwork
+    AddressFamily_AF_PACKET = 65536,  // System.Net.AddressFamily.Packet
+    AddressFamily_AF_CAN = 65537,     // System.Net.AddressFamily.ControllerAreaNetwork
 } AddressFamily;
 
 /*
@@ -248,10 +250,10 @@ typedef struct
 
 typedef struct
 {
-    uint8_t* CanonicalName;  // Canonical name of the host
-    uint8_t** Aliases;       // List of aliases for the host
-    struct addrinfo* AddressListHandle; // Handle for host socket addresses
-    int32_t IPAddressCount;  // Number of IP end points in the list
+    uint8_t* CanonicalName;    // Canonical name of the host
+    uint8_t** Aliases;         // List of aliases for the host
+    IPAddress* IPAddressList;  // Handle for host socket addresses
+    int32_t IPAddressCount;    // Number of IP end points in the socket address list
 } HostEntry;
 
 typedef struct
@@ -310,9 +312,8 @@ typedef struct
 
 DLLEXPORT int32_t SystemNative_GetHostEntryForName(const uint8_t* address, HostEntry* entry);
 
-DLLEXPORT int32_t SystemNative_GetNextIPAddress(const HostEntry* entry, struct addrinfo** addressListHandle, IPAddress* endPoint);
-
 DLLEXPORT void SystemNative_FreeHostEntry(HostEntry* entry);
+
 
 DLLEXPORT int32_t SystemNative_GetNameInfo(const uint8_t* address,
                                int32_t addressLength,

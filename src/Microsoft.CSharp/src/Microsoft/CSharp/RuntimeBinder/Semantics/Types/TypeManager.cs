@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -37,7 +36,7 @@ namespace Microsoft.CSharp.RuntimeBinder.Semantics
             //      pbsm is the containing symbol manager
             //      fMeth designates whether this is a method type var or class type var
             //
-            // The standard class type variables are useful during emit, but not for type 
+            // The standard class type variables are useful during emit, but not for type
             // comparison when binding. The standard method type variables are useful during
             // binding for signature comparison.
 
@@ -212,7 +211,7 @@ namespace Microsoft.CSharp.RuntimeBinder.Semantics
                     if (src != dst)
                     {
                         CType[] dsts = new CType[srcs.Length];
-                        Array.Copy(srcs, 0, dsts, 0, i);
+                        Array.Copy(srcs, dsts, i);
                         dsts[i] = dst;
                         while (++i < srcs.Length)
                         {
@@ -333,9 +332,9 @@ namespace Microsoft.CSharp.RuntimeBinder.Semantics
             {
                 // The following assertion is not always true and indicates a problem where
                 // the signature of override method does not match the one inherited from
-                // the base class. The method match we have found does not take the type 
+                // the base class. The method match we have found does not take the type
                 // arguments of the base class into account. So actually we are not overriding
-                // the method that we "intend" to. 
+                // the method that we "intend" to.
                 // Debug.Assert(taDst == SubstTypeArray(taSrc, typeArgsCls, typeArgsMeth, grfst));
                 return true;
             }
@@ -608,7 +607,7 @@ namespace Microsoft.CSharp.RuntimeBinder.Semantics
 
             if (typeSrc is AggregateType aggSrc)
             {
-                for (;;)
+                while (true)
                 {
                     if ((aggSrc.IsInterfaceType || aggSrc.IsDelegateType) && TryVarianceAdjustmentToGetAccessibleType(context, aggSrc, out CType typeDst))
                     {
@@ -750,19 +749,22 @@ namespace Microsoft.CSharp.RuntimeBinder.Semantics
             (Assembly, Assembly) key = (assemblyThatDefinesAttribute, assemblyToCheck);
             if (!s_internalsVisibleToCache.TryGetValue(key, out bool result))
             {
-                AssemblyName assyName;
-
                 // Assembly.GetName() requires FileIOPermission to FileIOPermissionAccess.PathDiscovery.
                 // If we don't have that (we're in low trust), then we are going to effectively turn off
-                // InternalsVisibleTo. The alternative is to crash when this happens. 
+                // InternalsVisibleTo. The alternative is to crash when this happens.
 
                 try
                 {
-                    assyName = assemblyToCheck.GetName();
-                    result = assemblyThatDefinesAttribute.GetCustomAttributes()
-                        .OfType<InternalsVisibleToAttribute>()
-                        .Select(ivta => new AssemblyName(ivta.AssemblyName))
-                        .Any(an => AssemblyName.ReferenceMatchesDefinition(an, assyName));
+                    AssemblyName assyName = assemblyToCheck.GetName();
+                    foreach (Attribute attr in assemblyThatDefinesAttribute.GetCustomAttributes())
+                    {
+                        if (attr is InternalsVisibleToAttribute ivta &&
+                            AssemblyName.ReferenceMatchesDefinition(new AssemblyName(ivta.AssemblyName), assyName))
+                        {
+                            result = true;
+                            break;
+                        }
+                    }
                 }
                 catch (SecurityException)
                 {

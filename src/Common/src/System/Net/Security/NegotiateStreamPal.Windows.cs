@@ -80,7 +80,7 @@ namespace System.Net.Security
             ref byte[] resultBlob,
             ref ContextFlagsPal contextFlags)
         {
-#if netstandard
+#if NETSTANDARD2_0
             Span<SecurityBuffer> inSecurityBufferSpan = new SecurityBuffer[2];
 #else
             TwoSecurityBuffers twoSecurityBuffers = default;
@@ -109,17 +109,19 @@ namespace System.Net.Security
             var outSecurityBuffer = new SecurityBuffer(resultBlob, SecurityBufferType.SECBUFFER_TOKEN);
 
             Interop.SspiCli.ContextFlags outContextFlags = Interop.SspiCli.ContextFlags.Zero;
+            // There is only one SafeDeleteContext type on Windows which is SafeDeleteSslContext so this cast is safe.
+            SafeDeleteSslContext sslContext = (SafeDeleteSslContext)securityContext;
             Interop.SECURITY_STATUS winStatus = (Interop.SECURITY_STATUS)SSPIWrapper.InitializeSecurityContext(
                 GlobalSSPI.SSPIAuth,
                 ref credentialsHandle,
-                ref securityContext,
+                ref sslContext,
                 spn,
                 ContextFlagsAdapterPal.GetInteropFromContextFlagsPal(requestedContextFlags),
                 Interop.SspiCli.Endianness.SECURITY_NETWORK_DREP,
                 inSecurityBufferSpan,
                 ref outSecurityBuffer,
                 ref outContextFlags);
-
+            securityContext = sslContext;
             resultBlob = outSecurityBuffer.token;
             contextFlags = ContextFlagsAdapterPal.GetContextFlagsPalFromInterop(outContextFlags);
             return SecurityStatusAdapterPal.GetSecurityStatusPalFromInterop(winStatus);
@@ -129,11 +131,14 @@ namespace System.Net.Security
             ref SafeDeleteContext securityContext,
             byte[] incomingBlob)
         {
+            // There is only one SafeDeleteContext type on Windows which is SafeDeleteSslContext so this cast is safe.
+            SafeDeleteSslContext sslContext = (SafeDeleteSslContext)securityContext;
             var inSecurityBuffer = new SecurityBuffer(incomingBlob, SecurityBufferType.SECBUFFER_TOKEN);
             Interop.SECURITY_STATUS winStatus = (Interop.SECURITY_STATUS)SSPIWrapper.CompleteAuthToken(
                 GlobalSSPI.SSPIAuth,
-                ref securityContext,
+                ref sslContext,
                 in inSecurityBuffer);
+            securityContext = sslContext;
             return SecurityStatusAdapterPal.GetSecurityStatusPalFromInterop(winStatus);
         }
 
@@ -146,7 +151,7 @@ namespace System.Net.Security
             ref byte[] resultBlob,
             ref ContextFlagsPal contextFlags)
         {
-#if netstandard
+#if NETSTANDARD2_0
             Span<SecurityBuffer> inSecurityBufferSpan = new SecurityBuffer[2];
 #else
             TwoSecurityBuffers twoSecurityBuffers = default;
@@ -175,10 +180,12 @@ namespace System.Net.Security
             var outSecurityBuffer = new SecurityBuffer(resultBlob, SecurityBufferType.SECBUFFER_TOKEN);
 
             Interop.SspiCli.ContextFlags outContextFlags = Interop.SspiCli.ContextFlags.Zero;
+            // There is only one SafeDeleteContext type on Windows which is SafeDeleteSslContext so this cast is safe.
+            SafeDeleteSslContext sslContext = (SafeDeleteSslContext)securityContext;
             Interop.SECURITY_STATUS winStatus = (Interop.SECURITY_STATUS)SSPIWrapper.AcceptSecurityContext(
                 GlobalSSPI.SSPIAuth,
                 credentialsHandle,
-                ref securityContext,
+                ref sslContext,
                 ContextFlagsAdapterPal.GetInteropFromContextFlagsPal(requestedContextFlags),
                 Interop.SspiCli.Endianness.SECURITY_NETWORK_DREP,
                 inSecurityBufferSpan,
@@ -186,7 +193,7 @@ namespace System.Net.Security
                 ref outContextFlags);
 
             resultBlob = outSecurityBuffer.token;
-
+            securityContext = sslContext;
             contextFlags = ContextFlagsAdapterPal.GetContextFlagsPalFromInterop(outContextFlags);
             return SecurityStatusAdapterPal.GetSecurityStatusPalFromInterop(winStatus);
         }
@@ -216,7 +223,7 @@ namespace System.Net.Security
             // setup security buffers for ssp call
             // one points at signed data
             // two will receive payload if signature is valid
-#if netstandard
+#if NETSTANDARD2_0
             Span<SecurityBuffer> securityBuffer = new SecurityBuffer[2];
 #else
             TwoSecurityBuffers stackBuffer = default;
@@ -242,7 +249,7 @@ namespace System.Net.Security
             if (securityBuffer[1].type != SecurityBufferType.SECBUFFER_DATA)
                 throw new InternalException(securityBuffer[1].type);
 
-            // return validated payload size 
+            // return validated payload size
             return securityBuffer[1].size;
         }
 
@@ -263,7 +270,7 @@ namespace System.Net.Security
             Buffer.BlockCopy(buffer, offset, output, sizes.cbMaxSignature, count);
 
             // setup security buffers for ssp call
-#if netstandard
+#if NETSTANDARD2_0
             Span<SecurityBuffer> securityBuffer = new SecurityBuffer[2];
 #else
             TwoSecurityBuffers stackBuffer = default;

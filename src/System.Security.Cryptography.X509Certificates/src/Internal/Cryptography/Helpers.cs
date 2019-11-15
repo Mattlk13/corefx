@@ -21,7 +21,7 @@ namespace Internal.Cryptography
             return chars;
         }
 
-        private static void ToHexArrayUpper(byte[] bytes, Span<char> chars)
+        private static void ToHexArrayUpper(ReadOnlySpan<byte> bytes, Span<char> chars)
         {
             Debug.Assert(chars.Length >= bytes.Length * 2);
             int i = 0;
@@ -110,8 +110,8 @@ namespace Internal.Cryptography
         private static char NibbleToHex(byte b)
         {
             Debug.Assert(b >= 0 && b <= 15);
-            return (char)(b >= 0 && b <= 9 ? 
-                '0' + b : 
+            return (char)(b >= 0 && b <= 9 ?
+                '0' + b :
                 'A' + (b - 10));
         }
 
@@ -208,6 +208,35 @@ namespace Internal.Cryptography
                 reader.ReadEncodedValue();
             }
         }
+
+        public static ReadOnlyMemory<byte> DecodeOctetStringAsMemory(ReadOnlyMemory<byte> encodedOctetString)
+        {
+            AsnReader reader = new AsnReader(encodedOctetString, AsnEncodingRules.BER);
+
+            if (reader.PeekEncodedValue().Length != encodedOctetString.Length)
+            {
+                throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
+            }
+
+            // Almost everything in X.509 is DER-encoded, which means Octet String values are
+            // encoded as a primitive (non-segmented)
+            //
+            // Even in BER Octet Strings are usually encoded as a primitive.
+            if (reader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> primitiveContents))
+            {
+                return primitiveContents;
+            }
+
+            byte[] tooBig = new byte[encodedOctetString.Length];
+
+            if (reader.TryCopyOctetStringBytes(tooBig, out int bytesWritten))
+            {
+                return tooBig.AsMemory(0, bytesWritten);
+            }
+
+            Debug.Fail("TryCopyOctetStringBytes failed with an over-allocated array");
+            throw new CryptographicException();
+        }
     }
 
     internal static class DictionaryStringHelper
@@ -233,7 +262,7 @@ namespace Internal.Cryptography
                     // NULL character which was literally embedded in the DER would cause a
                     // failure in .NET whereas it wouldn't have with strcmp.
                     return tavReader.ReadCharacterString((UniversalTagNumber)tag.TagValue).TrimEnd('\0');
-                    
+
                 default:
                     throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
             }

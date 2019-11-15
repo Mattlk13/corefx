@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{149D7DFE-2FAC-4A38-89AD-E24CE63AACB8}</ProjectGuid>
     <AssemblyName>Microsoft.CSharp</AssemblyName>
     <RootNamespace>Microsoft.CSharp</RootNamespace>
     <!-- dotnet/corefx#3128 tracks removing this exclusion -->
     <ExcludeLocalizationImport Condition="'$(TargetsWindows)' != 'true'">true</ExcludeLocalizationImport>
-    <Configurations>netstandard-Debug;netstandard-Release</Configurations>
+    <Configurations>netstandard2.0-Debug;netstandard2.0-Release</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Microsoft\CSharp\RuntimeBinder\ArgumentObject.cs" />
@@ -158,7 +157,7 @@
     <Compile Include="Microsoft\CSharp\RuntimeBinder\Syntax\PredefinedType.cs" />
     <Compile Include="Microsoft\CSharp\RuntimeBinder\Syntax\TokenFacts.cs" />
     <Compile Include="Microsoft\CSharp\RuntimeBinder\Syntax\TokenKind.cs" />
-    <Compile Include="$(CommonPath)\CoreLib\System\Numerics\Hashing\HashHelpers.cs">
+    <Compile Include="$(CoreLibDir)System\Numerics\Hashing\HashHelpers.cs">
       <Link>Common\System\Collections\HashHelpers.cs</Link>
     </Compile>
   </ItemGroup>

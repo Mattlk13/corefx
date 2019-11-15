@@ -18,6 +18,7 @@ internal static partial class Interop
         private const string CmdLineFileName = "/cmdline";
         private const string StatFileName = "/stat";
         private const string MapsFileName = "/maps";
+        private const string StatusFileName = "/status";
         private const string FileDescriptorDirectoryName = "/fd/";
         private const string TaskDirectoryName = "/task/";
 
@@ -27,7 +28,7 @@ internal static partial class Interop
 
         internal struct ParsedStat
         {
-            // Commented out fields are available in the stat data file but 
+            // Commented out fields are available in the stat data file but
             // are currently not used.  If/when needed, they can be uncommented,
             // and the corresponding entry can be added back to StatParser, replacing
             // the MoveNext() with the appropriate ParseNext* call and assignment.
@@ -78,6 +79,19 @@ internal static partial class Interop
             //internal long cguest_time;
         }
 
+        internal struct ParsedStatus
+        {
+#if DEBUG
+            internal int Pid;
+#endif
+            internal ulong VmHWM;
+            internal ulong VmRSS;
+            internal ulong VmData;
+            internal ulong VmSwap;
+            internal ulong VmSize;
+            internal ulong VmPeak;
+        }
+
         internal struct ParsedMapsModule
         {
             internal string FileName;
@@ -97,6 +111,11 @@ internal static partial class Interop
         internal static string GetStatFilePathForProcess(int pid)
         {
             return RootPath + pid.ToString(CultureInfo.InvariantCulture) + StatFileName;
+        }
+
+        internal static string GetStatusFilePathForProcess(int pid)
+        {
+            return RootPath + pid.ToString(CultureInfo.InvariantCulture) + StatusFileName;
         }
 
         internal static string GetMapsFilePathForProcess(int pid)
@@ -136,8 +155,8 @@ internal static partial class Interop
                 // Use a StringParser to avoid string.Split costs
                 var parser = new StringParser(line, separator: ' ', skipEmpty: true);
 
-                // Parse the address range 
-                KeyValuePair<long, long> addressRange =  
+                // Parse the address range
+                KeyValuePair<long, long> addressRange =
                     parser.ParseRaw(delegate (string s, ref int start, ref int end)
                     {
                         long startingAddress = 0, endingAddress = 0;
@@ -192,9 +211,9 @@ internal static partial class Interop
         {
             // Perf note: Calling GetTaskDirectoryPathForProcess will allocate a string,
             // which we then use in another Concat call to produce another string.  The straightforward alternative,
-            // though, since we have five input strings, is to use the string.Concat overload that takes a params array. 
+            // though, since we have five input strings, is to use the string.Concat overload that takes a params array.
             // This results in allocating not only the params array but also a defensive copy inside of Concat,
-            // which means allocating two five-element arrays.  This two-string approach will result not only in fewer 
+            // which means allocating two five-element arrays.  This two-string approach will result not only in fewer
             // allocations, but also typically in less memory allocated, and it's a bit more maintainable.
             return GetTaskDirectoryPathForProcess(pid) + tid.ToString(CultureInfo.InvariantCulture) + StatFileName;
         }
@@ -209,24 +228,22 @@ internal static partial class Interop
         internal static bool TryReadStatFile(int pid, int tid, out ParsedStat result, ReusableTextReader reusableReader)
         {
             bool b = TryParseStatFile(GetStatFilePathForThread(pid, tid), out result, reusableReader);
-            //
-            // This assert currently fails in the Windows Subsystem For Linux.  See https://github.com/Microsoft/BashOnWindows/issues/967.
-            //
-            //Debug.Assert(!b || result.pid == tid, "Expected thread ID from stat file to match supplied tid");
+            Debug.Assert(!b || result.pid == tid, "Expected thread ID from stat file to match supplied tid");
+            return b;
+        }
+
+        internal static bool TryReadStatusFile(int pid, out ParsedStatus result, ReusableTextReader reusableReader)
+        {
+            bool b = TryParseStatusFile(GetStatusFilePathForProcess(pid), out result, reusableReader);
+#if DEBUG
+            Debug.Assert(!b || result.Pid == pid, "Expected process ID from status file to match supplied pid");
+#endif
             return b;
         }
 
         internal static bool TryParseStatFile(string statFilePath, out ParsedStat result, ReusableTextReader reusableReader)
         {
-            string statFileContents;
-            try
-            {
-                using (var source = new FileStream(statFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, useAsync: false))
-                {
-                    statFileContents = reusableReader.ReadAllText(source);
-                }
-            }
-            catch (IOException)
+            if (!TryReadFile(statFilePath, reusableReader, out string statFileContents))
             {
                 // Between the time that we get an ID and the time that we try to read the associated stat
                 // file(s), the process could be gone.
@@ -266,7 +283,7 @@ internal static partial class Interop
             // The following lines are commented out as there's no need to parse through
             // the rest of the entry (we've gotten all of the data we need).  Should any
             // of these fields be needed in the future, uncomment all of the lines up
-            // through and including the one that's needed.  For now, these are being left 
+            // through and including the one that's needed.  For now, these are being left
             // commented to document what's available in the remainder of the entry.
 
             //parser.MoveNextOrFail(); // startcode
@@ -291,6 +308,128 @@ internal static partial class Interop
 
             result = results;
             return true;
+        }
+
+        internal static bool TryParseStatusFile(string statusFilePath, out ParsedStatus result, ReusableTextReader reusableReader)
+        {
+            if (!TryReadFile(statusFilePath, reusableReader, out string fileContents))
+            {
+                // Between the time that we get an ID and the time that we try to read the associated stat
+                // file(s), the process could be gone.
+                result = default(ParsedStatus);
+                return false;
+            }
+
+            ParsedStatus results = default(ParsedStatus);
+            ReadOnlySpan<char> statusFileContents = fileContents.AsSpan();
+            int unitSliceLength = -1;
+#if DEBUG
+            int nonUnitSliceLength = -1;
+#endif
+            while (!statusFileContents.IsEmpty)
+            {
+                int startIndex = statusFileContents.IndexOf(':');
+                if (startIndex == -1)
+                {
+                    // Reached end of file
+                    break;
+                }
+
+                ReadOnlySpan<char> title = statusFileContents.Slice(0, startIndex);
+                statusFileContents = statusFileContents.Slice(startIndex + 1);
+                int endIndex = statusFileContents.IndexOf('\n');
+                if (endIndex == -1)
+                {
+                    endIndex = statusFileContents.Length - 1;
+                    unitSliceLength = statusFileContents.Length - 3;
+#if DEBUG
+                    nonUnitSliceLength = statusFileContents.Length;
+#endif
+                }
+                else
+                {
+                    unitSliceLength = endIndex - 3;
+#if DEBUG
+                    nonUnitSliceLength = endIndex;
+#endif
+                }
+
+                ReadOnlySpan<char> value = default;
+                bool valueParsed = true;
+#if DEBUG
+                if (title.SequenceEqual("Pid".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, nonUnitSliceLength);
+                    valueParsed = int.TryParse(value, out results.Pid);
+                }
+#endif
+                if (title.SequenceEqual("VmHWM".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out results.VmHWM);
+                }
+                else if (title.SequenceEqual("VmRSS".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out results.VmRSS);
+                }
+                else if (title.SequenceEqual("VmData".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out ulong vmData);
+                    results.VmData += vmData;
+                }
+                else if (title.SequenceEqual("VmSwap".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out results.VmSwap);
+                }
+                else if (title.SequenceEqual("VmSize".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out results.VmSize);
+                }
+                else if (title.SequenceEqual("VmPeak".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out results.VmPeak);
+                }
+                else if (title.SequenceEqual("VmStk".AsSpan()))
+                {
+                    value = statusFileContents.Slice(0, unitSliceLength);
+                    valueParsed = ulong.TryParse(value, out ulong vmStack);
+                    results.VmData += vmStack;
+                }
+
+                Debug.Assert(valueParsed);
+                statusFileContents = statusFileContents.Slice(endIndex + 1);
+            }
+
+            results.VmData *= 1024;
+            results.VmPeak *= 1024;
+            results.VmSize *= 1024;
+            results.VmSwap *= 1024;
+            results.VmRSS *= 1024;
+            results.VmHWM *= 1024;
+            result = results;
+            return true;
+        }
+
+        private static bool TryReadFile(string filePath, ReusableTextReader reusableReader, out string fileContents)
+        {
+            try
+            {
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, useAsync: false))
+                {
+                    fileContents = reusableReader.ReadAllText(fileStream);
+                    return true;
+                }
+            }
+            catch (IOException)
+            {
+                fileContents = null;
+                return false;
+            }
         }
     }
 }

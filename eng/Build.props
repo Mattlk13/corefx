@@ -1,9 +1,5 @@
 <Project>
   <ItemGroup>
-    <ProjectToBuild Condition="'$(DirectoryToBuild)' == ''" Include="$(RepoRoot)build.proj" />
-    <ProjectToBuild Condition="'$(DirectoryToBuild)' != ''" Include="$(RepoRoot)src\dirs.proj" />
-  </ItemGroup>
-  <ItemGroup>
-    <SolutionBuildTargets Condition="'$(BuildTests)' == 'true'" Include="BuildTests" />
+    <ProjectToBuild Include="$(RepoRoot)src\build.proj" />
   </ItemGroup>
 </Project>

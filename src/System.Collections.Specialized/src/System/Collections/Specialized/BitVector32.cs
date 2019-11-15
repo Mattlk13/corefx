@@ -71,7 +71,7 @@ namespace System.Collections.Specialized
             }
             set
             {
-                // The code should really have originally validated "(value & section.Mask) == value" with 
+                // The code should really have originally validated "(value & section.Mask) == value" with
                 // an exception (it instead validated it with a Debug.Assert, which does little good in a
                 // public method when in a Release build).  We don't include such a check now as it would
                 // likely break things and for little benefit.
@@ -185,7 +185,7 @@ namespace System.Collections.Specialized
             return new Section(CreateMaskFromHighValue(maxValue), offset);
         }
 
-        public override bool Equals(object o)
+        public override bool Equals(object? o)
         {
             if (!(o is BitVector32))
             {
@@ -254,7 +254,7 @@ namespace System.Collections.Specialized
                 }
             }
 
-            public override bool Equals(object o)
+            public override bool Equals(object? o)
             {
                 if (o is Section)
                     return Equals((Section)o);

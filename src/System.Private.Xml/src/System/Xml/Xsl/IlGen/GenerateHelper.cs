@@ -452,9 +452,10 @@ namespace System.Xml.Xsl.IlGen
         private MethodBase _methInfo;
         private ILGenerator _ilgen;
         private LocalBuilder _locXOut;
-        private XmlILModule _module;
-        private bool _isDebug, _initWriters;
-        private StaticDataManager _staticData;
+        private readonly XmlILModule _module;
+        private readonly bool _isDebug;
+        private bool _initWriters;
+        private readonly StaticDataManager _staticData;
         private ISourceLineInfo _lastSourceInfo;
         private MethodInfo _methSyncToNav;
 
@@ -469,8 +470,8 @@ namespace System.Xml.Xsl.IlGen
         /// <summary>
         /// Cache metadata used during code-generation phase.
         /// </summary>
-        // SxS note: Using hardcoded "dump.il" is an SxS issue. Since we are doing this ONLY in debug builds 
-        // and only for tracing purposes and MakeVersionSafeName does not seem to be able to handle file 
+        // SxS note: Using hardcoded "dump.il" is an SxS issue. Since we are doing this ONLY in debug builds
+        // and only for tracing purposes and MakeVersionSafeName does not seem to be able to handle file
         // extensions correctly I decided to suppress the SxS message (as advised by SxS guys).
         public GenerateHelper(XmlILModule module, bool isDebug)
         {
@@ -487,8 +488,8 @@ namespace System.Xml.Xsl.IlGen
         /// <summary>
         /// Begin generating code within a new method.
         /// </summary>
-        // SxS note: Using hardcoded "dump.il" is an SxS issue. Since we are doing this ONLY in debug builds 
-        // and only for tracing purposes and MakeVersionSafeName does not seem to be able to handle file 
+        // SxS note: Using hardcoded "dump.il" is an SxS issue. Since we are doing this ONLY in debug builds
+        // and only for tracing purposes and MakeVersionSafeName does not seem to be able to handle file
         // extensions correctly I decided to suppress the SxS message (as advised by SxS guys).
         public void MethodBegin(MethodBase methInfo, ISourceLineInfo sourceInfo, bool initWriters)
         {

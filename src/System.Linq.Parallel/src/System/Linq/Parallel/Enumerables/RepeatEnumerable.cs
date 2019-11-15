@@ -10,6 +10,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Linq.Parallel
 {
@@ -20,8 +21,8 @@ namespace System.Linq.Parallel
     /// <typeparam name="TResult"></typeparam>
     internal class RepeatEnumerable<TResult> : ParallelQuery<TResult>, IParallelPartitionable<TResult>
     {
-        private TResult _element; // Element value to repeat.
-        private int _count; // Count of element values.
+        private readonly TResult _element; // Element value to repeat.
+        private readonly int _count; // Count of element values.
 
         //-----------------------------------------------------------------------------------
         // Constructs a new repeat enumerable object for the repeat operation.
@@ -77,12 +78,12 @@ namespace System.Linq.Parallel
         // The actual enumerator that produces a set of repeated elements.
         //
 
-        class RepeatEnumerator : QueryOperatorEnumerator<TResult, int>
+        private class RepeatEnumerator : QueryOperatorEnumerator<TResult, int>
         {
             private readonly TResult _element; // The element to repeat.
             private readonly int _count; // The number of times to repeat it.
             private readonly int _indexOffset; // Our index offset.
-            private Shared<int> _currentIndex; // The number of times we have already repeated it. [allocate in moveNext to avoid false-sharing]
+            private Shared<int>? _currentIndex; // The number of times we have already repeated it. [allocate in moveNext to avoid false-sharing]
 
             //-----------------------------------------------------------------------------------
             // Creates a new enumerator.
@@ -99,7 +100,7 @@ namespace System.Linq.Parallel
             // Basic IEnumerator<T> methods. These produce the repeating sequence..
             //
 
-            internal override bool MoveNext(ref TResult currentElement, ref int currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TResult currentElement, ref int currentKey)
             {
                 if (_currentIndex == null)
                     _currentIndex = new Shared<int>(-1);

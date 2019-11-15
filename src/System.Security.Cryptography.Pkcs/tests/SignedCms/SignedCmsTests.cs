@@ -62,6 +62,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
         [InlineData("Too-long BER length", "3005")]
         public static void DecodeInvalid(string description, string inputHex)
         {
+            _ = description;
             byte[] inputData = inputHex.HexToByteArray();
 
             SignedCms cms = new SignedCms();
@@ -535,7 +536,6 @@ namespace System.Security.Cryptography.Pkcs.Tests
         [Theory]
         [InlineData(SubjectIdentifierType.IssuerAndSerialNumber, false)]
         [InlineData(SubjectIdentifierType.IssuerAndSerialNumber, true)]
-        [ActiveIssue(31977, TargetFrameworkMonikers.Uap)]
         public static void AddFirstSigner_DSA(SubjectIdentifierType identifierType, bool detached)
         {
             ContentInfo contentInfo = new ContentInfo(new byte[] { 9, 8, 7, 6, 5 });
@@ -562,7 +562,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             Assert.NotSame(cms.Certificates[0], firstSigner.Certificate);
             Assert.Equal(cms.Certificates[0], firstSigner.Certificate);
 
-#if netcoreapp
+#if NETCOREAPP
             byte[] signature = firstSigner.GetSignature();
             Assert.NotEmpty(signature);
             // DSA PKIX signature format is a DER SEQUENCE.
@@ -581,7 +581,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             Assert.Equal(identifierType, cms.SignerInfos[0].SignerIdentifier.Type);
             Assert.Equal(firstSigner.Certificate, cms.SignerInfos[0].Certificate);
 
-#if netcoreapp
+#if NETCOREAPP
             byte[] sig2 = cms.SignerInfos[0].GetSignature();
             Assert.Equal(signature, sig2);
 #endif
@@ -633,7 +633,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             Assert.NotSame(cms.Certificates[0], firstSigner.Certificate);
             Assert.Equal(cms.Certificates[0], firstSigner.Certificate);
 
-#if netcoreapp
+#if NETCOREAPP
             byte[] signature = firstSigner.GetSignature();
             Assert.NotEmpty(signature);
             // ECDSA PKIX signature format is a DER SEQUENCE.
@@ -655,7 +655,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             Assert.Equal(identifierType, cms.SignerInfos[0].SignerIdentifier.Type);
             Assert.Equal(firstSigner.Certificate, cms.SignerInfos[0].Certificate);
 
-#if netcoreapp
+#if NETCOREAPP
             byte[] sig2 = cms.SignerInfos[0].GetSignature();
             Assert.Equal(signature, sig2);
 #endif
@@ -951,7 +951,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             Assert.Equal(2, cms.SignerInfos.Count);
 
             // One of them is a V3 signer, so the whole document is V3.
-#if netfx
+#if NETFRAMEWORK
             // Windows CMS computes the version on the first signer, and doesn't
             // seem to lift it on the second one.
             // It encoded the message as
@@ -962,7 +962,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             {
 #endif
             Assert.Equal(3, cms.Version);
-#if netfx
+#if NETFRAMEWORK
             }
 #endif
 
@@ -1025,7 +1025,6 @@ namespace System.Security.Cryptography.Pkcs.Tests
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        [ActiveIssue(31977, TargetFrameworkMonikers.Uap)]
         public static void EnsureExtraCertsAdded(bool newDocument)
         {
             SignedCms cms;
@@ -1057,7 +1056,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
                 cms.ComputeSignature(signer);
 
                 bool ExpectCopyRemoved =
-#if !netfx
+#if !NETFRAMEWORK
                     true
 #else
                     false
@@ -1248,7 +1247,7 @@ namespace System.Security.Cryptography.Pkcs.Tests
             {
                 EnvelopedCms envelopedCms = new EnvelopedCms(new ContentInfo(new byte[] { 3 }));
                 envelopedCms.Encrypt(new CmsRecipient(signerType, cert));
-                
+
                 SignedCms signedCms = new SignedCms(
                     new ContentInfo(new Oid(Oids.Pkcs7Enveloped), envelopedCms.Encode()));
 

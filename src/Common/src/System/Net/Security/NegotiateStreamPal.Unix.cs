@@ -38,7 +38,7 @@ namespace System.Net.Security
             return negoContext.IsNtlmUsed ? NegotiationInfoClass.NTLM : NegotiationInfoClass.Kerberos;
         }
 
-        static byte[] GssWrap(
+        private static byte[] GssWrap(
             SafeGssContextHandle context,
             bool encrypt,
             byte[] buffer,
@@ -187,10 +187,14 @@ namespace System.Net.Security
 
         private static bool GssAcceptSecurityContext(
             ref SafeGssContextHandle context,
+            SafeGssCredHandle credential,
             byte[] buffer,
             out byte[] outputBuffer,
-            out uint outFlags)
+            out uint outFlags,
+            out bool isNtlmUsed)
         {
+            Debug.Assert(credential != null);
+
             bool newContext = false;
             if (context == null)
             {
@@ -205,11 +209,13 @@ namespace System.Net.Security
             {
                 Interop.NetSecurityNative.Status minorStatus;
                 status = Interop.NetSecurityNative.AcceptSecContext(out minorStatus,
+                                                                    credential,
                                                                     ref context,
                                                                     buffer,
                                                                     buffer?.Length ?? 0,
                                                                     ref token,
-                                                                    out outFlags);
+                                                                    out outFlags,
+                                                                    out isNtlmUsed);
 
                 if ((status != Interop.NetSecurityNative.Status.GSS_S_COMPLETE) &&
                     (status != Interop.NetSecurityNative.Status.GSS_S_CONTINUE_NEEDED))
@@ -249,7 +255,19 @@ namespace System.Net.Security
                     throw new Interop.NetSecurityNative.GssApiException(status, minorStatus);
                 }
 
-                return Encoding.UTF8.GetString(token.ToByteArray());
+                ReadOnlySpan<byte> tokenBytes = token.Span;
+                int length = tokenBytes.Length;
+                if (length > 0 && tokenBytes[length - 1] == '\0')
+                {
+                    // Some GSS-API providers (gss-ntlmssp) include the terminating null with strings, so skip that.
+                    tokenBytes = tokenBytes.Slice(0, length - 1);
+                }
+
+#if NETSTANDARD2_0
+                return Encoding.UTF8.GetString(tokenBytes.ToArray(), 0, tokenBytes.Length);
+#else
+                return Encoding.UTF8.GetString(tokenBytes);
+#endif
             }
             finally
             {
@@ -274,7 +292,7 @@ namespace System.Net.Security
                 if (NetEventSource.IsEnabled)
                 {
                     string protocol = isNtlmOnly ? "NTLM" : "SPNEGO";
-                    NetEventSource.Info(null, $"requested protocol = {protocol}, target = {targetName}");
+                    NetEventSource.Info(context, $"requested protocol = {protocol}, target = {targetName}");
                 }
 
                 context = new SafeDeleteNegoContext(credential, targetName);
@@ -305,7 +323,7 @@ namespace System.Net.Security
                     if (NetEventSource.IsEnabled)
                     {
                         string protocol = isNtlmOnly ? "NTLM" : isNtlmUsed ? "SPNEGO-NTLM" : "SPNEGO-Kerberos";
-                        NetEventSource.Info(null, $"actual protocol = {protocol}");
+                        NetEventSource.Info(context, $"actual protocol = {protocol}");
                     }
 
                     // Populate protocol used for authentication
@@ -396,9 +414,11 @@ namespace System.Net.Security
                 SafeGssContextHandle contextHandle = negoContext.GssContext;
                 bool done = GssAcceptSecurityContext(
                    ref contextHandle,
+                   negoContext.AcceptorCredential,
                    incomingBlob,
                    out resultBlob,
-                   out uint outputFlags);
+                   out uint outputFlags,
+                   out bool isNtlmUsed);
 
                 Debug.Assert(resultBlob != null, "Unexpected null buffer returned by GssApi");
                 Debug.Assert(negoContext.GssContext == null || contextHandle == negoContext.GssContext);
@@ -413,16 +433,59 @@ namespace System.Net.Security
                 contextFlags = ContextFlagsAdapterPal.GetContextFlagsPalFromInterop(
                     (Interop.NetSecurityNative.GssFlags)outputFlags, isServer: true);
 
-                SecurityStatusPalErrorCode errorCode = done ?
-                    (negoContext.IsNtlmUsed && resultBlob.Length > 0 ? SecurityStatusPalErrorCode.OK : SecurityStatusPalErrorCode.CompleteNeeded) :
-                    SecurityStatusPalErrorCode.ContinueNeeded;
+                SecurityStatusPalErrorCode errorCode;
+                if (done)
+                {
+                    if (NetEventSource.IsEnabled)
+                    {
+                        string protocol = isNtlmUsed ? "SPNEGO-NTLM" : "SPNEGO-Kerberos";
+                        NetEventSource.Info(securityContext, $"AcceptSecurityContext: actual protocol = {protocol}");
+                    }
+
+                    negoContext.SetAuthenticationPackage(isNtlmUsed);
+                    errorCode = (isNtlmUsed && resultBlob.Length > 0) ? SecurityStatusPalErrorCode.OK : SecurityStatusPalErrorCode.CompleteNeeded;
+                }
+                else
+                {
+                    errorCode = SecurityStatusPalErrorCode.ContinueNeeded;
+                }
 
                 return new SecurityStatusPal(errorCode);
+            }
+            catch (Interop.NetSecurityNative.GssApiException gex)
+            {
+                if (NetEventSource.IsEnabled) NetEventSource.Error(null, gex);
+                return new SecurityStatusPal(GetErrorCode(gex), gex);
             }
             catch (Exception ex)
             {
                 if (NetEventSource.IsEnabled) NetEventSource.Error(null, ex);
                 return new SecurityStatusPal(SecurityStatusPalErrorCode.InternalError, ex);
+            }
+        }
+
+        // https://www.gnu.org/software/gss/reference/gss.pdf (page 25)
+        private static SecurityStatusPalErrorCode GetErrorCode(Interop.NetSecurityNative.GssApiException exception)
+        {
+            switch (exception.MajorStatus)
+            {
+                case Interop.NetSecurityNative.Status.GSS_S_NO_CRED:
+                    return SecurityStatusPalErrorCode.UnknownCredentials;
+                case Interop.NetSecurityNative.Status.GSS_S_BAD_BINDINGS:
+                    return SecurityStatusPalErrorCode.BadBinding;
+                case Interop.NetSecurityNative.Status.GSS_S_CREDENTIALS_EXPIRED:
+                    return SecurityStatusPalErrorCode.CertExpired;
+                case Interop.NetSecurityNative.Status.GSS_S_DEFECTIVE_TOKEN:
+                    return SecurityStatusPalErrorCode.InvalidToken;
+                case Interop.NetSecurityNative.Status.GSS_S_DEFECTIVE_CREDENTIAL:
+                    return SecurityStatusPalErrorCode.IncompleteCredentials;
+                case Interop.NetSecurityNative.Status.GSS_S_BAD_SIG:
+                    return SecurityStatusPalErrorCode.MessageAltered;
+                case Interop.NetSecurityNative.Status.GSS_S_BAD_MECH:
+                    return SecurityStatusPalErrorCode.Unsupported;
+                case Interop.NetSecurityNative.Status.GSS_S_NO_CONTEXT:
+                default:
+                    return SecurityStatusPalErrorCode.InternalError;
             }
         }
 
@@ -452,7 +515,7 @@ namespace System.Net.Security
             // This value is not used on Unix
             return 0;
         }
-        
+
         internal static SafeFreeCredentials AcquireDefaultCredential(string package, bool isServer)
         {
             return AcquireCredentialsHandle(package, isServer, new NetworkCredential(string.Empty, string.Empty, string.Empty));
@@ -465,7 +528,7 @@ namespace System.Net.Security
             bool ntlmOnly = string.Equals(package, NegotiationInfoClass.NTLM, StringComparison.OrdinalIgnoreCase);
             if (ntlmOnly && isEmptyCredential)
             {
-                // NTLM authentication is not possible with default credentials which are no-op 
+                // NTLM authentication is not possible with default credentials which are no-op
                 throw new PlatformNotSupportedException(SR.net_ntlm_not_possible_default_cred);
             }
 
@@ -475,7 +538,7 @@ namespace System.Net.Security
                     new SafeFreeNegoCredentials(false, string.Empty, string.Empty, string.Empty) :
                     new SafeFreeNegoCredentials(ntlmOnly, credential.UserName, credential.Password, credential.Domain);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Win32Exception(NTE_FAIL, ex.Message);
             }

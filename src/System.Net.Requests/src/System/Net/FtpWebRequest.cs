@@ -208,7 +208,7 @@ namespace System.Net
         private Exception _exception;
 
         private TimerThread.Queue _timerQueue = s_DefaultTimerQueue;
-        private TimerThread.Callback _timerCallback;
+        private readonly TimerThread.Callback _timerCallback;
 
         private bool _enableSsl;
         private FtpControlStream _connection;
@@ -989,7 +989,7 @@ namespace System.Net
                     {
                         if (sEx.SocketErrorCode == SocketError.TimedOut)
                         {
-                            SetException(new WebException(SR.net_timeout, WebExceptionStatus.Timeout));
+                            SetException(ExceptionDispatchInfo.SetCurrentStackTrace(new WebException(SR.net_timeout, WebExceptionStatus.Timeout)));
                         }
                     }
                 }
@@ -1831,6 +1831,3 @@ namespace System.Net
         }
     } // class FtpWebRequestCreator
 } // namespace System.Net
-
-
-

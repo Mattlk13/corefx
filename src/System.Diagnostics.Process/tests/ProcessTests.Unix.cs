@@ -109,7 +109,7 @@ namespace System.Diagnostics.Tests
         [OuterLoop]
         public void ProcessStart_UseShellExecute_OnUnix_OpenMissingFile_DoesNotThrow()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && 
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) &&
                 s_allowedProgramsToRun.FirstOrDefault(program => IsProgramInstalled(program)) == null)
             {
                 return;
@@ -229,7 +229,9 @@ namespace System.Diagnostics.Tests
             }
 
             // Open a file that doesn't exist with an argument that xdg-open considers invalid.
-            using (var px = Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = "/nosuchfile", Arguments = "invalid_arg" }))
+            var startInfo = new ProcessStartInfo { UseShellExecute = true, FileName = "/nosuchfile", Arguments = "invalid_arg" };
+            startInfo.Environment.Remove("DISPLAY"); // Get rid of DISPLAY environment variable as this causes spurious test failures.
+            using (var px = Process.Start(startInfo))
             {
                 Assert.NotNull(px);
                 px.WaitForExit();

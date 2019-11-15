@@ -31,7 +31,7 @@ namespace System.Xml.Tests
         public static void XmlDataDocument_CloneNode()
         {
             DataSet ds = Create();
-            DataRow dr = ds.Tables[0].Rows[0];
+            _ = ds.Tables[0].Rows[0];
             XmlDataDocument doc = new XmlDataDocument(ds);
             ds.EnforceConstraints = false;
 
@@ -109,7 +109,7 @@ namespace System.Xml.Tests
             XmlDataDocument doc = new XmlDataDocument();
             Assert.Throws<FileNotFoundException>(() => doc.Load("missingfile"));
         }
-        
+
         [Fact]
         public static void XmlDataDocument_LoadXmlReader()
         {

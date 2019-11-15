@@ -2,7 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 // Copyright (c) 2004 Mainsoft Co.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -10,10 +10,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -115,24 +115,24 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void constraintName()
+        public void ConstraintName()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
 
             UniqueConstraint uc = null;
             uc = new UniqueConstraint(dtParent.Columns[0]);
 
-            // default 
+            // default
             Assert.Equal(string.Empty, uc.ConstraintName);
 
             uc.ConstraintName = "myConstraint";
 
-            // set/get 
+            // set/get
             Assert.Equal("myConstraint", uc.ConstraintName);
         }
 
         [Fact]
-        public void ctor_DataColumn()
+        public void Ctor_DataColumn()
         {
             Exception tmpEx = new Exception();
 
@@ -146,10 +146,8 @@ namespace System.Data.Tests
             // DataColumn.Unique - without constraint
             Assert.False(dtParent.Columns[0].Unique);
 
-            uc = new UniqueConstraint(dtParent.Columns[0]);
-
             // Ctor
-            Assert.False(uc == null);
+            uc = new UniqueConstraint(dtParent.Columns[0]);
 
             // DataColumn.Unique - with constraint
             Assert.False(dtParent.Columns[0].Unique);
@@ -163,7 +161,7 @@ namespace System.Data.Tests
             uc = new UniqueConstraint(dtChild.Columns[1]);
 
             //Column[1] is not unique, will throw exception
-            // ArgumentException 
+            // ArgumentException
             AssertExtensions.Throws<ArgumentException>(null, () => dtChild.Constraints.Add(uc));
 
             //reset the table
@@ -185,16 +183,11 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DataColumnNoPrimary()
+        public void Ctor_DataColumnNoPrimary()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
-
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint(dtParent.Columns[0], false);
+            UniqueConstraint uc = new UniqueConstraint(dtParent.Columns[0], false);
             dtParent.Constraints.Add(uc);
-
-            // Ctor
-            Assert.False(uc == null);
 
             // primary key 1
             Assert.Equal(0, dtParent.PrimaryKey.Length);
@@ -208,16 +201,13 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DataColumns()
+        public void Ctor_DataColumns()
         {
             Exception tmpEx = new Exception();
             DataTable dtParent = DataProvider.CreateParentDataTable();
 
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint(new DataColumn[] { dtParent.Columns[0], dtParent.Columns[1] });
-
             // Ctor - parent
-            Assert.False(uc == null);
+            UniqueConstraint uc = new UniqueConstraint(new DataColumn[] { dtParent.Columns[0], dtParent.Columns[1] });
 
             // Ctor - add existing column
             dtParent.Rows.Add(new object[] { 99, "str1", "str2" });
@@ -228,9 +218,6 @@ namespace System.Data.Tests
             uc = new UniqueConstraint(new DataColumn[] { dtChild.Columns[0], dtChild.Columns[1] });
             dtChild.Constraints.Add(uc);
 
-            // Ctor - child
-            Assert.False(uc == null);
-
             dtChild.Constraints.Clear();
             uc = new UniqueConstraint(new DataColumn[] { dtChild.Columns[1], dtChild.Columns[2] });
 
@@ -240,16 +227,11 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_DataColumnPrimary()
+        public void Ctor_DataColumnPrimary()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
-
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint(dtParent.Columns[0], false);
+            UniqueConstraint uc = new UniqueConstraint(dtParent.Columns[0], false);
             dtParent.Constraints.Add(uc);
-
-            // Ctor
-            Assert.False(uc == null);
 
             // primary key 1
             Assert.Equal(0, dtParent.PrimaryKey.Length);
@@ -263,31 +245,21 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_NameDataColumn()
+        public void Ctor_NameDataColumn()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
-
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint("myConstraint", dtParent.Columns[0]);
-
-            // Ctor
-            Assert.False(uc == null);
+            UniqueConstraint uc = new UniqueConstraint("myConstraint", dtParent.Columns[0]);
 
             // Ctor name
             Assert.Equal("myConstraint", uc.ConstraintName);
         }
 
         [Fact]
-        public void ctor_NameDataColumnPrimary()
+        public void Ctor_NameDataColumnPrimary()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
-
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint("myConstraint", dtParent.Columns[0], false);
+            UniqueConstraint uc = new UniqueConstraint("myConstraint", dtParent.Columns[0], false);
             dtParent.Constraints.Add(uc);
-
-            // Ctor
-            Assert.False(uc == null);
 
             // primary key 1
             Assert.Equal(0, dtParent.PrimaryKey.Length);
@@ -307,31 +279,22 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void ctor_NameDataColumns()
+        public void Ctor_NameDataColumns()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
 
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint("myConstraint", new DataColumn[] { dtParent.Columns[0], dtParent.Columns[1] });
-
-            // Ctor
-            Assert.False(uc == null);
+            UniqueConstraint uc = new UniqueConstraint("myConstraint", new DataColumn[] { dtParent.Columns[0], dtParent.Columns[1] });
 
             // Ctor name
             Assert.Equal("myConstraint", uc.ConstraintName);
         }
 
         [Fact]
-        public void ctor_NameDataColumnsPrimary()
+        public void Ctor_NameDataColumnsPrimary()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
-
-            UniqueConstraint uc = null;
-            uc = new UniqueConstraint("myConstraint", new DataColumn[] { dtParent.Columns[0] }, false);
+            UniqueConstraint uc = new UniqueConstraint("myConstraint", new DataColumn[] { dtParent.Columns[0] }, false);
             dtParent.Constraints.Add(uc);
-
-            // Ctor
-            Assert.False(uc == null);
 
             // primary key 1
             Assert.Equal(0, dtParent.PrimaryKey.Length);
@@ -351,7 +314,7 @@ namespace System.Data.Tests
         }
 
         [Fact]
-        public void extendedProperties()
+        public void ExtendedProperties()
         {
             DataTable dtParent = DataProvider.CreateParentDataTable();
 
@@ -359,10 +322,10 @@ namespace System.Data.Tests
             uc = new UniqueConstraint(dtParent.Columns[0]);
             PropertyCollection pc = uc.ExtendedProperties;
 
-            // Checking ExtendedProperties default 
-            Assert.True(pc != null);
+            // Checking ExtendedProperties default
+            Assert.NotNull(pc);
 
-            // Checking ExtendedProperties count 
+            // Checking ExtendedProperties count
             Assert.Equal(0, pc.Count);
         }
     }

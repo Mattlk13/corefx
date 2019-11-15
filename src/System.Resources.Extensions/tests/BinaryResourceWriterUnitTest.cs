@@ -56,7 +56,7 @@ namespace System.Resources.Extensions.Tests
                     Assert.Throws<ArgumentNullException>("name", () => writer.AddResource(null, stream, true));
                     Assert.Throws<ArgumentNullException>("name", () => writer.AddActivatorResource(null, stream, "System.DayOfWeek", false));
                 }
-                
+
                 Assert.Throws<ArgumentNullException>("name", () => writer.AddBinaryFormattedResource(null, new byte[1], "System.DayOfWeek"));
                 Assert.Throws<ArgumentNullException>("name", () => writer.AddTypeConverterResource(null, new byte[1], "System.DayOfWeek"));
                 Assert.Throws<ArgumentNullException>("name", () => writer.AddResource(null, "Monday", "System.DayOfWeek"));
@@ -150,7 +150,7 @@ namespace System.Resources.Extensions.Tests
             Assert.Equal(writerBuffer, binaryWriterBuffer);
         }
 
-        
+
         [Fact]
         public static void PrimitiveResources()
         {
@@ -267,23 +267,7 @@ namespace System.Resources.Extensions.Tests
         public static void BinaryFormattedResources()
         {
             var values = TestData.BinaryFormatted;
-            byte[] writerBuffer, binaryWriterBuffer;
-            using (MemoryStream ms = new MemoryStream())
-            using (ResourceWriter writer = new ResourceWriter(ms))
-            {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-
-                foreach (var pair in values)
-                {
-                    using (MemoryStream memoryStream = new MemoryStream())
-                    {
-                        binaryFormatter.Serialize(memoryStream, pair.Value);
-                        writer.AddResourceData(pair.Key, TestData.GetSerializationTypeName(pair.Value.GetType()), memoryStream.ToArray());
-                    }
-                }
-                writer.Generate();
-                writerBuffer = ms.ToArray();
-            }
+            byte[] binaryWriterBuffer;
 
             using (MemoryStream ms = new MemoryStream())
             using (PreserializedResourceWriter writer = new PreserializedResourceWriter(ms))
@@ -302,24 +286,8 @@ namespace System.Resources.Extensions.Tests
                 binaryWriterBuffer = ms.ToArray();
             }
 
-            // PreserializedResourceWriter should write ResourceWriter/ResourceReader format
-            Assert.Equal(writerBuffer, binaryWriterBuffer);
-
-            using (MemoryStream ms = new MemoryStream(writerBuffer, false))
-            using (ResourceReader reader = new ResourceReader(ms))
-            {
-                typeof(ResourceReader).GetField("_permitDeserialization", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(reader, true);
-
-                IDictionaryEnumerator dictEnum = reader.GetEnumerator();
-
-                while (dictEnum.MoveNext())
-                {
-                    ResourceValueEquals(values[(string)dictEnum.Key], dictEnum.Value);
-                }
-            }
-
-            // DeserializingResourceReader can read ResourceReader format
-            using (MemoryStream ms = new MemoryStream(writerBuffer, false))
+            // DeserializingResourceReader can read BinaryFormatted resources with type names.
+            using (MemoryStream ms = new MemoryStream(binaryWriterBuffer, false))
             using (DeserializingResourceReader reader = new DeserializingResourceReader(ms))
             {
                 IDictionaryEnumerator dictEnum = reader.GetEnumerator();
@@ -461,7 +429,7 @@ namespace System.Resources.Extensions.Tests
                 }
             }
         }
-        
+
         [Fact]
         public static void CanReadViaResourceManager()
         {
@@ -474,14 +442,14 @@ namespace System.Resources.Extensions.Tests
                 .Concat(TestData.ByteArrayConverterWithoutDrawing)
                 .Concat(TestData.StringConverterWithoutDrawing);
 
-            foreach(KeyValuePair<string, object> pair in objectPairs) 
+            foreach (KeyValuePair<string, object> pair in objectPairs)
             {
                 var actualValue = resourceManager.GetObject(pair.Key);
 
                 Assert.Equal(pair.Value, actualValue);
             }
 
-            foreach(KeyValuePair<string, (Type type, Stream stream)> pair in TestData.ActivatorWithoutDrawing)
+            foreach (KeyValuePair<string, (Type type, Stream stream)> pair in TestData.ActivatorWithoutDrawing)
             {
                 pair.Value.stream.Seek(0, SeekOrigin.Begin);
                 var expectedValue = Activator.CreateInstance(pair.Value.type, pair.Value.stream);
@@ -510,7 +478,13 @@ namespace System.Resources.Extensions.Tests
             {
                 TestData.WriteResourcesStream(actualData);
                 resourcesStream.CopyTo(expectedData);
-                Assert.Equal(expectedData.ToArray(), actualData.ToArray());
+
+                if (!PlatformDetection.IsFullFramework)
+                {
+                    // Some types rely on SerializationInfo.SetType on .NETCore
+                    // which result in a different binary format
+                    Assert.Equal(expectedData.ToArray(), actualData.ToArray());
+                }
             }
         }
 

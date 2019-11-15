@@ -4,7 +4,7 @@
 
 // =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 // A helper class that contains parallel versions of various looping constructs.  This
-// internally uses the task parallel library, but takes care to expose very little 
+// internally uses the task parallel library, but takes care to expose very little
 // evidence of this infrastructure being used.
 //
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -12,14 +12,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Runtime.ExceptionServices;
 using System.Diagnostics;
 
 namespace System.Threading.Tasks
 {
     /// <summary>
-    /// Stores options that configure the operation of methods on the 
+    /// Stores options that configure the operation of methods on the
     /// <see cref="System.Threading.Tasks.Parallel">Parallel</see> class.
     /// </summary>
     /// <remarks>
@@ -29,7 +28,7 @@ namespace System.Threading.Tasks
     /// </remarks>
     public class ParallelOptions
     {
-        private TaskScheduler _scheduler;
+        private TaskScheduler? _scheduler;
         private int _maxDegreeOfParallelism;
         private CancellationToken _cancellationToken;
 
@@ -40,7 +39,7 @@ namespace System.Threading.Tasks
         /// This constructor initializes the instance with default values.  <see cref="MaxDegreeOfParallelism"/>
         /// is initialized to -1, signifying that there is no upper bound set on how much parallelism should
         /// be employed.  <see cref="CancellationToken"/> is initialized to a non-cancelable token,
-        /// and <see cref="TaskScheduler"/> is initialized to the default scheduler (TaskScheduler.Default).  
+        /// and <see cref="TaskScheduler"/> is initialized to the default scheduler (TaskScheduler.Default).
         /// All of these defaults may be overwritten using the property set accessors on the instance.
         /// </remarks>
         public ParallelOptions()
@@ -51,25 +50,18 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="System.Threading.Tasks.TaskScheduler">TaskScheduler</see> 
+        /// Gets or sets the <see cref="System.Threading.Tasks.TaskScheduler">TaskScheduler</see>
         /// associated with this <see cref="ParallelOptions"/> instance. Setting this property to null
         /// indicates that the current scheduler should be used.
         /// </summary>
-        public TaskScheduler TaskScheduler
+        public TaskScheduler? TaskScheduler
         {
             get { return _scheduler; }
             set { _scheduler = value; }
         }
 
         // Convenience property used by TPL logic
-        internal TaskScheduler EffectiveTaskScheduler
-        {
-            get
-            {
-                if (_scheduler == null) return TaskScheduler.Current;
-                else return _scheduler;
-            }
-        }
+        internal TaskScheduler EffectiveTaskScheduler => _scheduler ?? TaskScheduler.Current;
 
         /// <summary>
         /// Gets or sets the maximum degree of parallelism enabled by this ParallelOptions instance.
@@ -137,7 +129,7 @@ namespace System.Threading.Tasks
     /// </remarks>
     public static class Parallel
     {
-        // static counter for generating unique Fork/Join Context IDs to be used in ETW events     
+        // static counter for generating unique Fork/Join Context IDs to be used in ETW events
         internal static int s_forkJoinContextID;
 
         // We use a stride for loops to amortize the frequency of interlocked operations.
@@ -150,17 +142,17 @@ namespace System.Threading.Tasks
         /// Executes each of the provided actions, possibly in parallel.
         /// </summary>
         /// <param name="actions">An array of <see cref="System.Action">Actions</see> to execute.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="actions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentException">The exception that is thrown when the
         /// <paramref name="actions"/> array contains a null element.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown when any
         /// action in the <paramref name="actions"/> array throws an exception.</exception>
         /// <remarks>
-        /// This method can be used to execute a set of operations, potentially in parallel.   
-        /// No guarantees are made about the order in which the operations execute or whether 
-        /// they execute in parallel.  This method does not return until each of the 
-        /// provided operations has completed, regardless of whether completion 
+        /// This method can be used to execute a set of operations, potentially in parallel.
+        /// No guarantees are made about the order in which the operations execute or whether
+        /// they execute in parallel.  This method does not return until each of the
+        /// provided operations has completed, regardless of whether completion
         /// occurs due to normal or exceptional termination.
         /// </remarks>
         public static void Invoke(params Action[] actions)
@@ -171,29 +163,29 @@ namespace System.Threading.Tasks
         /// <summary>
         /// Executes each of the provided actions, possibly in parallel.
         /// </summary>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="actions">An array of <see cref="System.Action">Actions</see> to execute.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="actions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentException">The exception that is thrown when the
         /// <paramref name="actions"/> array contains a null element.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> is set.</exception>
-        /// <exception cref="System.AggregateException">The exception that is thrown when any 
+        /// <exception cref="System.AggregateException">The exception that is thrown when any
         /// action in the <paramref name="actions"/> array throws an exception.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <remarks>
-        /// This method can be used to execute a set of operations, potentially in parallel.   
-        /// No guarantees are made about the order in which the operations execute or whether 
-        /// the they execute in parallel.  This method does not return until each of the 
-        /// provided operations has completed, regardless of whether completion 
+        /// This method can be used to execute a set of operations, potentially in parallel.
+        /// No guarantees are made about the order in which the operations execute or whether
+        /// the they execute in parallel.  This method does not return until each of the
+        /// provided operations has completed, regardless of whether completion
         /// occurs due to normal or exceptional termination.
         /// </remarks>
         public static void Invoke(ParallelOptions parallelOptions, params Action[] actions)
@@ -208,7 +200,7 @@ namespace System.Threading.Tasks
             }
 
             // On desktop, we throw an ODE if we're passed a disposed CancellationToken.
-            // Here, CancellationToken.ThrowIfSourceDisposed() is not exposed.  
+            // Here, CancellationToken.ThrowIfSourceDisposed() is not exposed.
             // This is benign, because we'll end up throwing ODE when we register
             // with the token later.
 
@@ -238,7 +230,7 @@ namespace System.Threading.Tasks
             }
 
 #if DEBUG
-            actions = null; // Ensure we don't accidentally use this below.
+            actions = null!; // Ensure we don't accidentally use this below.
 #endif
 
             // If we have no work to do, we are done.
@@ -257,7 +249,7 @@ namespace System.Threading.Tasks
                      (parallelOptions.MaxDegreeOfParallelism != -1 && parallelOptions.MaxDegreeOfParallelism < actionsCopy.Length))
                 {
                     // Used to hold any exceptions encountered during action processing
-                    ConcurrentQueue<Exception> exceptionQ = null; // will be lazily initialized if necessary
+                    ConcurrentQueue<Exception>? exceptionQ = null; // will be lazily initialized if necessary
 
                     // Launch a task replicator to handle the execution of all actions.
                     // This allows us to use as many cores as are available, and no more.
@@ -311,12 +303,10 @@ namespace System.Threading.Tasks
                         //       (regular exception thrown).
                         // We'll need to cover them both.
 
-                        ObjectDisposedException ode = e as ObjectDisposedException;
-                        if (ode != null)
+                        if (e is ObjectDisposedException)
                             throw;
 
-                        AggregateException ae = e as AggregateException;
-                        if (ae != null)
+                        if (e is AggregateException ae)
                         {
                             // Strip off outer container of an AggregateException, because downstream
                             // logic needs OCEs to be at the top level.
@@ -368,7 +358,7 @@ namespace System.Threading.Tasks
             }
             finally
             {
-                // ETW event for Parallel Invoke End             
+                // ETW event for Parallel Invoke End
                 if (ParallelEtwProvider.Log.IsEnabled())
                 {
                     ParallelEtwProvider.Log.ParallelInvokeEnd(TaskScheduler.Current.Id, Task.CurrentId ?? 0, forkJoinContextID);
@@ -382,14 +372,14 @@ namespace System.Threading.Tasks
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
         /// [fromInclusive, toExclusive).  It is provided with the iteration count (an Int32) as a parameter.
         /// </remarks>
         public static ParallelLoopResult For(int fromInclusive, int toExclusive, Action<int> body)
@@ -411,14 +401,14 @@ namespace System.Threading.Tasks
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
         /// [fromInclusive, toExclusive).  It is provided with the iteration count (an Int64) as a parameter.
         /// </remarks>
         public static ParallelLoopResult For(long fromInclusive, long toExclusive, Action<long> body)
@@ -438,26 +428,26 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
         /// [fromInclusive, toExclusive).  It is provided with the iteration count (an Int32) as a parameter.
         /// </remarks>
         public static ParallelLoopResult For(int fromInclusive, int toExclusive, ParallelOptions parallelOptions, Action<int> body)
@@ -481,26 +471,26 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
         /// [fromInclusive, toExclusive).  It is provided with the iteration count (an Int64) as a parameter.
         /// </remarks>
         public static ParallelLoopResult For(long fromInclusive, long toExclusive, ParallelOptions parallelOptions, Action<long> body)
@@ -525,7 +515,7 @@ namespace System.Threading.Tasks
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -533,25 +523,25 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32), 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32),
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </para>
         /// <para>
         /// Calling <see cref="System.Threading.Tasks.ParallelLoopState.Break()">ParallelLoopState.Break()</see>
-        /// informs the For operation that iterations after the current one need not 
+        /// informs the For operation that iterations after the current one need not
         /// execute.  However, all iterations before the current one will still need to be executed if they have not already.
-        /// Therefore, calling Break is similar to using a break operation within a 
-        /// conventional for loop in a language like C#, but it is not a perfect substitute: for example, there is no guarantee that iterations 
+        /// Therefore, calling Break is similar to using a break operation within a
+        /// conventional for loop in a language like C#, but it is not a perfect substitute: for example, there is no guarantee that iterations
         /// after the current one will definitely not execute.
         /// </para>
         /// <para>
-        /// If executing all iterations before the current one is not necessary, 
+        /// If executing all iterations before the current one is not necessary,
         /// <see cref="System.Threading.Tasks.ParallelLoopState.Stop()">ParallelLoopState.Stop()</see>
         /// should be preferred to using Break.  Calling Stop informs the For loop that it may abandon all remaining
-        /// iterations, regardless of whether they're for iterations above or below the current, 
-        /// since all required work has already been completed.  As with Break, however, there are no guarantees regarding 
+        /// iterations, regardless of whether they're for iterations above or below the current,
+        /// since all required work has already been completed.  As with Break, however, there are no guarantees regarding
         /// which other iterations will not execute.
         /// </para>
         /// <para>
@@ -577,16 +567,16 @@ namespace System.Threading.Tasks
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64), 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64),
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </remarks>
         public static ParallelLoopResult For(long fromInclusive, long toExclusive, Action<long, ParallelLoopState> body)
@@ -606,28 +596,28 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32), 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32),
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </remarks>
         public static ParallelLoopResult For(int fromInclusive, int toExclusive, ParallelOptions parallelOptions, Action<int, ParallelLoopState> body)
@@ -651,28 +641,28 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64), 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64),
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </remarks>
         public static ParallelLoopResult For(long fromInclusive, long toExclusive, ParallelOptions parallelOptions,
@@ -698,16 +688,16 @@ namespace System.Threading.Tasks
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -715,18 +705,18 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32), 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32),
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -760,16 +750,16 @@ namespace System.Threading.Tasks
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -777,18 +767,18 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64), 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64),
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -822,46 +812,46 @@ namespace System.Threading.Tasks
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32), 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int32),
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -899,46 +889,46 @@ namespace System.Threading.Tasks
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="fromInclusive">The start index, inclusive.</param>
         /// <param name="toExclusive">The end index, exclusive.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range: 
-        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64), 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each value in the iteration range:
+        /// [fromInclusive, toExclusive).  It is provided with the following parameters: the iteration count (an Int64),
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -974,7 +964,7 @@ namespace System.Threading.Tasks
 
         private static bool CheckTimeoutReached(int timeoutOccursAt)
         {
-            // Note that both, Environment.TickCount and timeoutOccursAt are ints and can overflow and become negative.            
+            // Note that both, Environment.TickCount and timeoutOccursAt are ints and can overflow and become negative.
             int currentMillis = Environment.TickCount;
 
             if (currentMillis < timeoutOccursAt)
@@ -1004,7 +994,7 @@ namespace System.Threading.Tasks
         /// common implementation details for the various For overloads we offer. Without it, we'd end up
         /// with lots of duplicate code. It handles: (1) simple for loops, (2) for loops that depend on
         /// ParallelState, and (3) for loops with thread local data.
-        /// 
+        ///
         /// </summary>
         /// <typeparam name="TLocal">The type of the local data.</typeparam>
         /// <param name="fromInclusive">The loop's start index, inclusive.</param>
@@ -1020,10 +1010,10 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult ForWorker<TLocal>(
             int fromInclusive, int toExclusive,
             ParallelOptions parallelOptions,
-            Action<int> body,
-            Action<int, ParallelLoopState> bodyWithState,
-            Func<int, ParallelLoopState, TLocal, TLocal> bodyWithLocal,
-            Func<TLocal> localInit, Action<TLocal> localFinally)
+            Action<int>? body,
+            Action<int, ParallelLoopState>? bodyWithState,
+            Func<int, ParallelLoopState, TLocal, TLocal>? bodyWithLocal,
+            Func<TLocal>? localInit, Action<TLocal>? localFinally)
         {
             Debug.Assert(((body == null ? 0 : 1) + (bodyWithState == null ? 0 : 1) + (bodyWithLocal == null ? 0 : 1)) == 1,
                 "expected exactly one body function to be supplied");
@@ -1031,7 +1021,7 @@ namespace System.Threading.Tasks
                 "thread local functions should only be supplied for loops w/ thread local bodies");
 
             // Instantiate our result.  Specifics will be filled in later.
-            ParallelLoopResult result = new ParallelLoopResult();
+            ParallelLoopResult result = default;
 
             // We just return immediately if 'to' is smaller (or equal to) 'from'.
             if (toExclusive <= fromInclusive)
@@ -1040,8 +1030,8 @@ namespace System.Threading.Tasks
                 return result;
             }
 
-            // For all loops we need a shared flag even though we don't have a body with state, 
-            // because the shared flag contains the exceptional bool, which triggers other workers 
+            // For all loops we need a shared flag even though we don't have a body with state,
+            // because the shared flag contains the exceptional bool, which triggers other workers
             // to exit their loops if one worker catches an exception
             ParallelLoopStateFlags32 sharedPStateFlags = new ParallelLoopStateFlags32();
 
@@ -1050,12 +1040,12 @@ namespace System.Threading.Tasks
 
             // initialize ranges with passed in loop arguments and expected number of workers
             int numExpectedWorkers = (parallelOptions.EffectiveMaxConcurrencyLevel == -1) ?
-                PlatformHelper.ProcessorCount :
+                Environment.ProcessorCount :
                 parallelOptions.EffectiveMaxConcurrencyLevel;
             RangeManager rangeManager = new RangeManager(fromInclusive, toExclusive, 1, numExpectedWorkers);
 
             // Keep track of any cancellations
-            OperationCanceledException oce = null;
+            OperationCanceledException? oce = null;
 
             // if cancellation is enabled, we need to register a callback to stop the loop when it gets signaled
             CancellationTokenRegistration ctr = (!parallelOptions.CancellationToken.CanBeCanceled)
@@ -1112,14 +1102,14 @@ namespace System.Threading.Tasks
                                 ParallelEtwProvider.Log.ParallelFork(TaskScheduler.Current.Id, Task.CurrentId ?? 0, forkJoinContextID);
                             }
 
-                            TLocal localValue = default(TLocal);
+                            TLocal localValue = default!;
                             bool bLocalValueInitialized = false; // Tracks whether localInit ran without exceptions, so that we can skip localFinally if it wasn't
 
                             try
                             {
                                 // Create a new state object that references the shared "stopped" and "exceptional" flags
                                 // If needed, it will contain a new instance of thread-local state by invoking the selector.
-                                ParallelLoopState32 state = null;
+                                ParallelLoopState32? state = null;
 
                                 if (bodyWithState != null)
                                 {
@@ -1160,7 +1150,7 @@ namespace System.Threading.Tasks
                                                                        || !sharedPStateFlags.ShouldExitLoop(j));
                                             j += 1)
                                         {
-                                            state.CurrentIteration = j;
+                                            state!.CurrentIteration = j;
                                             bodyWithState(j, state);
                                         }
                                     }
@@ -1171,8 +1161,8 @@ namespace System.Threading.Tasks
                                                                        || !sharedPStateFlags.ShouldExitLoop(j));
                                             j += 1)
                                         {
-                                            state.CurrentIteration = j;
-                                            localValue = bodyWithLocal(j, state, localValue);
+                                            state!.CurrentIteration = j;
+                                            localValue = bodyWithLocal!(j, state, localValue);
                                         }
                                     }
 
@@ -1222,7 +1212,7 @@ namespace System.Threading.Tasks
                 }
 
                 // If we got through that with no exceptions, and we were canceled, then
-                // throw our cancellation exception  
+                // throw our cancellation exception
                 if (oce != null) throw oce;
             }
             catch (AggregateException aggExp)
@@ -1265,7 +1255,7 @@ namespace System.Threading.Tasks
         /// common implementation details for the various For overloads we offer. Without it, we'd end up
         /// with lots of duplicate code. It handles: (1) simple for loops, (2) for loops that depend on
         /// ParallelState, and (3) for loops with thread local data.
-        /// 
+        ///
         /// </summary>
         /// <typeparam name="TLocal">The type of the local data.</typeparam>
         /// <param name="fromInclusive">The loop's start index, inclusive.</param>
@@ -1281,10 +1271,10 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult ForWorker64<TLocal>(
             long fromInclusive, long toExclusive,
             ParallelOptions parallelOptions,
-            Action<long> body,
-            Action<long, ParallelLoopState> bodyWithState,
-            Func<long, ParallelLoopState, TLocal, TLocal> bodyWithLocal,
-            Func<TLocal> localInit, Action<TLocal> localFinally)
+            Action<long>? body,
+            Action<long, ParallelLoopState>? bodyWithState,
+            Func<long, ParallelLoopState, TLocal, TLocal>? bodyWithLocal,
+            Func<TLocal>? localInit, Action<TLocal>? localFinally)
         {
             Debug.Assert(((body == null ? 0 : 1) + (bodyWithState == null ? 0 : 1) + (bodyWithLocal == null ? 0 : 1)) == 1,
                 "expected exactly one body function to be supplied");
@@ -1292,7 +1282,7 @@ namespace System.Threading.Tasks
                 "thread local functions should only be supplied for loops w/ thread local bodies");
 
             // Instantiate our result.  Specifics will be filled in later.
-            ParallelLoopResult result = new ParallelLoopResult();
+            ParallelLoopResult result = default;
 
             // We just return immediately if 'to' is smaller (or equal to) 'from'.
             if (toExclusive <= fromInclusive)
@@ -1301,8 +1291,8 @@ namespace System.Threading.Tasks
                 return result;
             }
 
-            // For all loops we need a shared flag even though we don't have a body with state, 
-            // because the shared flag contains the exceptional bool, which triggers other workers 
+            // For all loops we need a shared flag even though we don't have a body with state,
+            // because the shared flag contains the exceptional bool, which triggers other workers
             // to exit their loops if one worker catches an exception
             ParallelLoopStateFlags64 sharedPStateFlags = new ParallelLoopStateFlags64();
 
@@ -1312,12 +1302,12 @@ namespace System.Threading.Tasks
 
             // initialize ranges with passed in loop arguments and expected number of workers
             int numExpectedWorkers = (parallelOptions.EffectiveMaxConcurrencyLevel == -1) ?
-                PlatformHelper.ProcessorCount :
+                Environment.ProcessorCount :
                 parallelOptions.EffectiveMaxConcurrencyLevel;
             RangeManager rangeManager = new RangeManager(fromInclusive, toExclusive, 1, numExpectedWorkers);
 
             // Keep track of any cancellations
-            OperationCanceledException oce = null;
+            OperationCanceledException? oce = null;
 
             // if cancellation is enabled, we need to register a callback to stop the loop when it gets signaled
             CancellationTokenRegistration ctr = (!parallelOptions.CancellationToken.CanBeCanceled)
@@ -1369,20 +1359,20 @@ namespace System.Threading.Tasks
                             }
 
 
-                            // ETW event for ParallelFor Worker Fork                    
+                            // ETW event for ParallelFor Worker Fork
                             if (ParallelEtwProvider.Log.IsEnabled())
                             {
                                 ParallelEtwProvider.Log.ParallelFork(TaskScheduler.Current.Id, Task.CurrentId ?? 0, forkJoinContextID);
                             }
 
-                            TLocal localValue = default(TLocal);
+                            TLocal localValue = default!;
                             bool bLocalValueInitialized = false; // Tracks whether localInit ran without exceptions, so that we can skip localFinally if it wasn't
 
                             try
                             {
                                 // Create a new state object that references the shared "stopped" and "exceptional" flags
                                 // If needed, it will contain a new instance of thread-local state by invoking the selector.
-                                ParallelLoopState64 state = null;
+                                ParallelLoopState64? state = null;
 
                                 if (bodyWithState != null)
                                 {
@@ -1425,7 +1415,7 @@ namespace System.Threading.Tasks
                                                                        || !sharedPStateFlags.ShouldExitLoop(j));
                                              j += 1)
                                         {
-                                            state.CurrentIteration = j;
+                                            state!.CurrentIteration = j;
                                             bodyWithState(j, state);
                                         }
                                     }
@@ -1436,8 +1426,8 @@ namespace System.Threading.Tasks
                                                                        || !sharedPStateFlags.ShouldExitLoop(j));
                                              j += 1)
                                         {
-                                            state.CurrentIteration = j;
-                                            localValue = bodyWithLocal(j, state, localValue);
+                                            state!.CurrentIteration = j;
+                                            localValue = bodyWithLocal!(j, state, localValue);
                                         }
                                     }
 
@@ -1526,22 +1516,22 @@ namespace System.Threading.Tasks
 
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
         /// enumerable.  It is provided with the current element as a parameter.
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, Action<TSource> body)
@@ -1560,33 +1550,33 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
         /// enumerable.  It is provided with the current element as a parameter.
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, ParallelOptions parallelOptions, Action<TSource> body)
@@ -1609,24 +1599,24 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, Action<TSource, ParallelLoopState> body)
@@ -1645,35 +1635,35 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, ParallelOptions parallelOptions, Action<TSource, ParallelLoopState> body)
@@ -1696,24 +1686,24 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely, and the current element's index (an Int64).
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, Action<TSource, ParallelLoopState, long> body)
@@ -1732,35 +1722,35 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely, and the current element's index (an Int64).
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(IEnumerable<TSource> source, ParallelOptions parallelOptions, Action<TSource, ParallelLoopState, long> body)
@@ -1783,24 +1773,24 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -1808,18 +1798,18 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -1848,54 +1838,54 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -1929,24 +1919,24 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -1954,18 +1944,18 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local
         /// state that may be shared amongst iterations that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -1994,54 +1984,54 @@ namespace System.Threading.Tasks
         }
 
         /// <summary>
-        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/> 
+        /// Executes a for each operation on an <see cref="System.Collections.Generic.IEnumerable{TSource}"/>
         /// in which iterations may run in parallel.
         /// </summary>
         /// <typeparam name="TSource">The type of the data in the source.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">An enumerable data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// enumerable.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// enumerable.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local
         /// state that may be shared amongst iterations that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -2081,7 +2071,7 @@ namespace System.Threading.Tasks
         /// end up with lots of duplicate code. It handles: (1) simple foreach loops, (2) foreach loops that
         /// depend on ParallelState, and (3) foreach loops that access indices, (4) foreach loops with thread
         /// local data, and any necessary permutations thereof.
-        /// 
+        ///
         /// </summary>
         /// <typeparam name="TSource">The type of the source data.</typeparam>
         /// <typeparam name="TLocal">The type of the local data.</typeparam>
@@ -2099,12 +2089,12 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult ForEachWorker<TSource, TLocal>(
             IEnumerable<TSource> source,
             ParallelOptions parallelOptions,
-            Action<TSource> body,
-            Action<TSource, ParallelLoopState> bodyWithState,
-            Action<TSource, ParallelLoopState, long> bodyWithStateAndIndex,
-            Func<TSource, ParallelLoopState, TLocal, TLocal> bodyWithStateAndLocal,
-            Func<TSource, ParallelLoopState, long, TLocal, TLocal> bodyWithEverything,
-            Func<TLocal> localInit, Action<TLocal> localFinally)
+            Action<TSource>? body,
+            Action<TSource, ParallelLoopState>? bodyWithState,
+            Action<TSource, ParallelLoopState, long>? bodyWithStateAndIndex,
+            Func<TSource, ParallelLoopState, TLocal, TLocal>? bodyWithStateAndLocal,
+            Func<TSource, ParallelLoopState, long, TLocal, TLocal>? bodyWithEverything,
+            Func<TLocal>? localInit, Action<TLocal>? localFinally)
         {
             Debug.Assert(((body == null ? 0 : 1) + (bodyWithState == null ? 0 : 1) +
                 (bodyWithStateAndIndex == null ? 0 : 1) + (bodyWithStateAndLocal == null ? 0 : 1) + (bodyWithEverything == null ? 0 : 1)) == 1,
@@ -2116,8 +2106,7 @@ namespace System.Threading.Tasks
             parallelOptions.CancellationToken.ThrowIfCancellationRequested();
 
             // If it's an array, we can use a fast-path that uses ldelems in the IL.
-            TSource[] sourceAsArray = source as TSource[];
-            if (sourceAsArray != null)
+            if (source is TSource[] sourceAsArray)
             {
                 return ForEachWorker<TSource, TLocal>(
                     sourceAsArray, parallelOptions, body, bodyWithState, bodyWithStateAndIndex, bodyWithStateAndLocal,
@@ -2126,8 +2115,7 @@ namespace System.Threading.Tasks
 
             // If we can index into the list, we can use a faster code-path that doesn't result in
             // contention for the single, shared enumerator object.
-            IList<TSource> sourceAsList = source as IList<TSource>;
-            if (sourceAsList != null)
+            if (source is IList<TSource> sourceAsList)
             {
                 return ForEachWorker<TSource, TLocal>(
                     sourceAsList, parallelOptions, body, bodyWithState, bodyWithStateAndIndex, bodyWithStateAndLocal,
@@ -2159,12 +2147,12 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult ForEachWorker<TSource, TLocal>(
             TSource[] array,
             ParallelOptions parallelOptions,
-            Action<TSource> body,
-            Action<TSource, ParallelLoopState> bodyWithState,
-            Action<TSource, ParallelLoopState, long> bodyWithStateAndIndex,
-            Func<TSource, ParallelLoopState, TLocal, TLocal> bodyWithStateAndLocal,
-            Func<TSource, ParallelLoopState, long, TLocal, TLocal> bodyWithEverything,
-            Func<TLocal> localInit, Action<TLocal> localFinally)
+            Action<TSource>? body,
+            Action<TSource, ParallelLoopState>? bodyWithState,
+            Action<TSource, ParallelLoopState, long>? bodyWithStateAndIndex,
+            Func<TSource, ParallelLoopState, TLocal, TLocal>? bodyWithStateAndLocal,
+            Func<TSource, ParallelLoopState, long, TLocal, TLocal>? bodyWithEverything,
+            Func<TLocal>? localInit, Action<TLocal>? localFinally)
         {
             Debug.Assert(array != null);
             Debug.Assert(parallelOptions != null, "ForEachWorker(array): parallelOptions is null");
@@ -2195,7 +2183,7 @@ namespace System.Threading.Tasks
             else
             {
                 return ForWorker<TLocal>(
-                    from, to, parallelOptions, null, null, (i, state, local) => bodyWithEverything(array[i], state, i, local), localInit, localFinally);
+                    from, to, parallelOptions, null, null, (i, state, local) => bodyWithEverything!(array[i], state, i, local), localInit, localFinally);
             }
         }
 
@@ -2218,12 +2206,12 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult ForEachWorker<TSource, TLocal>(
             IList<TSource> list,
             ParallelOptions parallelOptions,
-            Action<TSource> body,
-            Action<TSource, ParallelLoopState> bodyWithState,
-            Action<TSource, ParallelLoopState, long> bodyWithStateAndIndex,
-            Func<TSource, ParallelLoopState, TLocal, TLocal> bodyWithStateAndLocal,
-            Func<TSource, ParallelLoopState, long, TLocal, TLocal> bodyWithEverything,
-            Func<TLocal> localInit, Action<TLocal> localFinally)
+            Action<TSource>? body,
+            Action<TSource, ParallelLoopState>? bodyWithState,
+            Action<TSource, ParallelLoopState, long>? bodyWithStateAndIndex,
+            Func<TSource, ParallelLoopState, TLocal, TLocal>? bodyWithStateAndLocal,
+            Func<TSource, ParallelLoopState, long, TLocal, TLocal>? bodyWithEverything,
+            Func<TLocal>? localInit, Action<TLocal>? localFinally)
         {
             Debug.Assert(list != null);
             Debug.Assert(parallelOptions != null, "ForEachWorker(list): parallelOptions is null");
@@ -2251,7 +2239,7 @@ namespace System.Threading.Tasks
             else
             {
                 return ForWorker<TLocal>(
-                    0, list.Count, parallelOptions, null, null, (i, state, local) => bodyWithEverything(list[i], state, i, local), localInit, localFinally);
+                    0, list.Count, parallelOptions, null, null, (i, state, local) => bodyWithEverything!(list[i], state, i, local), localInit, localFinally);
             }
         }
 
@@ -2264,23 +2252,23 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -2288,13 +2276,13 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
         /// Partitioner.  It is provided with the current element as a parameter.
         /// </para>
         /// </remarks>
@@ -2321,23 +2309,23 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -2345,15 +2333,15 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
         /// </para>
         /// </remarks>
@@ -2380,26 +2368,26 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The OrderablePartitioner that contains the original data source.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> OrderablePartitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner do not return the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IList with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -2407,15 +2395,15 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely, and the current element's index (an Int64).
         /// </para>
         /// </remarks>
@@ -2447,32 +2435,32 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -2480,24 +2468,24 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -2534,35 +2522,35 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">The OrderablePartitioner that contains the original data source.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> OrderablePartitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner do not return the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IList with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
@@ -2570,24 +2558,24 @@ namespace System.Threading.Tasks
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local
         /// state that may be shared amongst iterations that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -2628,51 +2616,51 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
         /// Partitioner.  It is provided with the current element as a parameter.
-        /// </para>    
+        /// </para>
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(
             Partitioner<TSource> source,
@@ -2701,53 +2689,53 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// and a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely.
-        /// </para>  
+        /// </para>
         /// </remarks>
         public static ParallelLoopResult ForEach<TSource>(
             Partitioner<TSource> source,
@@ -2776,54 +2764,54 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <param name="source">The OrderablePartitioner that contains the original data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> OrderablePartitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner do not return the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IList with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
         /// used to break out of the loop prematurely, and the current element's index (an Int64).
         /// </para>
         /// </remarks>
@@ -2860,68 +2848,68 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">The Partitioner that contains the original data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> Partitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> Partitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner does not return
         /// the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() method in the <paramref name="source"/> Partitioner returns an IList
         /// with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() method in the <paramref name="source"/> Partitioner returns an
         /// IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, and some local state that may be shared amongst iterations
         /// that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -2963,71 +2951,71 @@ namespace System.Threading.Tasks
         /// <typeparam name="TSource">The type of the elements in <paramref name="source"/>.</typeparam>
         /// <typeparam name="TLocal">The type of the thread-local data.</typeparam>
         /// <param name="source">The OrderablePartitioner that contains the original data source.</param>
-        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see> 
+        /// <param name="parallelOptions">A <see cref="System.Threading.Tasks.ParallelOptions">ParallelOptions</see>
         /// instance that configures the behavior of this operation.</param>
-        /// <param name="localInit">The function delegate that returns the initial state of the local data 
+        /// <param name="localInit">The function delegate that returns the initial state of the local data
         /// for each thread.</param>
         /// <param name="body">The delegate that is invoked once per iteration.</param>
         /// <param name="localFinally">The delegate that performs a final action on the local state of each
         /// thread.</param>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="source"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="parallelOptions"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/> 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the <paramref name="body"/>
         /// argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localInit"/> argument is null.</exception>
-        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the 
+        /// <exception cref="System.ArgumentNullException">The exception that is thrown when the
         /// <paramref name="localFinally"/> argument is null.</exception>
-        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the 
-        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/> 
+        /// <exception cref="System.OperationCanceledException">The exception that is thrown when the
+        /// <see cref="System.Threading.CancellationToken">CancellationToken</see> in the <paramref name="parallelOptions"/>
         /// argument is set</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// SupportsDynamicPartitions property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// KeysNormalized property in the <paramref name="source"/> OrderablePartitioner returns
         /// false.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when any
         /// methods in the <paramref name="source"/> OrderablePartitioner return null.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner do not return the correct number of partitions.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetPartitions() or GetOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IList with at least one null value.</exception>
-        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the 
-        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/> 
+        /// <exception cref="System.InvalidOperationException">The exception that is thrown when the
+        /// GetDynamicPartitions() or GetDynamicOrderablePartitions() methods in the <paramref name="source"/>
         /// OrderablePartitioner return an IEnumerable whose GetEnumerator() method returns null.</exception>
         /// <exception cref="System.AggregateException">The exception that is thrown to contain an exception
         /// thrown from one of the specified delegates.</exception>
-        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the 
-        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the 
-        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the 
+        /// <exception cref="System.ObjectDisposedException">The exception that is thrown when the
+        /// the <see cref="System.Threading.CancellationTokenSource">CancellationTokenSource</see> associated with the
+        /// the <see cref="System.Threading.CancellationToken">CancellationToken</see> in the
         /// <paramref name="parallelOptions"/> has been disposed.</exception>
         /// <returns>A <see cref="System.Threading.Tasks.ParallelLoopResult">ParallelLoopResult</see> structure
         /// that contains information on what portion of the loop completed.</returns>
         /// <remarks>
         /// <para>
-        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve 
-        /// the elements to be processed, in place of the original data source.  If the current element's 
+        /// The <see cref="System.Collections.Concurrent.Partitioner{TSource}">Partitioner</see> is used to retrieve
+        /// the elements to be processed, in place of the original data source.  If the current element's
         /// index is desired, the source must be an <see cref="System.Collections.Concurrent.OrderablePartitioner{TSource}">
         /// OrderablePartitioner</see>.
         /// </para>
         /// <para>
-        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/> 
-        /// Partitioner.  It is provided with the following parameters: the current element, 
-        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be 
-        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local 
+        /// The <paramref name="body"/> delegate is invoked once for each element in the <paramref name="source"/>
+        /// Partitioner.  It is provided with the following parameters: the current element,
+        /// a <see cref="System.Threading.Tasks.ParallelLoopState">ParallelLoopState</see> instance that may be
+        /// used to break out of the loop prematurely, the current element's index (an Int64), and some local
         /// state that may be shared amongst iterations that execute on the same thread.
         /// </para>
         /// <para>
-        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's 
+        /// The <paramref name="localInit"/> delegate is invoked once for each thread that participates in the loop's
         /// execution and returns the initial local state for each of those threads.  These initial states are passed to the first
-        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly 
-        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value 
-        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final 
+        /// <paramref name="body"/> invocations on each thread.  Then, every subsequent body invocation returns a possibly
+        /// modified state value that is passed to the next body invocation.  Finally, the last body invocation on each thread returns a state value
+        /// that is passed to the <paramref name="localFinally"/> delegate.  The localFinally delegate is invoked once per thread to perform a final
         /// action on each thread's local state.
         /// </para>
         /// </remarks>
@@ -3071,13 +3059,13 @@ namespace System.Threading.Tasks
         private static ParallelLoopResult PartitionerForEachWorker<TSource, TLocal>(
             Partitioner<TSource> source, // Might be OrderablePartitioner
             ParallelOptions parallelOptions,
-            Action<TSource> simpleBody,
-            Action<TSource, ParallelLoopState> bodyWithState,
-            Action<TSource, ParallelLoopState, long> bodyWithStateAndIndex,
-            Func<TSource, ParallelLoopState, TLocal, TLocal> bodyWithStateAndLocal,
-            Func<TSource, ParallelLoopState, long, TLocal, TLocal> bodyWithEverything,
-            Func<TLocal> localInit,
-            Action<TLocal> localFinally)
+            Action<TSource>? simpleBody,
+            Action<TSource, ParallelLoopState>? bodyWithState,
+            Action<TSource, ParallelLoopState, long>? bodyWithStateAndIndex,
+            Func<TSource, ParallelLoopState, TLocal, TLocal>? bodyWithStateAndLocal,
+            Func<TSource, ParallelLoopState, long, TLocal, TLocal>? bodyWithEverything,
+            Func<TLocal>? localInit,
+            Action<TLocal>? localFinally)
         {
             Debug.Assert(((simpleBody == null ? 0 : 1) + (bodyWithState == null ? 0 : 1) +
                 (bodyWithStateAndIndex == null ? 0 : 1) + (bodyWithStateAndLocal == null ? 0 : 1) + (bodyWithEverything == null ? 0 : 1)) == 1,
@@ -3085,7 +3073,7 @@ namespace System.Threading.Tasks
             Debug.Assert((bodyWithStateAndLocal != null) || (bodyWithEverything != null) || (localInit == null && localFinally == null),
                 "PartitionForEach: thread local functions should only be supplied for loops w/ thread local bodies");
 
-            OrderablePartitioner<TSource> orderedSource = source as OrderablePartitioner<TSource>;
+            OrderablePartitioner<TSource>? orderedSource = source as OrderablePartitioner<TSource>;
             Debug.Assert((orderedSource != null) || (bodyWithStateAndIndex == null && bodyWithEverything == null),
                 "PartitionForEach: bodies with indices are only allowable for OrderablePartitioner");
 
@@ -3107,16 +3095,16 @@ namespace System.Threading.Tasks
                                                           0, 0);
             }
 
-            // For all loops we need a shared flag even though we don't have a body with state, 
-            // because the shared flag contains the exceptional bool, which triggers other workers 
+            // For all loops we need a shared flag even though we don't have a body with state,
+            // because the shared flag contains the exceptional bool, which triggers other workers
             // to exit their loops if one worker catches an exception
             ParallelLoopStateFlags64 sharedPStateFlags = new ParallelLoopStateFlags64();
 
             // Instantiate our result.  Specifics will be filled in later.
-            ParallelLoopResult result = new ParallelLoopResult();
+            ParallelLoopResult result = default;
 
             // Keep track of any cancellations
-            OperationCanceledException oce = null;
+            OperationCanceledException? oce = null;
 
             // if cancellation is enabled, we need to register a callback to stop the loop when it gets signaled
             CancellationTokenRegistration ctr = (!parallelOptions.CancellationToken.CanBeCanceled)
@@ -3131,8 +3119,8 @@ namespace System.Threading.Tasks
 
             // Get our dynamic partitioner -- depends on whether source is castable to OrderablePartitioner
             // Also, do some error checking.
-            IEnumerable<TSource> partitionerSource = null;
-            IEnumerable<KeyValuePair<long, TSource>> orderablePartitionerSource = null;
+            IEnumerable<TSource>? partitionerSource = null;
+            IEnumerable<KeyValuePair<long, TSource>>? orderablePartitionerSource = null;
             if (orderedSource != null)
             {
                 orderablePartitionerSource = orderedSource.GetOrderableDynamicPartitions();
@@ -3166,14 +3154,14 @@ namespace System.Threading.Tasks
                                 ParallelEtwProvider.Log.ParallelFork(TaskScheduler.Current.Id, Task.CurrentId ?? 0, forkJoinContextID);
                             }
 
-                            TLocal localValue = default(TLocal);
+                            TLocal localValue = default!;
                             bool bLocalValueInitialized = false; // Tracks whether localInit ran without exceptions, so that we can skip localFinally if it wasn't
 
                             try
                             {
                                 // Create a new state object that references the shared "stopped" and "exceptional" flags.
                                 // If needed, it will contain a new instance of thread-local state by invoking the selector.
-                                ParallelLoopState64 state = null;
+                                ParallelLoopState64? state = null;
 
                                 if (bodyWithState != null || bodyWithStateAndIndex != null)
                                 {
@@ -3196,11 +3184,11 @@ namespace System.Threading.Tasks
                                 if (orderedSource != null)  // Use this path for OrderablePartitioner:
                                 {
                                     // first check if there's saved state from a previous replica that we might be replacing.
-                                    // the only state to be passed down in such a transition is the enumerator                     
-                                    IEnumerator<KeyValuePair<long, TSource>> myPartition = partitionState as IEnumerator<KeyValuePair<long, TSource>>;
+                                    // the only state to be passed down in such a transition is the enumerator
+                                    IEnumerator<KeyValuePair<long, TSource>>? myPartition = partitionState as IEnumerator<KeyValuePair<long, TSource>>;
                                     if (myPartition == null)
                                     {
-                                        myPartition = orderablePartitionerSource.GetEnumerator();
+                                        myPartition = orderablePartitionerSource!.GetEnumerator();
                                         partitionState = myPartition;
                                     }
 
@@ -3219,13 +3207,13 @@ namespace System.Threading.Tasks
                                         if (simpleBody != null)
                                             simpleBody(value);
                                         else if (bodyWithState != null)
-                                            bodyWithState(value, state);
+                                            bodyWithState(value, state!);
                                         else if (bodyWithStateAndIndex != null)
-                                            bodyWithStateAndIndex(value, state, index);
+                                            bodyWithStateAndIndex(value, state!, index);
                                         else if (bodyWithStateAndLocal != null)
-                                            localValue = bodyWithStateAndLocal(value, state, localValue);
+                                            localValue = bodyWithStateAndLocal(value, state!, localValue);
                                         else
-                                            localValue = bodyWithEverything(value, state, index, localValue);
+                                            localValue = bodyWithEverything!(value, state!, index, localValue);
 
                                         if (sharedPStateFlags.ShouldExitLoop(index)) break;
 
@@ -3243,10 +3231,10 @@ namespace System.Threading.Tasks
                                 {
                                     // first check if there's saved state from a previous replica that we might be replacing.
                                     // the only state to be passed down in such a transition is the enumerator
-                                    IEnumerator<TSource> myPartition = partitionState as IEnumerator<TSource>;
+                                    IEnumerator<TSource>? myPartition = partitionState as IEnumerator<TSource>;
                                     if (myPartition == null)
                                     {
-                                        myPartition = partitionerSource.GetEnumerator();
+                                        myPartition = partitionerSource!.GetEnumerator();
                                         partitionState = myPartition;
                                     }
 
@@ -3264,9 +3252,9 @@ namespace System.Threading.Tasks
                                         if (simpleBody != null)
                                             simpleBody(t);
                                         else if (bodyWithState != null)
-                                            bodyWithState(t, state);
+                                            bodyWithState(t, state!);
                                         else if (bodyWithStateAndLocal != null)
-                                            localValue = bodyWithStateAndLocal(t, state, localValue);
+                                            localValue = bodyWithStateAndLocal(t, state!, localValue);
                                         else
                                             Debug.Fail("PartitionerForEach: illegal body type in Partitioner handler");
 
@@ -3302,8 +3290,7 @@ namespace System.Threading.Tasks
 
                                 if (!replicationDelegateYieldedBeforeCompletion)
                                 {
-                                    IDisposable partitionToDispose = partitionState as IDisposable;
-                                    if (partitionToDispose != null)
+                                    if (partitionState is IDisposable partitionToDispose)
                                         partitionToDispose.Dispose();
                                 }
 
@@ -3343,7 +3330,7 @@ namespace System.Threading.Tasks
                 }
 
                 //dispose the partitioner source if it implements IDisposable
-                IDisposable d = null;
+                IDisposable? d = null;
                 if (orderablePartitionerSource != null)
                 {
                     d = orderablePartitionerSource as IDisposable;
@@ -3370,9 +3357,9 @@ namespace System.Threading.Tasks
 
         /// <summary>
         /// If all exceptions in the specified collection are OperationCanceledExceptions with the specified token,
-        /// then get one such exception (the first one). Otherwise, return null.    
-        /// </summary>    
-        private static OperationCanceledException ReduceToSingleCancellationException(ICollection exceptions,
+        /// then get one such exception (the first one). Otherwise, return null.
+        /// </summary>
+        private static OperationCanceledException? ReduceToSingleCancellationException(ICollection exceptions,
                                                                                       CancellationToken cancelToken)
         {
             // If collection is empty - no match:
@@ -3384,8 +3371,8 @@ namespace System.Threading.Tasks
                 return null;
 
             // Check all exceptions:
-            Exception first = null;
-            foreach (object exObj in exceptions)
+            Exception? first = null;
+            foreach (object? exObj in exceptions)
             {
                 Debug.Assert(exObj is Exception);
                 Exception ex = (Exception)exObj;
@@ -3394,7 +3381,7 @@ namespace System.Threading.Tasks
                     first = ex;
 
                 // If mismatch found, fail-fast:
-                OperationCanceledException ocEx = ex as OperationCanceledException;
+                OperationCanceledException? ocEx = ex as OperationCanceledException;
                 if (ocEx == null || !cancelToken.Equals(ocEx.CancellationToken))
                     return null;
             }
@@ -3409,12 +3396,12 @@ namespace System.Threading.Tasks
         /// IF exceptions are all OperationCanceledExceptions with the specified cancelToken,
         /// THEN throw that unique OperationCanceledException (pick any);
         /// OTHERWISE throw the specified otherException.
-        /// </summary>    
+        /// </summary>
         private static void ThrowSingleCancellationExceptionOrOtherException(ICollection exceptions,
                                                                              CancellationToken cancelToken,
                                                                              Exception otherException)
         {
-            OperationCanceledException reducedCancelEx = ReduceToSingleCancellationException(exceptions, cancelToken);
+            OperationCanceledException? reducedCancelEx = ReduceToSingleCancellationException(exceptions, cancelToken);
             ExceptionDispatchInfo.Throw(reducedCancelEx ?? otherException);
         }
     }  // class Parallel

@@ -16,7 +16,7 @@ namespace System.Data.Common
         internal SchemaInfo[] _schemaInfo; // shared schema info among all the data records
         internal PropertyDescriptorCollection _descriptors; // cached property descriptors
         private FieldNameLookup _fieldNameLookup;
-        private bool _closeReader;
+        private readonly bool _closeReader;
 
         // users must get enumerators off of the datareader interfaces
         public DbEnumerator(IDataReader reader)
@@ -95,7 +95,7 @@ namespace System.Data.Common
             PropertyDescriptor[] props = new PropertyDescriptor[_reader.FieldCount];
             for (int i = 0; i < si.Length; i++)
             {
-                SchemaInfo s = new SchemaInfo();
+                SchemaInfo s = default;
                 s.name = _reader.GetName(i);
                 s.type = _reader.GetFieldType(i);
                 s.typeName = _reader.GetDataTypeName(i);
@@ -110,8 +110,8 @@ namespace System.Data.Common
 
         private sealed class DbColumnDescriptor : PropertyDescriptor
         {
-            private int _ordinal;
-            private Type _type;
+            private readonly int _ordinal;
+            private readonly Type _type;
 
             internal DbColumnDescriptor(int ordinal, string name, Type type)
                 : base(name, null)

@@ -16,10 +16,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -223,11 +223,7 @@ namespace System.Data.Tests
             table.Constraints.AddRange(constraints);
 
             //Check the table property of UniqueConstraint Object
-            try
-            {
-                Assert.Null(constraints[2].Table);
-            }
-            catch (NullReferenceException) { }
+            Assert.Null(constraints[2].Table);
 
             table.EndInit();
         }
@@ -235,17 +231,10 @@ namespace System.Data.Tests
         [Fact]
         public void Clear()
         {
-            //try
-            //{
             _table.Constraints.Clear(); //Clear all constraints
             Assert.Equal(0, _table.Constraints.Count);
             _table2.Constraints.Clear();
             Assert.Equal(0, _table2.Constraints.Count);
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e);
-            //}
         }
 
         [Fact]

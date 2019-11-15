@@ -61,7 +61,7 @@ namespace System.Text.Json.Tests
     ""Last"": 2147483647
   },
   ""NullDecimalRange"": null
-}", json);
+}".NormalizeLineEndings(), json);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace System.Text.Json.Tests
             Assert.Equal(@"{
   ""ByteArray"": ""VGhpcyBpcyBzb21lIHRlc3QgZGF0YSEhIQ=="",
   ""NullByteArray"": null
-}", json);
+}".NormalizeLineEndings(), json);
         }
 
         [Fact]
@@ -158,17 +158,25 @@ namespace System.Text.Json.Tests
         [Fact]
         public void AssertDoesNotDeserializeInterface()
         {
-            const string json = @"{
-""Value"": ""A value"",
-""Thing"": {
-""Number"": 123
-}
-}";
-            NotSupportedException e = Assert.Throws<NotSupportedException>(() =>
-            {
-                JsonSerializer.Deserialize<List<MyClass>>(json);
-            });
-            Assert.Equal("Deserialization of interface types is not supported. Type 'System.Text.Json.Tests.IThing'", e.Message);
+            const string validJson =
+                @"[{
+                    ""Value"": ""A value"",
+                    ""Thing"": {
+                        ""Number"": 123
+                    }
+                }]";
+
+            Assert.Throws<NotSupportedException>(() => JsonSerializer.Deserialize<List<MyClass>>(validJson));
+
+            const string invalidJson =
+                @"{
+                    ""Value"": ""A value"",
+                    ""Thing"": {
+                        ""Number"": 123
+                    }
+                }";
+
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<List<MyClass>>(invalidJson));
         }
     }
 

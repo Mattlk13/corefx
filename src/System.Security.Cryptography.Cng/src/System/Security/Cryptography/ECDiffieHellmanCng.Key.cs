@@ -44,7 +44,7 @@ namespace System.Security.Cryptography
 
                 _core.SetKey(value);
 
-                // LegalKeySizes stores the values for either the current named curve or for the three 
+                // LegalKeySizes stores the values for either the current named curve or for the three
                 // curves that use size instead of name
                 ForceSetKeySize(value.KeySize);
             }
@@ -82,7 +82,7 @@ namespace System.Security.Cryptography
                         Debug.Fail($"Unknown algorithm {alg}");
                         throw new ArgumentException(SR.Cryptography_InvalidKeySize);
                     }
-                    CngKey key = _core.GetOrGenerateKey(keySize, alg);
+                    _core.GetOrGenerateKey(keySize, alg);
                     ForceSetKeySize(keySize);
                 }
             }

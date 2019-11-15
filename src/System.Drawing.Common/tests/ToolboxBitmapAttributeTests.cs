@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
@@ -26,7 +26,7 @@ namespace System.Drawing.Tests
             {
                 // On .NET Framework sometimes the size might be default or it might
                 // be disposed in which case Size property throws an ArgumentException
-                // so allow both cases see https://github.com/dotnet/corefx/issues/27361. 
+                // so allow both cases see https://github.com/dotnet/corefx/issues/27361.
                 if (PlatformDetection.IsFullFramework && ex is ArgumentException)
                 {
                     return;
@@ -46,6 +46,7 @@ namespace System.Drawing.Tests
         [ActiveIssue(20884, TestPlatforms.AnyUnix)]
         [ConditionalTheory(Helpers.IsDrawingSupported)]
         [MemberData(nameof(Ctor_FileName_TestData))]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework)]
         public void Ctor_FileName(string fileName, Size size)
         {
             var attribute = new ToolboxBitmapAttribute(fileName);

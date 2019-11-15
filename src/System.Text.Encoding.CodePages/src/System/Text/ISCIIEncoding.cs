@@ -50,7 +50,7 @@ namespace System.Text
         private const char ZWJ = (char)0x200d;
 
         // Code Page
-        private int _defaultCodePage;
+        private readonly int _defaultCodePage;
 
         public ISCIIEncoding(int codePage) : base(codePage)
         {
@@ -117,14 +117,14 @@ namespace System.Text
         }
 
         // Our workhorse version
-        public override unsafe int GetByteCount(char* chars, int count, EncoderNLS baseEncoder)
+        public override unsafe int GetByteCount(char* chars, int count, EncoderNLS? baseEncoder)
         {
             // Use null pointer to ask GetBytes for count
             return GetBytes(chars, count, null, 0, baseEncoder);
         }
 
         // Workhorse
-        public override unsafe int GetBytes(char* chars, int charCount, byte* bytes, int byteCount, EncoderNLS baseEncoder)
+        public override unsafe int GetBytes(char* chars, int charCount, byte* bytes, int byteCount, EncoderNLS? baseEncoder)
         {
             // Allow null bytes for counting
             Debug.Assert(chars != null, "[ISCIIEncoding.GetBytes]chars!=null");
@@ -133,7 +133,7 @@ namespace System.Text
             Debug.Assert(byteCount >= 0, "[ISCIIEncoding.GetBytes]byteCount >=0");
 
             // Need the ISCII Encoder
-            ISCIIEncoder encoder = (ISCIIEncoder)baseEncoder;
+            ISCIIEncoder? encoder = (ISCIIEncoder?)baseEncoder;
 
             // prepare our helpers
             EncodingByteBuffer buffer = new EncodingByteBuffer(this, encoder, bytes, byteCount, chars, charCount);
@@ -299,7 +299,7 @@ namespace System.Text
         }
 
         // Workhorse
-        public override unsafe int GetCharCount(byte* bytes, int count, DecoderNLS baseDecoder)
+        public override unsafe int GetCharCount(byte* bytes, int count, DecoderNLS? baseDecoder)
         {
             // Just call GetChars with null chars saying we want count
             return GetChars(bytes, count, null, 0, baseDecoder);
@@ -312,7 +312,7 @@ namespace System.Text
         // Devenagari F0, BF -> \u0970
         // Some characters followed by E9 become a different character instead.
         public override unsafe int GetChars(byte* bytes, int byteCount,
-                                                char* chars, int charCount, DecoderNLS baseDecoder)
+                                                char* chars, int charCount, DecoderNLS? baseDecoder)
         {
             // Just need to ASSERT, this is called by something else internal that checked parameters already
             // Allow null chars for counting
@@ -322,7 +322,7 @@ namespace System.Text
             Debug.Assert(charCount >= 0, "[ISCIIEncoding.GetChars]charCount is negative");
 
             // Need the ISCII Decoder
-            ISCIIDecoder decoder = (ISCIIDecoder)baseDecoder;
+            ISCIIDecoder? decoder = (ISCIIDecoder?)baseDecoder;
 
             // Get our info.
             EncodingCharBuffer buffer = new EncodingCharBuffer(this, decoder, chars, charCount, bytes, byteCount);
@@ -792,7 +792,7 @@ namespace System.Text
         //
         ////////////////////////////////////////////////////////////////////////////
 
-        private static int[] s_UnicodeToIndicChar =
+        private static readonly int[] s_UnicodeToIndicChar =
         {
             0x02a1,  // U+0901 : Devanagari Sign Candrabindu
             0x02a2,  // U+0902 : Devanagari Sign Anusvara
@@ -1937,7 +1937,7 @@ namespace System.Text
         // This is used if the UnicodeToIndic table 4 high bits are set, this is
         // the value of the second Indic byte when applicable.
         ////////////////////////////////////////////////////////////////////////////
-        private static byte[] s_SecondIndicByte =
+        private static readonly byte[] s_SecondIndicByte =
         {
             0x00,
             0xe9,
@@ -1952,7 +1952,7 @@ namespace System.Text
         // There are 0x60 characters in each table.  The tables are in pairs of 2
         // (1st char, 2nd char) and there are 10 tables (1 for each code page "font")
         ////////////////////////////////////////////////////////////////////////////
-        private static int[] s_IndicMappingIndex =
+        private static readonly int[] s_IndicMappingIndex =
         {
             -1,       //  0 DEF 0X40 Default        // Not a real code page
             -1,       //  1 RMN 0X41 Roman          // Transliteration not supported
@@ -1987,7 +1987,7 @@ namespace System.Text
         //
         ////////////////////////////////////////////////////////////////////////////
         // char[codePageMapIndex][byte][character]
-        private static char[,,] s_IndicMapping =
+        private static readonly char[,,] s_IndicMapping =
         {
             {
                 ////////////////////////////////////////////////////////////////////////////

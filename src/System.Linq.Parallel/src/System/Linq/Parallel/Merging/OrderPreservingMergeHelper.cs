@@ -23,10 +23,10 @@ namespace System.Linq.Parallel
     /// <typeparam name="TKey"></typeparam>
     internal class OrderPreservingMergeHelper<TInputOutput, TKey> : IMergeHelper<TInputOutput>
     {
-        private QueryTaskGroupState _taskGroupState; // State shared among tasks.
-        private PartitionedStream<TInputOutput, TKey> _partitions; // Source partitions.
-        private Shared<TInputOutput[]> _results; // The array where results are stored.
-        private TaskScheduler _taskScheduler; // The task manager to execute the query.
+        private readonly QueryTaskGroupState _taskGroupState; // State shared among tasks.
+        private readonly PartitionedStream<TInputOutput, TKey> _partitions; // Source partitions.
+        private readonly Shared<TInputOutput[]?> _results; // The array where results are stored.
+        private readonly TaskScheduler _taskScheduler; // The task manager to execute the query.
 
         //-----------------------------------------------------------------------------------
         // Instantiates a new merge helper.
@@ -45,7 +45,7 @@ namespace System.Linq.Parallel
 
             _taskGroupState = new QueryTaskGroupState(cancellationState, queryId);
             _partitions = partitions;
-            _results = new Shared<TInputOutput[]>(null);
+            _results = new Shared<TInputOutput[]?>(null);
             _taskScheduler = taskScheduler;
         }
 
@@ -76,7 +76,7 @@ namespace System.Linq.Parallel
         // Returns the results as an array.
         //
 
-        public TInputOutput[] GetResultsAsArray()
+        public TInputOutput[]? GetResultsAsArray()
         {
             return _results.Value;
         }

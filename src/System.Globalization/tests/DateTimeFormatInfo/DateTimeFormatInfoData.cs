@@ -29,23 +29,19 @@ namespace System.Globalization.Tests
 
         public static string[] FrFRDayNames()
         {
-#if !uap
             if (PlatformDetection.IsOSX && PlatformDetection.OSXVersion < new Version(10, 12))
             {
                 return new string[] { "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi" };
             }
-#endif
             return new string[] { "dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi" };
         }
 
         public static string[] FrFRAbbreviatedDayNames()
         {
-#if !uap
             if (PlatformDetection.IsOSX  && PlatformDetection.OSXVersion < new Version(10, 12))
             {
                 return new string[] { "Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam." };
             }
-#endif
             return new string[] { "dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam." };
         }
 
@@ -56,12 +52,12 @@ namespace System.Globalization.Tests
             {
                 return CalendarWeekRule.FirstDay;
             }
-            
+
             if (PlatformDetection.IsWindows && PlatformDetection.WindowsVersion < 10)
             {
                 return CalendarWeekRule.FirstFullWeek;
             }
-            
+
             return CalendarWeekRule.FirstFourDayWeek;
         }
 

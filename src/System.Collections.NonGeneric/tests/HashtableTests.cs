@@ -91,19 +91,14 @@ namespace System.Collections.Tests
         [Fact]
         public void Ctor_IEqualityComparer()
         {
-            RemoteExecutor.Invoke(() =>
-            {
-                // Null comparer
-                var hash = new ComparableHashtable((IEqualityComparer)null);
-                VerifyHashtable(hash, null, null);
+            // Null comparer
+            var hash = new ComparableHashtable((IEqualityComparer)null);
+            VerifyHashtable(hash, null, null);
 
-                // Custom comparer
-                IEqualityComparer comparer = StringComparer.CurrentCulture;
-                hash = new ComparableHashtable(comparer);
-                VerifyHashtable(hash, null, comparer);
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();
+            // Custom comparer
+            IEqualityComparer comparer = StringComparer.CurrentCulture;
+            hash = new ComparableHashtable(comparer);
+            VerifyHashtable(hash, null, comparer);
         }
 
         [Theory]
@@ -182,28 +177,23 @@ namespace System.Collections.Tests
         [Fact]
         public void Ctor_IDictionary_IEqualityComparer()
         {
-            RemoteExecutor.Invoke(() =>
-            {
-                // No exception
-                var hash1 = new ComparableHashtable(new Hashtable(), null);
-                Assert.Equal(0, hash1.Count);
+            // No exception
+            var hash1 = new ComparableHashtable(new Hashtable(), null);
+            Assert.Equal(0, hash1.Count);
 
-                hash1 = new ComparableHashtable(new Hashtable(new Hashtable(new Hashtable(new Hashtable(new Hashtable(), null), null), null), null), null);
-                Assert.Equal(0, hash1.Count);
+            hash1 = new ComparableHashtable(new Hashtable(new Hashtable(new Hashtable(new Hashtable(new Hashtable(), null), null), null), null), null);
+            Assert.Equal(0, hash1.Count);
 
-                // Null comparer
-                Hashtable hash2 = Helpers.CreateIntHashtable(100);
-                hash1 = new ComparableHashtable(hash2, null);
-                VerifyHashtable(hash1, hash2, null);
+            // Null comparer
+            Hashtable hash2 = Helpers.CreateIntHashtable(100);
+            hash1 = new ComparableHashtable(hash2, null);
+            VerifyHashtable(hash1, hash2, null);
 
-                // Custom comparer
-                hash2 = Helpers.CreateIntHashtable(100);
-                IEqualityComparer comparer = StringComparer.CurrentCulture;
-                hash1 = new ComparableHashtable(hash2, comparer);
-                VerifyHashtable(hash1, hash2, comparer);
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();
+            // Custom comparer
+            hash2 = Helpers.CreateIntHashtable(100);
+            IEqualityComparer comparer = StringComparer.CurrentCulture;
+            hash1 = new ComparableHashtable(hash2, comparer);
+            VerifyHashtable(hash1, hash2, comparer);
         }
 
         [Fact]
@@ -275,20 +265,14 @@ namespace System.Collections.Tests
         [InlineData(1000)]
         public void Ctor_Int_IEqualityComparer(int capacity)
         {
-            RemoteExecutor.Invoke((rcapacity) =>
-            {
-                int.TryParse(rcapacity, out int capacityint);
+            // Null comparer
+            var hash = new ComparableHashtable(capacity, null);
+            VerifyHashtable(hash, null, null);
 
-                // Null comparer
-                var hash = new ComparableHashtable(capacityint, null);
-                VerifyHashtable(hash, null, null);
-
-                // Custom comparer
-                IEqualityComparer comparer = StringComparer.CurrentCulture;
-                hash = new ComparableHashtable(capacityint, comparer);
-                VerifyHashtable(hash, null, comparer);
-                return RemoteExecutor.SuccessExitCode;
-            }, capacity.ToString()).Dispose();
+            // Custom comparer
+            IEqualityComparer comparer = StringComparer.CurrentCulture;
+            hash = new ComparableHashtable(capacity, comparer);
+            VerifyHashtable(hash, null, comparer);
         }
 
         [Fact]
@@ -301,27 +285,24 @@ namespace System.Collections.Tests
         [Fact]
         public void Ctor_IDictionary_Int_IEqualityComparer()
         {
-            RemoteExecutor.Invoke(() => {
-                // No exception
-                var hash1 = new ComparableHashtable(new Hashtable(), 1f, null);
-                Assert.Equal(0, hash1.Count);
+            // No exception
+            var hash1 = new ComparableHashtable(new Hashtable(), 1f, null);
+            Assert.Equal(0, hash1.Count);
 
-                hash1 = new ComparableHashtable(new Hashtable(new Hashtable(
-                    new Hashtable(new Hashtable(new Hashtable(), 1f, null), 1f, null), 1f, null), 1f, null), 1f, null);
-                Assert.Equal(0, hash1.Count);
+            hash1 = new ComparableHashtable(new Hashtable(new Hashtable(
+                new Hashtable(new Hashtable(new Hashtable(), 1f, null), 1f, null), 1f, null), 1f, null), 1f, null);
+            Assert.Equal(0, hash1.Count);
 
-                // Null comparer
-                Hashtable hash2 = Helpers.CreateIntHashtable(100);
-                hash1 = new ComparableHashtable(hash2, 1f, null);
-                VerifyHashtable(hash1, hash2, null);
+            // Null comparer
+            Hashtable hash2 = Helpers.CreateIntHashtable(100);
+            hash1 = new ComparableHashtable(hash2, 1f, null);
+            VerifyHashtable(hash1, hash2, null);
 
-                hash2 = Helpers.CreateIntHashtable(100);
-                // Custom comparer
-                IEqualityComparer comparer = StringComparer.CurrentCulture;
-                hash1 = new ComparableHashtable(hash2, 1f, comparer);
-                VerifyHashtable(hash1, hash2, comparer);
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();
+            hash2 = Helpers.CreateIntHashtable(100);
+            // Custom comparer
+            IEqualityComparer comparer = StringComparer.CurrentCulture;
+            hash1 = new ComparableHashtable(hash2, 1f, comparer);
+            VerifyHashtable(hash1, hash2, comparer);
         }
 
         [Fact]
@@ -344,23 +325,15 @@ namespace System.Collections.Tests
         [InlineData(1000, 1)]
         public void Ctor_Int_Int_IEqualityComparer(int capacity, float loadFactor)
         {
-            RemoteExecutor.Invoke((rcapacity, rloadFactor) =>
-            {
-                int.TryParse(rcapacity, out int capacityint);
-                float.TryParse(rloadFactor, out float loadFactorFloat);
+            // Null comparer
+            var hash = new ComparableHashtable(capacity, loadFactor, null);
+            VerifyHashtable(hash, null, null);
+            Assert.Null(hash.EqualityComparer);
 
-                // Null comparer
-                var hash = new ComparableHashtable(capacityint, loadFactorFloat, null);
-                VerifyHashtable(hash, null, null);
-                Assert.Null(hash.EqualityComparer);
-
-                // Custom compare
-                IEqualityComparer comparer = StringComparer.CurrentCulture;
-                hash = new ComparableHashtable(capacityint, loadFactorFloat, comparer);
-                VerifyHashtable(hash, null, comparer);
-
-                return RemoteExecutor.SuccessExitCode;
-            }, capacity.ToString(), loadFactor.ToString()).Dispose();
+            // Custom compare
+            IEqualityComparer comparer = StringComparer.CurrentCulture;
+            hash = new ComparableHashtable(capacity, loadFactor, comparer);
+            VerifyHashtable(hash, null, comparer);
         }
 
         [Fact]
@@ -442,7 +415,7 @@ namespace System.Collections.Tests
         [OuterLoop]
         public void AddRemove_LargeAmountNumbers()
         {
-            // Generate a random 100,000 array of ints as test data 
+            // Generate a random 100,000 array of ints as test data
             var inputData = new int[100000];
             var random = new Random(341553);
             for (int i = 0; i < inputData.Length; i++)
@@ -1019,7 +992,7 @@ namespace System.Collections.Tests
     ///        (2) compare the hashcode, if equal, go to step 3. Otherwise end.
     ///        (3) compare the key, if equal, go to step 4. Otherwise end.
     ///        (4) return the value contained in the bucket.
-    ///     The problem is that after step 3 and before step 4. A writer can kick in a remove the old item and add a new one 
+    ///     The problem is that after step 3 and before step 4. A writer can kick in a remove the old item and add a new one
     ///     in the same bucket. In order to make this happen easily, I created two long with same hashcode.
     /// </summary>
     public class Hashtable_ItemThreadSafetyTests

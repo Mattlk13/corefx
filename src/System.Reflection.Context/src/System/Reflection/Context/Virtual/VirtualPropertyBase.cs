@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -122,7 +122,7 @@ namespace System.Reflection.Context.Virtual
             {
                 args = new object[index.Length + 1];
 
-                Array.Copy(index, 0, args, 0, index.Length);
+                Array.Copy(index, args, index.Length);
 
                 args[index.Length] = value;
             }
@@ -130,7 +130,7 @@ namespace System.Reflection.Context.Virtual
             {
                 args = new object[1];
                 args[0] = value;
-            }   
+            }
 
             setMethod.Invoke(obj, invokeAttr, binder, args, culture);
         }

@@ -10,6 +10,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace System.Linq.Parallel
@@ -21,9 +22,9 @@ namespace System.Linq.Parallel
     ///     This enumerator type won't work properly at all if the analysis engine didn't
     ///     ensure a proper hash-partition. We expect inner and outer elements with equal
     ///     keys are ALWAYS in the same partition. If they aren't (e.g. if the analysis is
-    ///     busted) we'll silently drop items on the floor. :( 
-    ///     
-    ///     
+    ///     busted) we'll silently drop items on the floor. :(
+    ///
+    ///
     ///  This is the enumerator class for two operators:
     ///   - Join
     ///   - GroupJoin
@@ -43,14 +44,14 @@ namespace System.Linq.Parallel
         private readonly Func<TLeftInput, TRightInput, TOutput> _resultSelector; // Result selector.
         private readonly HashJoinOutputKeyBuilder<TLeftKey, TRightKey, TOutputKey> _outputKeyBuilder;
         private readonly CancellationToken _cancellationToken;
-        private Mutables _mutables;
+        private Mutables? _mutables;
 
         private class Mutables
         {
-            internal TLeftInput _currentLeft; // The current matching left element.
-            internal TLeftKey _currentLeftKey; // The current index of the matching left element.
-            internal HashJoinHashLookup<THashKey, TRightInput, TRightKey> _rightHashLookup; // The hash lookup.
-            internal ListChunk<Pair<TRightInput, TRightKey>> _currentRightMatches; // Current right matches (if any).
+            internal TLeftInput _currentLeft = default!; // The current matching left element.
+            internal TLeftKey _currentLeftKey = default!; // The current index of the matching left element.
+            internal HashJoinHashLookup<THashKey, TRightInput, TRightKey>? _rightHashLookup; // The hash lookup.
+            internal ListChunk<Pair<TRightInput, TRightKey>>? _currentRightMatches; // Current right matches (if any).
             internal int _currentRightMatchesIndex; // Current index in the set of right matches.
             internal int _outputLoopCount;
         }
@@ -90,14 +91,14 @@ namespace System.Linq.Parallel
         // as we do for inner joins.
         //
 
-        internal override bool MoveNext(ref TOutput currentElement, ref TOutputKey currentKey)
+        internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TOutput currentElement, ref TOutputKey currentKey)
         {
             Debug.Assert(_resultSelector != null, "expected a compiled result selector");
             Debug.Assert(_leftSource != null);
             Debug.Assert(_rightLookupBuilder != null);
 
             // BUILD phase: If we haven't built the hash-table yet, create that first.
-            Mutables mutables = _mutables;
+            Mutables? mutables = _mutables;
             if (mutables == null)
             {
                 mutables = _mutables = new Mutables();
@@ -105,7 +106,7 @@ namespace System.Linq.Parallel
             }
 
             // PROBE phase: So long as the source has a next element, return the match.
-            ListChunk<Pair<TRightInput, TRightKey>> currentRightChunk = mutables._currentRightMatches;
+            ListChunk<Pair<TRightInput, TRightKey>>? currentRightChunk = mutables._currentRightMatches;
             if (currentRightChunk != null && mutables._currentRightMatchesIndex == currentRightChunk.Count)
             {
                 mutables._currentRightMatches = currentRightChunk.Next;
@@ -116,7 +117,7 @@ namespace System.Linq.Parallel
             {
                 // We have to look up the next list of matches in the hash-table.
                 Pair<TLeftInput, THashKey> leftPair = default(Pair<TLeftInput, THashKey>);
-                TLeftKey leftKey = default(TLeftKey);
+                TLeftKey leftKey = default(TLeftKey)!;
                 while (_leftSource.MoveNext(ref leftPair, ref leftKey))
                 {
                     if ((mutables._outputLoopCount++ & CancellationState.POLL_INTERVAL) == 0)
@@ -130,6 +131,7 @@ namespace System.Linq.Parallel
                     // Ignore null keys.
                     if (leftHashKey != null)
                     {
+                        Debug.Assert(mutables._rightHashLookup != null);
                         if (mutables._rightHashLookup.TryGetValue(leftHashKey, ref matchValue))
                         {
                             // We found a new match. We remember the list in case there are multiple
@@ -194,7 +196,7 @@ namespace System.Linq.Parallel
 
     /// <summary>
     /// A key builder that simply returns the left key, ignoring the right key.
-    /// 
+    ///
     /// Used when the right source is unordered.
     /// </summary>
     /// <typeparam name="TLeftKey"></typeparam>
@@ -209,7 +211,7 @@ namespace System.Linq.Parallel
 
     /// <summary>
     /// A key builder that simply returns a left key, right key pair.
-    /// 
+    ///
     /// Used when the right source is ordered.
     /// </summary>
     /// <typeparam name="TLeftKey"></typeparam>
@@ -245,7 +247,7 @@ namespace System.Linq.Parallel
 #endif
 
             Pair<TBaseElement, THashKey> currentPair = default(Pair<TBaseElement, THashKey>);
-            TBaseOrderKey orderKey = default(TBaseOrderKey);
+            TBaseOrderKey orderKey = default(TBaseOrderKey)!;
             int i = 0;
             while (dataSource.MoveNext(ref currentPair, ref orderKey))
             {
@@ -303,7 +305,7 @@ namespace System.Linq.Parallel
 
     /// <summary>
     /// A wrapper for the HashLookup returned by HashLookupBuilder.
-    /// 
+    ///
     /// This will allow for providing a default if there is no value in the base lookup.
     /// </summary>
     /// <typeparam name="THashKey"></typeparam>
@@ -317,10 +319,10 @@ namespace System.Linq.Parallel
 
     /// <summary>
     /// A list to handle one or more right elements of a join operation.
-    /// 
+    ///
     /// It optimizes for 1 to 1 joins by only allocating heap space lazily
     /// once a second value is added.
-    /// 
+    ///
     /// This is built in the HashLookupBuilder classes and consumed by the
     /// HashJoinQueryOperatorEnumerator.
     /// </summary>
@@ -337,14 +339,14 @@ namespace System.Linq.Parallel
         }
         private readonly Pair<TElement, TOrderKey> _head;
 
-        internal ListChunk<Pair<TElement, TOrderKey>> Tail
+        internal ListChunk<Pair<TElement, TOrderKey>>? Tail
         {
             get
             {
                 return _tail;
             }
         }
-        private ListChunk<Pair<TElement, TOrderKey>> _tail;
+        private ListChunk<Pair<TElement, TOrderKey>>? _tail;
 
         private const int INITIAL_CHUNK_SIZE = 2;
 
@@ -374,7 +376,7 @@ namespace System.Linq.Parallel
             {
                 _tail = new ListChunk<Pair<TElement, TOrderKey>>(INITIAL_CHUNK_SIZE);
             }
-            _tail.Add(CreatePair(value, orderKey));
+            _tail!.Add(CreatePair(value, orderKey));
 
             return requiresMemoryChange;
         }

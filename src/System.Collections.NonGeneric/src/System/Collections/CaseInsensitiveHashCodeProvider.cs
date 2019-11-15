@@ -13,7 +13,7 @@ namespace System.Collections
     [Obsolete("Please use StringComparer instead.")]
     public class CaseInsensitiveHashCodeProvider : IHashCodeProvider
     {
-        private static volatile CaseInsensitiveHashCodeProvider s_invariantCaseInsensitiveHashCodeProvider = null;
+        private static volatile CaseInsensitiveHashCodeProvider? s_invariantCaseInsensitiveHashCodeProvider = null;
         private readonly CompareInfo _compareInfo;
 
         public CaseInsensitiveHashCodeProvider()
@@ -32,7 +32,7 @@ namespace System.Collections
 
         public static CaseInsensitiveHashCodeProvider Default => new CaseInsensitiveHashCodeProvider();
 
-        public static CaseInsensitiveHashCodeProvider DefaultInvariant => s_invariantCaseInsensitiveHashCodeProvider ?? 
+        public static CaseInsensitiveHashCodeProvider DefaultInvariant => s_invariantCaseInsensitiveHashCodeProvider ??
             (s_invariantCaseInsensitiveHashCodeProvider = new CaseInsensitiveHashCodeProvider(CultureInfo.InvariantCulture));
 
         public int GetHashCode(object obj)
@@ -42,7 +42,7 @@ namespace System.Collections
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            string s = obj as string;
+            string? s = obj as string;
             return s != null ?
                 _compareInfo.GetHashCode(s, CompareOptions.IgnoreCase) :
                 obj.GetHashCode();

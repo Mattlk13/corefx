@@ -22,6 +22,7 @@ namespace System.Threading
     public partial struct AsyncFlowControl : System.IDisposable
     {
         private object _dummy;
+        private int _dummyPrimitive;
         public void Dispose() { }
         public override bool Equals(object? obj) { throw null; }
         public bool Equals(System.Threading.AsyncFlowControl obj) { throw null; }
@@ -156,8 +157,10 @@ namespace System.Threading
         public static int CompareExchange(ref int location1, int value, int comparand) { throw null; }
         public static long CompareExchange(ref long location1, long value, long comparand) { throw null; }
         public static System.IntPtr CompareExchange(ref System.IntPtr location1, System.IntPtr value, System.IntPtr comparand) { throw null; }
+        [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("location1")]
         public static object? CompareExchange(ref object? location1, object? value, object? comparand) { throw null; }
         public static float CompareExchange(ref float location1, float value, float comparand) { throw null; }
+        [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("location1")]
         public static T CompareExchange<T>(ref T location1, T value, T comparand) where T : class? { throw null; }
         public static int Decrement(ref int location) { throw null; }
         public static long Decrement(ref long location) { throw null; }
@@ -387,10 +390,8 @@ namespace System.Threading
         public static void SetSynchronizationContext(System.Threading.SynchronizationContext? syncContext) { }
         protected void SetWaitNotificationRequired() { }
         [System.CLSCompliantAttribute(false)]
-        [System.Runtime.ConstrainedExecution.PrePrepareMethodAttribute]
         public virtual int Wait(System.IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout) { throw null; }
         [System.CLSCompliantAttribute(false)]
-        [System.Runtime.ConstrainedExecution.PrePrepareMethodAttribute]
         protected static int WaitHelper(System.IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout) { throw null; }
     }
     public partial class SynchronizationLockException : System.SystemException

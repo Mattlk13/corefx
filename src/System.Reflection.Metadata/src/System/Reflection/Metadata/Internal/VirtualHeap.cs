@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -32,7 +32,7 @@ namespace System.Reflection.Metadata.Ecma335
                 Length = length;
             }
 
-            public unsafe MemoryBlock GetMemoryBlock() => 
+            public unsafe MemoryBlock GetMemoryBlock() =>
                 new MemoryBlock((byte*)Handle.AddrOfPinnedObject(), Length);
         }
 
@@ -47,7 +47,7 @@ namespace System.Reflection.Metadata.Ecma335
         protected override void Release()
         {
             // Make sure the current thread isn't aborted in the middle of the operation.
-#if !NETSTANDARD11
+#if !NETSTANDARD1_1
             RuntimeHelpers.PrepareConstrainedRegions();
 #endif
             try
@@ -95,7 +95,7 @@ namespace System.Reflection.Metadata.Ecma335
             var blobs = GetBlobs();
 
             MemoryBlock result;
-#if !NETSTANDARD11
+#if !NETSTANDARD1_1
             RuntimeHelpers.PrepareConstrainedRegions();
 #endif
             try

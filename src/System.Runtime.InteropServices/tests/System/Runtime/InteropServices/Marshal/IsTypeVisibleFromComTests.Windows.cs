@@ -15,13 +15,13 @@ namespace System.Runtime.InteropServices.Tests
             yield return new object[] { typeof(ComImportObject), true };
             yield return new object[] { typeof(InterfaceAndComImportObject), true };
             yield return new object[] { typeof(InterfaceComImportObject), true };
-            
+
             yield return new object[] { typeof(IsTypeVisibleFromComTests), true };
             yield return new object[] { typeof(PrivateType), false };
             yield return new object[] { typeof(ProtectedType), false };
             yield return new object[] { typeof(InternalType), false };
             yield return new object[] { typeof(InnerManagedInterface), false};
-            yield return new object[] { typeof(NonGenericInterface), true };
+            yield return new object[] { typeof(INonGenericInterface), true };
             yield return new object[] { typeof(NonGenericStruct), true };
             yield return new object[] { typeof(ManagedClassWithComVisibleFalse), false };
             yield return new object[] { typeof(ManagedClassWithComVisibleTrue), true };
@@ -29,7 +29,6 @@ namespace System.Runtime.InteropServices.Tests
 
         [ConditionalTheory(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsNanoServer))]
         [MemberData(nameof(IsTypeVisibleFromCom_Windows_TestData))]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Not approved COM object for app")]
         public void IsTypeVisibleFromCom_Windows_ReturnsExpected(Type value, bool expected)
         {
             Assert.Equal(expected, Marshal.IsTypeVisibleFromCom(value));

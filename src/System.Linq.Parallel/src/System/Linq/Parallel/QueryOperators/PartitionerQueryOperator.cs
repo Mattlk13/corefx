@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Linq.Parallel;
 using System.Diagnostics;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Linq.Parallel
 {
@@ -24,7 +25,7 @@ namespace System.Linq.Parallel
     /// </summary>
     internal class PartitionerQueryOperator<TElement> : QueryOperator<TElement>
     {
-        private Partitioner<TElement> _partitioner; // The partitioner to use as data source.
+        private readonly Partitioner<TElement> _partitioner; // The partitioner to use as data source.
 
         internal PartitionerQueryOperator(Partitioner<TElement> partitioner)
             : base(false, QuerySettings.Empty)
@@ -70,11 +71,11 @@ namespace System.Linq.Parallel
         }
 
         /// <summary>
-        /// Determines the OrdinalIndexState for a partitioner 
+        /// Determines the OrdinalIndexState for a partitioner
         /// </summary>
         internal static OrdinalIndexState GetOrdinalIndexState(Partitioner<TElement> partitioner)
         {
-            OrderablePartitioner<TElement> orderablePartitioner = partitioner as OrderablePartitioner<TElement>;
+            OrderablePartitioner<TElement>? orderablePartitioner = partitioner as OrderablePartitioner<TElement>;
 
             if (orderablePartitioner == null)
             {
@@ -115,7 +116,7 @@ namespace System.Linq.Parallel
         /// </summary>
         private class PartitionerQueryOperatorResults : QueryResults<TElement>
         {
-            private Partitioner<TElement> _partitioner; // The data source for the query
+            private readonly Partitioner<TElement> _partitioner; // The data source for the query
 
             private QuerySettings _settings; // Settings collected from the query
 
@@ -130,7 +131,7 @@ namespace System.Linq.Parallel
                 Debug.Assert(_settings.DegreeOfParallelism.HasValue);
                 int partitionCount = _settings.DegreeOfParallelism.Value;
 
-                OrderablePartitioner<TElement> orderablePartitioner = _partitioner as OrderablePartitioner<TElement>;
+                OrderablePartitioner<TElement>? orderablePartitioner = _partitioner as OrderablePartitioner<TElement>;
 
                 // If the partitioner is not orderable, it will yield zeros as order keys. The order index state
                 // is irrelevant.
@@ -206,14 +207,14 @@ namespace System.Linq.Parallel
         /// </summary>
         private class OrderablePartitionerEnumerator : QueryOperatorEnumerator<TElement, int>
         {
-            private IEnumerator<KeyValuePair<long, TElement>> _sourceEnumerator;
+            private readonly IEnumerator<KeyValuePair<long, TElement>> _sourceEnumerator;
 
             internal OrderablePartitionerEnumerator(IEnumerator<KeyValuePair<long, TElement>> sourceEnumerator)
             {
                 _sourceEnumerator = sourceEnumerator;
             }
 
-            internal override bool MoveNext(ref TElement currentElement, ref int currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TElement currentElement, ref int currentKey)
             {
                 if (!_sourceEnumerator.MoveNext()) return false;
 
@@ -241,14 +242,14 @@ namespace System.Linq.Parallel
         /// </summary>
         private class PartitionerEnumerator : QueryOperatorEnumerator<TElement, int>
         {
-            private IEnumerator<TElement> _sourceEnumerator;
+            private readonly IEnumerator<TElement> _sourceEnumerator;
 
             internal PartitionerEnumerator(IEnumerator<TElement> sourceEnumerator)
             {
                 _sourceEnumerator = sourceEnumerator;
             }
 
-            internal override bool MoveNext(ref TElement currentElement, ref int currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TElement currentElement, ref int currentKey)
             {
                 if (!_sourceEnumerator.MoveNext()) return false;
 

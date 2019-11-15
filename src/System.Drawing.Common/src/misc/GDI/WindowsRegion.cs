@@ -12,7 +12,6 @@ namespace System.Drawing.Internal
     /// </summary>
     internal sealed partial class WindowsRegion : MarshalByRefObject, ICloneable, IDisposable
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
         private IntPtr _nativeHandle; // The hRegion, this class always takes ownership of the hRegion.
         private bool _ownHandle;
 
@@ -36,13 +35,13 @@ namespace System.Drawing.Internal
 
         /// <summary>
         /// Creates a WindowsRegion from a region handle, if 'takeOwnership' is true, the handle is added to the
-        /// HandleCollector and is removed &amp; destroyed on dispose. 
+        /// HandleCollector and is removed &amp; destroyed on dispose.
         /// </summary>
         public static WindowsRegion FromHregion(IntPtr hRegion, bool takeOwnership)
         {
             WindowsRegion wr = new WindowsRegion();
 
-            // Note: Passing IntPtr.Zero for hRegion is ok.  GDI+ infinite regions will have hRegion == null.  
+            // Note: Passing IntPtr.Zero for hRegion is ok.  GDI+ infinite regions will have hRegion == null.
             // GDI's SelectClipRgn interprets null region handle as resetting the clip region (all region will be available for painting).
             if (hRegion != IntPtr.Zero)
             {
@@ -57,7 +56,7 @@ namespace System.Drawing.Internal
         }
 
         /// <summary>
-        /// Creates a WindowsRegion from a System.Drawing.Region. 
+        /// Creates a WindowsRegion from a System.Drawing.Region.
         /// </summary>
         public static WindowsRegion FromRegion(Region region, Graphics g)
         {
@@ -89,17 +88,17 @@ namespace System.Drawing.Internal
 
         /// <summary>
         /// Combines region1 &amp; region2 into this region. The regions cannot be null. The three regions need not be
-        /// distinct. For example, the sourceRgn1 can equal this region. 
+        /// distinct. For example, the sourceRgn1 can equal this region.
         /// </summary>
-        public IntNativeMethods.RegionFlags CombineRegion(WindowsRegion region1, WindowsRegion region2, RegionCombineMode mode)
+        public Interop.RegionType CombineRegion(WindowsRegion region1, WindowsRegion region2, Interop.Gdi32.CombineMode mode)
         {
-            return IntUnsafeNativeMethods.CombineRgn(new HandleRef(this, HRegion), new HandleRef(region1, region1.HRegion), new HandleRef(region2, region2.HRegion), mode);
+            return Interop.Gdi32.CombineRgn(new HandleRef(this, HRegion), new HandleRef(region1, region1.HRegion), new HandleRef(region2, region2.HRegion), mode);
         }
 
         private void CreateRegion(Rectangle rect)
         {
             Debug.Assert(_nativeHandle == IntPtr.Zero, "nativeHandle should be null, we're leaking handle");
-            _nativeHandle = IntSafeNativeMethods.CreateRectRgn(rect.X, rect.Y, rect.X + rect.Width, rect.Y + rect.Height);
+            _nativeHandle = Interop.Gdi32.CreateRectRgn(rect.X, rect.Y, rect.X + rect.Width, rect.Y + rect.Height);
             _ownHandle = true;
         }
 
@@ -113,7 +112,7 @@ namespace System.Drawing.Internal
 
                 if (_ownHandle)
                 {
-                    IntUnsafeNativeMethods.DeleteObject(new HandleRef(this, _nativeHandle));
+                    Interop.Gdi32.DeleteObject(new HandleRef(this, _nativeHandle));
                 }
 
                 _nativeHandle = IntPtr.Zero;
@@ -128,14 +127,14 @@ namespace System.Drawing.Internal
         ~WindowsRegion() => Dispose(false);
 
         /// <summary>
-        /// The native region handle. 
+        /// The native region handle.
         /// </summary>
         public IntPtr HRegion => _nativeHandle;
 
         public bool IsInfinite => _nativeHandle == IntPtr.Zero;
 
         /// <summary>
-        /// A rectangle representing the window region set with the SetWindowRgn function. 
+        /// A rectangle representing the window region set with the SetWindowRgn function.
         /// </summary>
         public Rectangle ToRectangle()
         {
@@ -144,8 +143,8 @@ namespace System.Drawing.Internal
                 return new Rectangle(-int.MaxValue, -int.MaxValue, int.MaxValue, int.MaxValue);
             }
 
-            var rect = new IntNativeMethods.RECT();
-            IntUnsafeNativeMethods.GetRgnBox(new HandleRef(this, _nativeHandle), ref rect);
+            Interop.Gdi32.RECT rect = default;
+            Interop.Gdi32.GetRgnBox(new HandleRef(this, _nativeHandle), ref rect);
             return new Rectangle(new Point(rect.left, rect.top), rect.Size);
         }
     }

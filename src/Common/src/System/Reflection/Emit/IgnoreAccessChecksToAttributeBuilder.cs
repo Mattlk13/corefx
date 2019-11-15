@@ -48,12 +48,12 @@ namespace System.Reflection.Emit
 
             // Define property as:
             // public string AssemblyName {get { return this.assemblyName; } }
-            PropertyBuilder getterPropertyBuilder = attributeTypeBuilder.DefineProperty(
-                                                   "AssemblyName",
-                                                   PropertyAttributes.None,
-                                                   CallingConventions.HasThis,
-                                                   returnType: typeof(string),
-                                                   parameterTypes: null);
+            _ = attributeTypeBuilder.DefineProperty(
+                    "AssemblyName",
+                    PropertyAttributes.None,
+                    CallingConventions.HasThis,
+                    returnType: typeof(string),
+                    parameterTypes: null);
 
             MethodBuilder getterMethodBuilder = attributeTypeBuilder.DefineMethod(
                                                    "get_AssemblyName",
@@ -76,7 +76,7 @@ namespace System.Reflection.Emit
             // Find the ctor that takes only AttributeTargets
             ConstructorInfo attributeUsageConstructorInfo =
                 attributeUsageTypeInfo.DeclaredConstructors
-                    .Single(c => c.GetParameters().Count() == 1 &&
+                    .Single(c => c.GetParameters().Length == 1 &&
                                  c.GetParameters()[0].ParameterType == typeof(AttributeTargets));
 
             // Find the property to set AllowMultiple
@@ -95,7 +95,7 @@ namespace System.Reflection.Emit
             attributeTypeBuilder.SetCustomAttribute(customAttributeBuilder);
 
             // Make the TypeInfo real so the constructor can be used.
-            return attributeTypeBuilder.CreateTypeInfo().DeclaredConstructors.Single();
+            return attributeTypeBuilder.CreateTypeInfo()!.DeclaredConstructors.Single();
         }
     }
 }

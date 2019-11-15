@@ -3,14 +3,14 @@
 // See the LICENSE file in the project root for more information.
 
 namespace System.Reflection.Emit
-{  
+{
     /// <summary>
     /// The ParameterToken class is an opaque representation of the Token returned
     /// by the Metadata to represent the parameter.
     /// </summary>
     public struct ParameterToken
     {
-        public static readonly ParameterToken Empty = new ParameterToken();
+        public static readonly ParameterToken Empty = default;
 
         internal ParameterToken(int parameterToken)
         {

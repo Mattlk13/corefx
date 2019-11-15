@@ -31,12 +31,8 @@ namespace System.Net.WebSockets.Tests
             AssertExtensions.Throws<ArgumentOutOfRangeException>("keepAliveInterval", () => CreateFromStream(new MemoryStream(), true, "subProtocol", TimeSpan.FromSeconds(-2)));
         }
 
-        [Theory]
-        [InlineData(0)]
-        [InlineData(1)]
-        [InlineData(14)]
-        [InlineData(4096)]
-        public void CreateFromStream_ValidBufferSizes_CreatesWebSocket(int bufferSize)
+        [Fact]
+        public void CreateFromStream_ValidBufferSizes_CreatesWebSocket()
         {
             Assert.NotNull(CreateFromStream(new MemoryStream(), false, null, Timeout.InfiniteTimeSpan));
             Assert.NotNull(CreateFromStream(new MemoryStream(), true, null, Timeout.InfiniteTimeSpan));
@@ -47,6 +43,12 @@ namespace System.Net.WebSockets.Tests
         [MemberData(nameof(EchoServers))]
         public async Task WebSocketProtocol_CreateFromConnectedStream_CanSendReceiveData(Uri echoUri)
         {
+            if (PlatformDetection.IsWindows7)
+            {
+                // https://github.com/dotnet/corefx/issues/42339
+                return;
+            }
+
             using (var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
                 bool secure = echoUri.Scheme == "wss";
@@ -155,6 +157,12 @@ namespace System.Net.WebSockets.Tests
         [MemberData(nameof(EchoServersAndBoolean))]
         public async Task WebSocketProtocol_CreateFromConnectedStream_CloseAsyncClosesStream(Uri echoUri, bool explicitCloseAsync)
         {
+            if (PlatformDetection.IsWindows7)
+            {
+                // https://github.com/dotnet/corefx/issues/42339
+                return;
+            }
+
             using (var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
                 bool secure = echoUri.Scheme == "wss";

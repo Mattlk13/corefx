@@ -2,26 +2,26 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Runtime.Versioning;
+using System.Security;
+using System.Text;
+using System.Xml;
+using System.Xml.XPath;
+using System.Xml.Xsl.Runtime;
+using System.Xml.Xsl.XsltOld.Debugger;
+using MS.Internal.Xml.XPath;
+using KeywordsTable = System.Xml.Xsl.Xslt.KeywordsTable;
+
 namespace System.Xml.Xsl.XsltOld
 {
-    using System;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.Xml;
-    using System.Xml.XPath;
-    using System.Xml.Xsl.Runtime;
-    using MS.Internal.Xml.XPath;
-    using System.Xml.Xsl.XsltOld.Debugger;
-    using System.Text;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Collections.Specialized;
-    using System.IO;
-    using System.Reflection;
-    using System.Security;
-    using KeywordsTable = System.Xml.Xsl.Xslt.KeywordsTable;
-    using System.Runtime.Versioning;
-
     internal class Sort
     {
         internal int select;
@@ -73,9 +73,9 @@ namespace System.Xml.Xsl.XsltOld
 
         //
         // Current import stack
-        private Stack _stylesheets;
+        private Stack<Stylesheet> _stylesheets;
 
-        private HybridDictionary _documentURIs = new HybridDictionary();
+        private readonly HybridDictionary _documentURIs = new HybridDictionary();
 
         // import/include documents, who is here has its URI in this.documentURIs
         private NavigatorInput _input;
@@ -90,7 +90,7 @@ namespace System.Xml.Xsl.XsltOld
         internal Stylesheet rootStylesheet;
         private RootAction _rootAction;
         private List<TheQuery> _queryStore;
-        private QueryBuilder _queryBuilder = new QueryBuilder();
+        private readonly QueryBuilder _queryBuilder = new QueryBuilder();
         private int _rtfCount = 0;
 
         // Used to load Built In templates
@@ -659,12 +659,7 @@ namespace System.Xml.Xsl.XsltOld
 
         internal void PushStylesheet(Stylesheet stylesheet)
         {
-            if (_stylesheets == null)
-            {
-                _stylesheets = new Stack();
-            }
-            Debug.Assert(_stylesheets != null);
-
+            _stylesheets ??= new Stack<Stylesheet>();
             _stylesheets.Push(stylesheet);
             this.stylesheet = stylesheet;
         }
@@ -672,8 +667,8 @@ namespace System.Xml.Xsl.XsltOld
         internal Stylesheet PopStylesheet()
         {
             Debug.Assert(this.stylesheet == _stylesheets.Peek());
-            Stylesheet stylesheet = (Stylesheet)_stylesheets.Pop();
-            this.stylesheet = (Stylesheet)_stylesheets.Peek();
+            Stylesheet stylesheet = _stylesheets.Pop();
+            this.stylesheet = _stylesheets.Peek();
             return stylesheet;
         }
 
@@ -767,7 +762,7 @@ namespace System.Xml.Xsl.XsltOld
         //
         // Script support
         //
-        private Hashtable[] _typeDeclsByLang = new Hashtable[] { new Hashtable(), new Hashtable(), new Hashtable() };
+        private readonly Hashtable[] _typeDeclsByLang = new Hashtable[] { new Hashtable(), new Hashtable(), new Hashtable() };
 
         internal void AddScript(string source, ScriptingLanguage lang, string ns, string fileName, int lineNumber)
         {
@@ -778,7 +773,7 @@ namespace System.Xml.Xsl.XsltOld
                 Hashtable typeDecls = _typeDeclsByLang[(int)langTmp];
                 if (lang == langTmp)
                 {
-                    throw new PlatformNotSupportedException("Compiling JScript/CSharp scripts is not supported");
+                    throw new PlatformNotSupportedException(SR.CompilingScriptsNotSupported);
                 }
                 else if (typeDecls.Contains(ns))
                 {
@@ -1179,8 +1174,8 @@ namespace System.Xml.Xsl.XsltOld
 
         internal class ErrorXPathExpression : CompiledXpathExpr
         {
-            private string _baseUri;
-            private int _lineNumber, _linePosition;
+            private readonly string _baseUri;
+            private readonly int _lineNumber, _linePosition;
             public ErrorXPathExpression(string expression, string baseUri, int lineNumber, int linePosition)
                 : base(null, expression, false)
             {

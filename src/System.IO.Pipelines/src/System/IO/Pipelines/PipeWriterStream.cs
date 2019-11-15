@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -51,7 +51,7 @@ namespace System.IO.Pipelines
 
         public override void SetLength(long value) => throw new NotSupportedException();
 
-        public sealed override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) =>
+        public sealed override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state) =>
             TaskToApm.Begin(WriteAsync(buffer, offset, count, default), callback, state);
 
         public sealed override void EndWrite(IAsyncResult asyncResult) =>
@@ -69,7 +69,7 @@ namespace System.IO.Pipelines
             return GetFlushResultAsTask(valueTask);
         }
 
-#if !netstandard
+#if !NETSTANDARD2_0
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
             ValueTask<FlushResult> valueTask = _pipeWriter.WriteAsync(buffer, cancellationToken);
@@ -112,4 +112,3 @@ namespace System.IO.Pipelines
         }
     }
 }
-

@@ -12,11 +12,11 @@ namespace System.Security.Cryptography
     /// </summary>
     /// <remarks>
     /// Asymmetric Algorithms implemented using Microsoft's CNG (Cryptography Next Generation) API
-    /// will interpret the underlying string value as a CNG algorithm identifier: 
+    /// will interpret the underlying string value as a CNG algorithm identifier:
     ///   * https://msdn.microsoft.com/en-us/library/windows/desktop/aa375534(v=vs.85).aspx
     ///
-    /// As with CNG, the names are case-sensitive. 
-    /// 
+    /// As with CNG, the names are case-sensitive.
+    ///
     /// Asymmetric Algorithms implemented using other technologies:
     ///    * Must recognize at least "MD5", "SHA1", "SHA256", "SHA384", and "SHA512".
     ///    * Should recognize additional CNG IDs for any other hash algorithms that they also support.
@@ -51,25 +51,25 @@ namespace System.Security.Cryptography
         /// </summary>
         public static HashAlgorithmName SHA512 { get { return new HashAlgorithmName("SHA512"); } }
 
-        private readonly string _name;
+        private readonly string? _name;
 
         /// <summary>
         /// Gets a <see cref="HashAlgorithmName" /> representing a custom name.
         /// </summary>
         /// <param name="name">The custom hash algorithm name.</param>
-        public HashAlgorithmName(string name)
+        public HashAlgorithmName(string? name)
         {
             // Note: No validation because we have to deal with default(HashAlgorithmName) regardless.
             _name = name;
         }
 
         /// <summary>
-        /// Gets the underlying string representation of the algorithm name. 
+        /// Gets the underlying string representation of the algorithm name.
         /// </summary>
         /// <remarks>
         /// May be null or empty to indicate that no hash algorithm is applicable.
         /// </remarks>
-        public string Name
+        public string? Name
         {
             get { return _name; }
         }
@@ -79,7 +79,7 @@ namespace System.Security.Cryptography
             return _name ?? string.Empty;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is HashAlgorithmName && Equals((HashAlgorithmName)obj);
         }
@@ -103,6 +103,46 @@ namespace System.Security.Cryptography
         public static bool operator !=(HashAlgorithmName left, HashAlgorithmName right)
         {
             return !(left == right);
+        }
+
+        public static bool TryFromOid(string oidValue, out HashAlgorithmName value)
+        {
+            if (oidValue is null)
+            {
+                throw new ArgumentNullException(nameof(oidValue));
+            }
+
+            switch (oidValue)
+            {
+                case Oids.Md5:
+                    value = MD5;
+                    return true;
+                case Oids.Sha1:
+                    value = SHA1;
+                    return true;
+                case Oids.Sha256:
+                    value = SHA256;
+                    return true;
+                case Oids.Sha384:
+                    value = SHA384;
+                    return true;
+                case Oids.Sha512:
+                    value = SHA512;
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
+        }
+
+        public static HashAlgorithmName FromOid(string oidValue)
+        {
+            if (TryFromOid(oidValue, out HashAlgorithmName value))
+            {
+                return value;
+            }
+
+            throw new CryptographicException(SR.Format(SR.Cryptography_InvalidHashAlgorithmOid, oidValue));
         }
     }
 }

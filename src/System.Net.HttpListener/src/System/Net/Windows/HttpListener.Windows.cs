@@ -25,7 +25,7 @@ namespace System.Net
 
         // Windows 8 fixed a bug in Http.sys's HttpReceiveClientCertificate method.
         // Without this fix IOCP callbacks were not being called although ERROR_IO_PENDING was
-        // returned from HttpReceiveClientCertificate when using the 
+        // returned from HttpReceiveClientCertificate when using the
         // FileCompletionNotificationModes.SkipCompletionPortOnSuccess flag.
         // This bug was only hit when the buffer passed into HttpReceiveClientCertificate
         // (1500 bytes initially) is tool small for the certificate.
@@ -33,8 +33,8 @@ namespace System.Net
         // flag is only used on Win8 and later.
         internal static readonly bool SkipIOCPCallbackOnSuccess = Environment.OSVersion.Version >= new Version(6, 2);
 
-        // Mitigate potential DOS attacks by limiting the number of unknown headers we accept.  Numerous header names 
-        // with hash collisions will cause the server to consume excess CPU.  1000 headers limits CPU time to under 
+        // Mitigate potential DOS attacks by limiting the number of unknown headers we accept.  Numerous header names
+        // with hash collisions will cause the server to consume excess CPU.  1000 headers limits CPU time to under
         // 0.5 seconds per request.  Respond with a 400 Bad Request.
         private const int UnknownHeaderLimit = 1000;
 
@@ -58,8 +58,8 @@ namespace System.Net
 
         private void ValidateV2Property()
         {
-            // Make sure that calling CheckDisposed and SetupV2Config is an atomic operation. This 
-            // avoids race conditions if the listener is aborted/closed after CheckDisposed(), but 
+            // Make sure that calling CheckDisposed and SetupV2Config is an atomic operation. This
+            // avoids race conditions if the listener is aborted/closed after CheckDisposed(), but
             // before SetupV2Config().
             lock (_internalLock)
             {
@@ -124,8 +124,7 @@ namespace System.Net
         {
             ValidateV2Property(); // CheckDispose and initilize HttpListener in the case of app.config timeouts
 
-            Interop.HttpApi.HTTP_TIMEOUT_LIMIT_INFO timeoutinfo =
-                new Interop.HttpApi.HTTP_TIMEOUT_LIMIT_INFO();
+            Interop.HttpApi.HTTP_TIMEOUT_LIMIT_INFO timeoutinfo = default;
 
             timeoutinfo.Flags = Interop.HttpApi.HTTP_FLAGS.HTTP_PROPERTY_FLAG_PRESENT;
             timeoutinfo.DrainEntityBody =
@@ -269,7 +268,7 @@ namespace System.Net
                     }
 
                     // SetupV2Config() is not called in the ctor, because it may throw. This would
-                    // be a regression since in v1 the ctor never threw. Besides, ctors should do 
+                    // be a regression since in v1 the ctor never threw. Besides, ctors should do
                     // minimal work according to the framework design guidelines.
                     SetupV2Config();
                     CreateRequestQueueHandle();
@@ -342,10 +341,10 @@ namespace System.Net
         private void AttachRequestQueueToUrlGroup()
         {
             //
-            // Set the association between request queue and url group. After this, requests for registered urls will 
+            // Set the association between request queue and url group. After this, requests for registered urls will
             // get delivered to this request queue.
             //
-            Interop.HttpApi.HTTP_BINDING_INFO info = new Interop.HttpApi.HTTP_BINDING_INFO();
+            Interop.HttpApi.HTTP_BINDING_INFO info = default;
             info.Flags = Interop.HttpApi.HTTP_FLAGS.HTTP_PROPERTY_FLAG_PRESENT;
             info.RequestQueueHandle = DangerousGetHandle();
 
@@ -360,13 +359,13 @@ namespace System.Net
             Debug.Assert(_urlGroupId != 0, "DetachRequestQueueFromUrlGroup can't detach using Url group id 0.");
 
             //
-            // Break the association between request queue and url group. After this, requests for registered urls 
+            // Break the association between request queue and url group. After this, requests for registered urls
             // will get 503s.
             // Note that this method may be called multiple times (Stop() and then Abort()). This
-            // is fine since http.sys allows to set HttpServerBindingProperty multiple times for valid 
+            // is fine since http.sys allows to set HttpServerBindingProperty multiple times for valid
             // Url groups.
             //
-            Interop.HttpApi.HTTP_BINDING_INFO info = new Interop.HttpApi.HTTP_BINDING_INFO();
+            Interop.HttpApi.HTTP_BINDING_INFO info = default;
             info.Flags = Interop.HttpApi.HTTP_FLAGS.NONE;
             info.RequestQueueHandle = IntPtr.Zero;
 
@@ -468,8 +467,8 @@ namespace System.Net
                         return;
                     }
 
-                    // Just detach and free resources. Don't call Stop (which may throw). Behave like v1: just 
-                    // clean up resources.   
+                    // Just detach and free resources. Don't call Stop (which may throw). Behave like v1: just
+                    // clean up resources.
                     if (_state == State.Started)
                     {
                         DetachRequestQueueFromUrlGroup();
@@ -577,9 +576,9 @@ namespace System.Net
                 uint size = 4096;
                 ulong requestId = 0;
                 memoryBlob = new SyncRequestContext((int)size);
-                for (;;)
+                while (true)
                 {
-                    for (;;)
+                    while (true)
                     {
                         if (NetEventSource.IsEnabled) NetEventSource.Info(this, $"Calling Interop.HttpApi.HttpReceiveHttpRequest RequestId: {requestId}");
                         uint bytesTransferred = 0;
@@ -820,7 +819,7 @@ namespace System.Net
                     disconnectResult = null;
                 }
 
-                // Pick out the old context now.  By default, it'll be removed in the finally, unless context is set somewhere. 
+                // Pick out the old context now.  By default, it'll be removed in the finally, unless context is set somewhere.
                 if (disconnectResult != null)
                 {
                     oldContext = disconnectResult.Session;
@@ -1328,7 +1327,7 @@ namespace System.Net
                 }
             }
         }
-        
+
         private static void FreeContext(ref HttpListenerContext httpContext, RequestContextBase memoryBlob)
         {
             if (httpContext != null)
@@ -1339,8 +1338,8 @@ namespace System.Net
             }
         }
 
-        // Using the configured Auth schemes, populate the auth challenge headers. This is for scenarios where 
-        // Anonymous access is allowed for some resources, but the server later determines that authorization 
+        // Using the configured Auth schemes, populate the auth challenge headers. This is for scenarios where
+        // Anonymous access is allowed for some resources, but the server later determines that authorization
         // is required for this request.
         internal void SetAuthenticationHeaders(HttpListenerContext context)
         {
@@ -1676,8 +1675,8 @@ namespace System.Net
         private void SendError(ulong requestId, HttpStatusCode httpStatusCode, ArrayList challenges)
         {
             if (NetEventSource.IsEnabled) NetEventSource.Info(this, $"RequestId: {requestId}");
-            Interop.HttpApi.HTTP_RESPONSE httpResponse = new Interop.HttpApi.HTTP_RESPONSE();
-            httpResponse.Version = new Interop.HttpApi.HTTP_VERSION();
+            Interop.HttpApi.HTTP_RESPONSE httpResponse = default;
+            httpResponse.Version = default;
             httpResponse.Version.MajorVersion = (ushort)1;
             httpResponse.Version.MinorVersion = (ushort)1;
             httpResponse.StatusCode = (ushort)httpStatusCode;
@@ -1699,8 +1698,8 @@ namespace System.Net
                     httpResponse.Headers.UnknownHeaderCount = checked((ushort)(challenges == null ? 0 : challenges.Count));
                     GCHandle[] challengeHandles = null;
                     Interop.HttpApi.HTTP_UNKNOWN_HEADER[] headersArray = null;
-                    GCHandle headersArrayHandle = new GCHandle();
-                    GCHandle wwwAuthenticateHandle = new GCHandle();
+                    GCHandle headersArrayHandle = default;
+                    GCHandle wwwAuthenticateHandle = default;
                     if (httpResponse.Headers.UnknownHeaderCount > 0)
                     {
                         challengeHandles = new GCHandle[httpResponse.Headers.UnknownHeaderCount];
@@ -1809,7 +1808,7 @@ namespace System.Net
                 blob = new byte[size];
                 fixed (byte* blobPtr = &blob[0])
                 {
-                    // Http.sys team: ServiceName will always be null if 
+                    // Http.sys team: ServiceName will always be null if
                     // HTTP_RECEIVE_SECURE_CHANNEL_TOKEN flag is set.
                     statusCode = Interop.HttpApi.HttpReceiveClientCertificate(
                         RequestQueueHandle,
@@ -1863,9 +1862,9 @@ namespace System.Net
         {
             private static readonly IOCompletionCallback s_IOCallback = new IOCompletionCallback(WaitCallback);
 
-            private ulong _connectionId;
-            private HttpListener _httpListener;
-            private NativeOverlapped* _nativeOverlapped;
+            private readonly ulong _connectionId;
+            private readonly HttpListener _httpListener;
+            private readonly NativeOverlapped* _nativeOverlapped;
             private int _ownershipState;   // 0 = normal, 1 = in HandleAuthentication(), 2 = disconnected, 3 = cleaned up
 
             private WindowsPrincipal _authenticatedConnection;
@@ -1924,7 +1923,7 @@ namespace System.Net
             {
                 int oldValue;
 
-                SpinWait spin = new SpinWait();
+                SpinWait spin = default;
                 while ((oldValue = Interlocked.CompareExchange(ref _ownershipState, 1, 0)) == 2)
                 {
                     // Must block until it equals 3 - we must be in the callback right now.

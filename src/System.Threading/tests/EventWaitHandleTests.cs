@@ -58,10 +58,10 @@ namespace System.Threading.Tests
         {
             string name = Guid.NewGuid().ToString("N");
             bool createdNew;
-            using (var ewh = new EventWaitHandle(false, EventResetMode.AutoReset, name, out createdNew))
+            using (var ewh = new EventWaitHandle(initialState, mode, name, out createdNew))
             {
                 Assert.True(createdNew);
-                using (new EventWaitHandle(false, EventResetMode.AutoReset, name, out createdNew))
+                using (new EventWaitHandle(initialState, mode, name, out createdNew))
                 {
                     Assert.False(createdNew);
                 }
@@ -204,7 +204,7 @@ namespace System.Threading.Tests
             }
         }
 
-        private static int PingPong_OtherProcess(string modeName, string inboundName, string outboundName)
+        private static void PingPong_OtherProcess(string modeName, string inboundName, string outboundName)
         {
             EventResetMode mode = (EventResetMode)Enum.Parse(typeof(EventResetMode), modeName);
 
@@ -223,8 +223,6 @@ namespace System.Threading.Tests
                     outbound.Set();
                 }
             }
-
-            return RemoteExecutor.SuccessExitCode;
         }
 
         public static TheoryData<string> GetValidNames()

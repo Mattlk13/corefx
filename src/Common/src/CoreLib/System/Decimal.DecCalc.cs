@@ -158,7 +158,7 @@ namespace System
 
             // Used to fill uninitialized stack variables with non-zero pattern in debug builds
             [Conditional("DEBUG")]
-            private static unsafe void DebugPoison<T>(ref T s) where T: unmanaged
+            private static unsafe void DebugPoison<T>(ref T s) where T : unmanaged
             {
                 MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref s, 1)).Fill(0xCD);
             }
@@ -168,11 +168,11 @@ namespace System
             private static unsafe uint GetExponent(float f)
             {
                 // Based on pulling out the exp from this single struct layout
-                //typedef struct {
+                // typedef struct {
                 //    ULONG mant:23;
                 //    ULONG exp:8;
                 //    ULONG sign:1;
-                //} SNGSTRUCT;
+                // } SNGSTRUCT;
 
                 return (byte)(*(uint*)&f >> 23);
             }
@@ -180,7 +180,7 @@ namespace System
             private static unsafe uint GetExponent(double d)
             {
                 // Based on pulling out the exp from this double struct layout
-                //typedef struct {
+                // typedef struct {
                 //   DWORDLONG mant:52;
                 //   DWORDLONG signexp:12;
                 // } DBLSTRUCT;
@@ -477,7 +477,7 @@ namespace System
                     //
                     prod1 = bufDen.Low64;
 
-                    for (;;)
+                    while (true)
                     {
                         quo--;
                         num += prod1;
@@ -593,7 +593,7 @@ PosRem:
                     uint sticky = 0;
                     uint quotient, remainder = 0;
 
-                    for (;;)
+                    while (true)
                     {
                         sticky |= remainder; // record remainder as sticky bit
 
@@ -690,7 +690,7 @@ PosRem:
                         }
 
                         break;
-                    } // for(;;)
+                    } // while (true)
                 }
                 return scale;
 
@@ -790,7 +790,7 @@ ThrowOverflow:
                     goto HaveScale;
                 }
 
-                var powerOvfl = PowerOvflValues;
+                PowerOvfl[] powerOvfl = PowerOvflValues;
                 if (scale > DEC_SCALE_MAX - 9)
                 {
                     // We can't scale by 10^9 without exceeding the max scale factor.
@@ -990,8 +990,7 @@ ThrowOverflow:
 
                     // Have to scale by a bunch. Move the number to a buffer where it has room to grow as it's scaled.
                     //
-                    Buf24 bufNum;
-                    _ = &bufNum; // workaround for CS0165
+                    Unsafe.SkipInit(out Buf24 bufNum);
                     DebugPoison(ref bufNum);
 
                     bufNum.Low64 = low64;
@@ -1052,7 +1051,7 @@ ThrowOverflow:
                             goto NoCarry;
 
                         // Carry the subtraction into the higher bits.
-                        // 
+                        //
                         uint* number = (uint*)&bufNum;
                         uint cur = 3;
                         do
@@ -1340,8 +1339,7 @@ ThrowOverflow:
 
                 ulong tmp;
                 uint hiProd;
-                Buf24 bufProd;
-                _ = &bufProd; // workaround for CS0165
+                Unsafe.SkipInit(out Buf24 bufProd);
                 DebugPoison(ref bufProd);
 
                 if ((d1.High | d1.Mid) == 0)
@@ -1787,7 +1785,7 @@ ReturnZero:
                     power = -power;
                     if (power < 10)
                     {
-                        var pow10 = s_powers10[power];
+                        uint pow10 = s_powers10[power];
                         ulong low64 = UInt32x32To64((uint)mant, pow10);
                         ulong hi64 = UInt32x32To64((uint)(mant >> 32), pow10);
                         result.Low = (uint)low64;
@@ -1912,7 +1910,7 @@ ReturnZero:
 
                 Unscale(ref low, ref high64, ref scale);
 
-                flags = ((flags) & ~ScaleMask) | (uint)scale << ScaleShift;
+                flags = (flags & ~ScaleMask) | (uint)scale << ScaleShift;
                 return (int)(flags ^ (uint)(high64 >> 32) ^ (uint)high64 ^ low);
             }
 
@@ -1922,8 +1920,7 @@ ReturnZero:
             /// </summary>
             internal static unsafe void VarDecDiv(ref DecCalc d1, ref DecCalc d2)
             {
-                Buf12 bufQuo;
-                _ = &bufQuo; // workaround for CS0165
+                Unsafe.SkipInit(out Buf12 bufQuo);
                 DebugPoison(ref bufQuo);
 
                 uint power;
@@ -1945,7 +1942,7 @@ ReturnZero:
                     bufQuo.U2 = d1.High;
                     uint remainder = Div96By32(ref bufQuo, den);
 
-                    for (;;)
+                    while (true)
                     {
                         if (remainder == 0)
                         {
@@ -2005,7 +2002,7 @@ ReturnZero:
                             scale = OverflowUnscale(ref bufQuo, scale, remainder != 0);
                             break;
                         }
-                    } // for (;;)
+                    } // while (true)
                 }
                 else
                 {
@@ -2024,8 +2021,7 @@ ReturnZero:
 
                     // Shift both dividend and divisor left by curScale.
                     //
-                    Buf16 bufRem;
-                    _ = &bufRem; // workaround for CS0165
+                    Unsafe.SkipInit(out Buf16 bufRem);
                     DebugPoison(ref bufRem);
 
                     bufRem.Low64 = d1.Low64 << curScale;
@@ -2042,7 +2038,7 @@ ReturnZero:
                         bufQuo.U1 = Div96By64(ref *(Buf12*)&bufRem.U1, divisor);
                         bufQuo.U0 = Div96By64(ref *(Buf12*)&bufRem, divisor);
 
-                        for (;;)
+                        while (true)
                         {
                             if (bufRem.Low64 == 0)
                             {
@@ -2086,7 +2082,7 @@ ReturnZero:
                                 scale = OverflowUnscale(ref bufQuo, scale, bufRem.Low64 != 0);
                                 break;
                             }
-                        } // for (;;)
+                        } // while (true)
                     }
                     else
                     {
@@ -2094,8 +2090,7 @@ ReturnZero:
                         //
                         // Start by finishing the shift left by curScale.
                         //
-                        Buf12 bufDivisor;
-                        _ = &bufDivisor; // workaround for CS0165
+                        Unsafe.SkipInit(out Buf12 bufDivisor);
                         DebugPoison(ref bufDivisor);
 
                         bufDivisor.Low64 = divisor;
@@ -2106,7 +2101,7 @@ ReturnZero:
                         bufQuo.Low64 = Div128By96(ref bufRem, ref bufDivisor);
                         bufQuo.U2 = 0;
 
-                        for (;;)
+                        while (true)
                         {
                             if ((bufRem.Low64 | bufRem.U2) == 0)
                             {
@@ -2159,7 +2154,7 @@ ReturnZero:
                                 scale = OverflowUnscale(ref bufQuo, scale, (bufRem.Low64 | bufRem.High64) != 0);
                                 break;
                             }
-                        } // for (;;)
+                        } // while (true)
                     }
                 }
 
@@ -2223,7 +2218,7 @@ ThrowOverflow:
                 if ((cmp ^ (int)(d1.uflags & SignMask)) < 0)
                     return;
 
-                // The divisor is smaller than the dividend and both are non-zero. Calculate the integer remainder using the larger scaling factor. 
+                // The divisor is smaller than the dividend and both are non-zero. Calculate the integer remainder using the larger scaling factor.
 
                 int scale = (sbyte)(d1.uflags - d2.uflags >> ScaleShift);
                 if (scale > 0)
@@ -2248,8 +2243,7 @@ ThrowOverflow:
                     {
                         d1.uflags = d2.uflags;
                         // Try to scale up dividend to match divisor.
-                        Buf12 bufQuo;
-                        unsafe { _ = &bufQuo; } // workaround for CS0165
+                        Unsafe.SkipInit(out Buf12 bufQuo);
                         DebugPoison(ref bufQuo);
 
                         bufQuo.Low64 = d1.Low64;
@@ -2300,8 +2294,8 @@ ThrowOverflow:
             {
                 // Divisor has bits set in the upper 64 bits.
                 //
-                // Divisor must be fully normalized (shifted so bit 31 of the most significant uint is 1). 
-                // Locate the MSB so we know how much to normalize by. 
+                // Divisor must be fully normalized (shifted so bit 31 of the most significant uint is 1).
+                // Locate the MSB so we know how much to normalize by.
                 // The dividend will be shifted by the same amount so the quotient is not changed.
                 //
                 uint tmp = d2.High;
@@ -2309,8 +2303,7 @@ ThrowOverflow:
                     tmp = d2.Mid;
                 int shift = BitOperations.LeadingZeroCount(tmp);
 
-                Buf28 b;
-                _ = &b; // workaround for CS0165
+                Unsafe.SkipInit(out Buf28 b);
                 DebugPoison(ref b);
 
                 b.Buf24.Low64 = d1.Low64 << shift;
@@ -2365,8 +2358,7 @@ ThrowOverflow:
                 }
                 else
                 {
-                    Buf12 bufDivisor;
-                    _ = &bufDivisor; // workaround for CS0165
+                    Unsafe.SkipInit(out Buf12 bufDivisor);
                     DebugPoison(ref bufDivisor);
 
                     bufDivisor.Low64 = d2.Low64 << shift;
@@ -2525,7 +2517,7 @@ done:
                 return (uint)num - div * TenToPowerNine;
             }
 
-            struct PowerOvfl
+            private struct PowerOvfl
             {
                 public readonly uint Hi;
                 public readonly ulong MidLo;
@@ -2537,7 +2529,7 @@ done:
                 }
             }
 
-            static readonly PowerOvfl[] PowerOvflValues = new[]
+            private static readonly PowerOvfl[] PowerOvflValues = new[]
             {
                 // This is a table of the largest values that can be in the upper two
                 // uints of a 96-bit number that will not overflow when multiplied

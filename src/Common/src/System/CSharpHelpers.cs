@@ -102,7 +102,7 @@ namespace System
 
         public static string CreateEscapedIdentifier(string name)
         {
-            // Any identifier started with two consecutive underscores are 
+            // Any identifier started with two consecutive underscores are
             // reserved by CSharp.
             if (IsKeyword(name) || IsPrefixTwoUnderscore(name))
             {
@@ -143,8 +143,10 @@ namespace System
         {
             bool nextMustBeStartChar = true;
 
-            if (value.Length == 0)
+            if (string.IsNullOrEmpty(value))
+            {
                 return false;
+            }
 
             // each char must be Lu, Ll, Lt, Lm, Lo, Nd, Mn, Mc, Pc
             //

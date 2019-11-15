@@ -102,7 +102,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="ReadEncodedValue"/>
         public ReadOnlyMemory<byte> PeekEncodedValue()
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int bytesRead);
+            ReadTagAndLength(out int? length, out int bytesRead);
 
             if (length == null)
             {
@@ -127,7 +127,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PeekEncodedValue"/>
         public ReadOnlyMemory<byte> PeekContentBytes()
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int bytesRead);
+            ReadTagAndLength(out int? length, out int bytesRead);
 
             if (length == null)
             {
@@ -362,7 +362,7 @@ namespace System.Security.Cryptography.Asn1
                 {
                     // This will throw a CryptographicException if the length exceeds our bounds.
                     ReadOnlyMemory<byte> tlv = Slice(tmpReader._data, 0, bytesRead + length.Value);
-                    
+
                     // No exception? Then slice the data and continue.
                     tmpReader._data = tmpReader._data.Slice(tlv.Length);
                     totalLen += tlv.Length;

@@ -21,7 +21,7 @@ namespace System.ServiceModel.Syndication
         private Collection<SyndicationPerson> _authors;
         private Collection<SyndicationCategory> _categories;
         private Collection<SyndicationPerson> _contributors;
-        private ExtensibleSyndicationObject _extensions = new ExtensibleSyndicationObject();
+        private ExtensibleSyndicationObject _extensions;
         private IEnumerable<SyndicationItem> _items;
         private DateTimeOffset _lastUpdatedTime;
         private Collection<SyndicationLink> _links;
@@ -143,7 +143,7 @@ namespace System.ServiceModel.Syndication
 
         public IEnumerable<SyndicationItem> Items
         {
-            get =>_items ?? (_items = new NullNotAllowedCollection<SyndicationItem>());
+            get => _items ?? (_items = new NullNotAllowedCollection<SyndicationItem>());
             set => _items = value ?? throw new ArgumentNullException(nameof(value));
         }
 
@@ -171,7 +171,7 @@ namespace System.ServiceModel.Syndication
 
         public Collection<SyndicationLink> Links
         {
-            get =>_links ?? (_links = new NullNotAllowedCollection<SyndicationLink>());
+            get => _links ?? (_links = new NullNotAllowedCollection<SyndicationLink>());
         }
 
         public TextSyndicationContent Title { get; set; }

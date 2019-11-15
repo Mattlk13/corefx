@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace System.Drawing
 {
-    partial class Region
+    public partial class Region
     {
         public void ReleaseHrgn(IntPtr regionHandle)
         {
@@ -17,8 +17,7 @@ namespace System.Drawing
                 throw new ArgumentNullException(nameof(regionHandle));
             }
 
-            // On Windows HRGN are (old) GDI objects. Deskop .NET does not check the return code of IntDeleteObject
-            SafeNativeMethods.IntDeleteObject(new HandleRef(this, regionHandle));
+            Interop.Gdi32.DeleteObject(new HandleRef(this, regionHandle));
         }
     }
 }

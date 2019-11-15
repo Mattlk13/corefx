@@ -10,7 +10,7 @@ using System.Threading;
 namespace System.Collections.Concurrent
 {
     /// <summary>
-    /// Represents a thread-safe, unordered collection of objects. 
+    /// Represents a thread-safe, unordered collection of objects.
     /// </summary>
     /// <typeparam name="T">Specifies the type of elements in the bag.</typeparam>
     /// <remarks>
@@ -20,7 +20,7 @@ namespace System.Collections.Concurrent
     /// scenarios where the same thread will be both producing and consuming data stored in the bag.
     /// </para>
     /// <para>
-    /// <see cref="ConcurrentBag{T}"/> accepts null reference (Nothing in Visual Basic) as a valid 
+    /// <see cref="ConcurrentBag{T}"/> accepts null reference (Nothing in Visual Basic) as a valid
     /// value for reference types.
     /// </para>
     /// <para>
@@ -82,7 +82,7 @@ namespace System.Collections.Concurrent
         /// <summary>
         /// Attempts to add an object to the <see cref="ConcurrentBag{T}"/>.
         /// </summary>
-        /// <param name="item">The object to be added to the 
+        /// <param name="item">The object to be added to the
         /// <see cref="ConcurrentBag{T}"/>. The value can be a null reference
         /// (Nothing in Visual Basic) for reference types.</param>
         /// <returns>Always returns true</returns>
@@ -459,7 +459,7 @@ namespace System.Collections.Concurrent
         /// cref="ConcurrentBag{T}"/>.</returns>
         /// <remarks>
         /// The enumeration represents a moment-in-time snapshot of the contents
-        /// of the bag.  It does not reflect any updates to the collection after 
+        /// of the bag.  It does not reflect any updates to the collection after
         /// <see cref="GetEnumerator"/> was called.  The enumerator is safe to use
         /// concurrently with reads from and writes to the bag.
         /// </remarks>
@@ -473,7 +473,7 @@ namespace System.Collections.Concurrent
         /// cref="ConcurrentBag{T}"/>.</returns>
         /// <remarks>
         /// The items enumerated represent a moment-in-time snapshot of the contents
-        /// of the bag.  It does not reflect any update to the collection after 
+        /// of the bag.  It does not reflect any update to the collection after
         /// <see cref="GetEnumerator"/> was called.
         /// </remarks>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -484,7 +484,7 @@ namespace System.Collections.Concurrent
         /// <value>The number of elements contained in the <see cref="ConcurrentBag{T}"/>.</value>
         /// <remarks>
         /// The count returned represents a moment-in-time snapshot of the contents
-        /// of the bag.  It does not reflect any updates to the collection after 
+        /// of the bag.  It does not reflect any updates to the collection after
         /// <see cref="GetEnumerator"/> was called.
         /// </remarks>
         public int Count
@@ -634,7 +634,7 @@ namespace System.Collections.Concurrent
             {
                 if (queue._currentOp != (int)Operation.None)
                 {
-                    var spinner = new SpinWait();
+                    SpinWait spinner = default;
                     do { spinner.SpinOnce(); }
                     while (queue._currentOp != (int)Operation.None);
                 }
@@ -796,7 +796,7 @@ namespace System.Collections.Concurrent
                             int headIdx = head & _mask;
                             if (headIdx == 0)
                             {
-                                Array.Copy(_array, 0, newArray, 0, _array.Length);
+                                Array.Copy(_array, newArray, _array.Length);
                             }
                             else
                             {
@@ -975,7 +975,7 @@ namespace System.Collections.Concurrent
                         // steal operations happening at the time.
                         if ((head - (_tailIndex - 2) >= 0) && _currentOp == (int)Operation.Add)
                         {
-                            var spinner = new SpinWait();
+                            SpinWait spinner = default;
                             do
                             {
                                 spinner.SpinOnce();

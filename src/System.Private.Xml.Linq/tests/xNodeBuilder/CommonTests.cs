@@ -9,7 +9,7 @@ using System.Linq;
 using System.Globalization;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions; 
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XmlDiff;
@@ -5230,7 +5230,7 @@ namespace CoreXml.Test.XLinq
                     throw new TestException(TestResult.Failed, "");
                 }
 
-                //[Variation(Id = 2, Desc = "LookupPrefix with String.Empty should if(!String.Empty", Priority = 1)]
+                //[Variation(Id = 2, Desc = "LookupPrefix with String.Empty should if (!String.Empty", Priority = 1)]
                 public void lookupPrefix_2()
                 {
                     XDocument doc = new XDocument();

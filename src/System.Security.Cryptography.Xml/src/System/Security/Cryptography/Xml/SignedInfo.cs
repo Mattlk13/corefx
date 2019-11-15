@@ -2,11 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections;
-using System.Runtime.InteropServices;
 using System.Xml;
-using System.Globalization;
 
 namespace System.Security.Cryptography.Xml
 {
@@ -16,7 +13,7 @@ namespace System.Security.Cryptography.Xml
         private string _canonicalizationMethod;
         private string _signatureMethod;
         private string _signatureLength;
-        private ArrayList _references;
+        private readonly ArrayList _references;
         private XmlElement _cachedXml = null;
         private SignedXml _signedXml = null;
         private Transform _canonicalizationMethodTransform = null;

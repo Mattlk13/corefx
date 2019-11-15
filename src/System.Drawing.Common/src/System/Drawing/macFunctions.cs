@@ -70,7 +70,7 @@ namespace System.Drawing
         {
             IntPtr graphicsContext = objc_msgSend(objc_getClass("NSGraphicsContext"), sel_registerName("currentContext"));
             IntPtr ctx = objc_msgSend(graphicsContext, sel_registerName("graphicsPort"));
-            Rect bounds = new Rect();
+            Rect bounds = default;
 
             CGContextSaveGState(ctx);
 
@@ -105,8 +105,8 @@ namespace System.Drawing
                 return new CarbonContext(port, context, (int)desktop_bounds.size.width, (int)desktop_bounds.size.height);
             }
 
-            QDRect window_bounds = new QDRect();
-            Rect view_bounds = new Rect();
+            QDRect window_bounds = default(QDRect);
+            Rect view_bounds = default(Rect);
 
             port = GetWindowPort(window);
 
@@ -150,9 +150,9 @@ namespace System.Drawing
                     CGContextFillRect (context, rc_clip);
                     CGContextFlush (context);
                     System.Threading.Thread.Sleep (500);
-                    if (red == 1.0f) { red = 0.0f; blue = 1.0f; } 
-                    else if (blue == 1.0f) { blue = 0.0f; green = 1.0f; } 
-                    else if (green == 1.0f) { green = 0.0f; red = 1.0f; } 
+                    if (red == 1.0f) { red = 0.0f; blue = 1.0f; }
+                    else if (blue == 1.0f) { blue = 0.0f; green = 1.0f; }
+                    else if (green == 1.0f) { green = 0.0f; red = 1.0f; }
                 }
 #endif
             }
@@ -195,7 +195,7 @@ namespace System.Drawing
             lock (lockobj)
             {
 #if FALSE
-                if (contextReference [port] != null && context == (IntPtr) contextReference [port]) { 
+                if (contextReference [port] != null && context == (IntPtr) contextReference [port]) {
                     QDEndCGContext (port, ref context);
                     contextReference [port] = null;
                 } else {

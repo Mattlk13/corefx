@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -27,7 +27,6 @@
 
 using System.Globalization;
 using Xunit;
-using System.Text.Json.Serialization;
 
 namespace System.Text.Json.Tests
 {
@@ -115,7 +114,7 @@ namespace System.Text.Json.Tests
             c.PreField = "Pre";
             c.PostField = "Post";
             string json = JsonSerializer.Serialize(c);
-            
+
             NullableDateTimeTestClass newOne = JsonSerializer.Deserialize<NullableDateTimeTestClass>(json);
             Assert.Equal(newOne.DateTimeField, c.DateTimeField);
             Assert.Equal(newOne.DateTimeOffsetField, c.DateTimeOffsetField);
@@ -128,7 +127,7 @@ namespace System.Text.Json.Tests
             c.PreField = "Pre";
             c.PostField = "Post";
             json = JsonSerializer.Serialize(c);
-            
+
             newOne = JsonSerializer.Deserialize<NullableDateTimeTestClass>(json);
             Assert.Equal(newOne.DateTimeField, c.DateTimeField);
             Assert.Equal(newOne.DateTimeOffsetField, c.DateTimeOffsetField);

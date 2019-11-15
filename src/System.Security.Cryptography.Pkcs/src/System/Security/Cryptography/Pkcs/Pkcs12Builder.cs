@@ -6,6 +6,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Cryptography.Asn1;
+using System.Security.Cryptography.Asn1.Pkcs7;
 using System.Security.Cryptography.Pkcs.Asn1;
 using Internal.Cryptography;
 
@@ -26,7 +27,7 @@ namespace System.Security.Cryptography.Pkcs
             AddSafeContentsEncrypted(
                 safeContents,
                 // Allows null.
-                new ReadOnlySpan<byte>(passwordBytes), 
+                new ReadOnlySpan<byte>(passwordBytes),
                 pbeParameters);
         }
 
@@ -247,7 +248,7 @@ namespace System.Security.Cryptography.Pkcs
                     }
 
                     // https://tools.ietf.org/html/rfc7292#section-4
-                    // 
+                    //
                     // MacData ::= SEQUENCE {
                     //   mac        DigestInfo,
                     //   macSalt    OCTET STRING,

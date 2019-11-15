@@ -23,10 +23,17 @@ namespace System.Text.Json
 
                 if (enumerable == null)
                 {
-                    if (!state.Current.JsonPropertyInfo.IgnoreNullValues)
+                    // If applicable, we only want to ignore object properties.
+                    if (state.Current.JsonClassInfo.ClassType != ClassType.Object ||
+                        !state.Current.JsonPropertyInfo.IgnoreNullValues)
                     {
                         // Write a null object or enumerable.
-                        state.Current.WriteObjectOrArrayStart(ClassType.Enumerable, writer, writeNull: true);
+                        state.Current.WriteObjectOrArrayStart(ClassType.Enumerable, writer, options, writeNull: true);
+                    }
+
+                    if (state.Current.PopStackOnEndCollection)
+                    {
+                        state.Pop();
                     }
 
                     return true;
@@ -34,7 +41,7 @@ namespace System.Text.Json
 
                 state.Current.CollectionEnumerator = enumerable.GetEnumerator();
 
-                state.Current.WriteObjectOrArrayStart(ClassType.Enumerable, writer);
+                state.Current.WriteObjectOrArrayStart(ClassType.Enumerable, writer, options);
             }
 
             if (state.Current.CollectionEnumerator.MoveNext())

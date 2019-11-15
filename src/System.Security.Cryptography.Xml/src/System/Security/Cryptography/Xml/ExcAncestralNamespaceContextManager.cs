@@ -3,8 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Xml;
-using System.IO;
-using System.Text;
 using System.Collections;
 
 namespace System.Security.Cryptography.Xml
@@ -13,7 +11,7 @@ namespace System.Security.Cryptography.Xml
     // object also maintains the inclusive prefix list in a tokenized form.
     internal class ExcAncestralNamespaceContextManager : AncestralNamespaceContextManager
     {
-        private Hashtable _inclusivePrefixSet = null;
+        private readonly Hashtable _inclusivePrefixSet = null;
 
         internal ExcAncestralNamespaceContextManager(string inclusiveNamespacesPrefixList)
         {

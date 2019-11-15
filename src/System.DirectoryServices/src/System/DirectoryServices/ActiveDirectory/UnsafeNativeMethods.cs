@@ -3,7 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 //
-//NOTE: 
+//NOTE:
 //Structures containing collection of another structures are defined without
 //embedded structure which will ensure proper marshalling in case collection
 //count is zero and there is no embedded structure. Marshalling code read the
@@ -20,7 +20,7 @@
 //Here it has been defined as (without embedded structure DS_REPL_CURSOR_3)
 //
 //internal sealed class DS_REPL_CURSORS_3
-//{  
+//{
 //    public int cNumCursors;
 //    public int dwEnumerationContext;
 //}
@@ -114,7 +114,7 @@ namespace System.DirectoryServices.ActiveDirectory
     }
 
     /*
-    typedef enum 
+    typedef enum
     {
         DsRole_RoleStandaloneWorkstation,
         DsRole_RoleMemberWorkstation,
@@ -144,7 +144,7 @@ namespace System.DirectoryServices.ActiveDirectory
     }
 
     /*
-    typedef enum 
+    typedef enum
     {
         DsRolePrimaryDomainInfoBasic,
         DsRoleUpgradeStatus,
@@ -464,11 +464,11 @@ namespace System.DirectoryServices.ActiveDirectory
     internal sealed class LSA_OBJECT_ATTRIBUTES
     {
         internal int Length;
-        private IntPtr _rootDirectory;
-        private IntPtr _objectName;
+        private readonly IntPtr _rootDirectory;
+        private readonly IntPtr _objectName;
         internal int Attributes;
-        private IntPtr _securityDescriptor;
-        private IntPtr _securityQualityOfService;
+        private readonly IntPtr _securityDescriptor;
+        private readonly IntPtr _securityQualityOfService;
 
         public LSA_OBJECT_ATTRIBUTES()
         {
@@ -571,12 +571,12 @@ namespace System.DirectoryServices.ActiveDirectory
     }
 
     /*
-     typedef struct _DSROLE_PRIMARY_DOMAIN_INFO_BASIC {  
-     DSROLE_MACHINE_ROLE MachineRole;  
-     ULONG Flags;  
-     LPWSTR DomainNameFlat;  
-     LPWSTR DomainNameDns;  
-     LPWSTR DomainForestName;  
+     typedef struct _DSROLE_PRIMARY_DOMAIN_INFO_BASIC {
+     DSROLE_MACHINE_ROLE MachineRole;
+     ULONG Flags;
+     LPWSTR DomainNameFlat;
+     LPWSTR DomainNameDns;
+     LPWSTR DomainForestName;
      GUID DomainGuid;
      } DSROLE_PRIMARY_DOMAIN_INFO_BASIC,  *PDSROLE_PRIMARY_DOMAIN_INFO_BASIC;
      */
@@ -592,7 +592,7 @@ namespace System.DirectoryServices.ActiveDirectory
         public string DomainNameDns;
         [MarshalAs(UnmanagedType.LPWStr)]
         public string DomainForestName;
-        public Guid DomainGuid = new Guid();
+        public Guid DomainGuid = default;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -846,4 +846,3 @@ namespace System.DirectoryServices.ActiveDirectory
             [In] IntPtr buffer);
     }
 }
-

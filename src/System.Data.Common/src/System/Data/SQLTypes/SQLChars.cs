@@ -23,7 +23,7 @@ namespace System.Data.SqlTypes
         // SqlChars has five possible states
         // 1) SqlChars is Null
         //        - m_stream must be null, m_lCuLen must be x_lNull
-        // 2) SqlChars contains a valid buffer, 
+        // 2) SqlChars contains a valid buffer,
         //        - m_rgchBuf must not be null, and m_stream must be null
         // 3) SqlChars contains a valid pointer
         //        - m_rgchBuf could be null or not,
@@ -129,17 +129,12 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Null:
-                        throw new SqlNullValueException();
-
-                    case SqlBytesCharsState.Stream:
-                        return _stream.Length;
-
-                    default:
-                        return _lCurLen;
-                }
+                    SqlBytesCharsState.Null => throw new SqlNullValueException(),
+                    SqlBytesCharsState.Stream => _stream.Length,
+                    _ => _lCurLen,
+                };
             }
         }
 
@@ -152,14 +147,11 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Stream:
-                        return -1L;
-
-                    default:
-                        return (_rgchBuf == null) ? -1L : _rgchBuf.Length;
-                }
+                    SqlBytesCharsState.Stream => -1L,
+                    _ => (_rgchBuf == null) ? -1L : _rgchBuf.Length,
+                };
             }
         }
 
@@ -187,7 +179,7 @@ namespace System.Data.SqlTypes
 
                     default:
                         buffer = new char[_lCurLen];
-                        Array.Copy(_rgchBuf, 0, buffer, 0, (int)_lCurLen);
+                        Array.Copy(_rgchBuf, buffer, (int)_lCurLen);
                         break;
                 }
 
@@ -239,20 +231,13 @@ namespace System.Data.SqlTypes
         {
             get
             {
-                switch (_state)
+                return _state switch
                 {
-                    case SqlBytesCharsState.Null:
-                        throw new SqlNullValueException();
-
-                    case SqlBytesCharsState.Stream:
-                        return StorageState.Stream;
-
-                    case SqlBytesCharsState.Buffer:
-                        return StorageState.Buffer;
-
-                    default:
-                        return StorageState.UnmanagedBuffer;
-                }
+                    SqlBytesCharsState.Null => throw new SqlNullValueException(),
+                    SqlBytesCharsState.Stream => StorageState.Stream,
+                    SqlBytesCharsState.Buffer => StorageState.Buffer,
+                    _ => StorageState.UnmanagedBuffer,
+                };
             }
         }
 
@@ -380,7 +365,7 @@ namespace System.Data.SqlTypes
 
                 if (IsNull)
                 {
-                    // If NULL and there is buffer inside, we only allow writing from 
+                    // If NULL and there is buffer inside, we only allow writing from
                     // offset zero.
                     //
                     if (offset != 0)
@@ -560,7 +545,7 @@ namespace System.Data.SqlTypes
         //      Static fields, properties
         // --------------------------------------------------------------
 
-        // Get a Null instance. 
+        // Get a Null instance.
         // Since SqlChars is mutable, have to be property and create a new one each time.
         public static SqlChars Null
         {
@@ -573,14 +558,14 @@ namespace System.Data.SqlTypes
 
     // SqlStreamChars is a stream build on top of SqlChars, and
     // provides the Stream interface. The purpose is to help users
-    // to read/write SqlChars object. 
+    // to read/write SqlChars object.
     internal sealed class SqlStreamChars
     {
         // --------------------------------------------------------------
         //      Data members
         // --------------------------------------------------------------
 
-        private SqlChars _sqlchars;        // the SqlChars object 
+        private readonly SqlChars _sqlchars;        // the SqlChars object
         private long _lPosition;
 
         // --------------------------------------------------------------

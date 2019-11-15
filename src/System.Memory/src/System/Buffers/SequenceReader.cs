@@ -14,7 +14,7 @@ namespace System.Buffers
         private SequencePosition _currentPosition;
         private SequencePosition _nextPosition;
         private bool _moreData;
-        private long _length;
+        private readonly long _length;
 
         /// <summary>
         /// Create a <see cref="SequenceReader{T}"/> over the given <see cref="ReadOnlySequence{T}"/>.
@@ -117,6 +117,58 @@ namespace System.Buffers
             {
                 value = default;
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Peeks at the next value at specific offset without advancing the reader.
+        /// </summary>
+        /// <param name="offset">The offset from current position.</param>
+        /// <param name="value">The next value or default if at the end.</param>
+        /// <returns>False if at the end of the reader.</returns>
+        public readonly bool TryPeek(long offset, out T value)
+        {
+            if (offset < 0)
+                ThrowHelper.ThrowArgumentOutOfRangeException_OffsetOutOfRange();
+
+            // If we've got data and offset is not out of bounds
+            if (!_moreData || Remaining <= offset)
+            {
+                value = default;
+                return false;
+            }
+
+            // If offset doesn't fall inside current segment move to next until we find correct one
+            if ((CurrentSpanIndex + offset) <= CurrentSpan.Length - 1)
+            {
+                value = CurrentSpan[CurrentSpanIndex + (int)offset];
+                return true;
+            }
+            else
+            {
+                long remainingOffset = offset - (CurrentSpan.Length - CurrentSpanIndex);
+                SequencePosition nextPosition = _nextPosition;
+                ReadOnlyMemory<T> currentMemory = default;
+
+                while (Sequence.TryGet(ref nextPosition, out currentMemory, true))
+                {
+                    // Skip empty segment
+                    if (currentMemory.Length > 0)
+                    {
+                        if (remainingOffset > currentMemory.Length - 1)
+                        {
+                            // Subtract current non consumed data
+                            remainingOffset -= currentMemory.Length;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                value = currentMemory.Span[(int)remainingOffset];
+                return true;
             }
         }
 

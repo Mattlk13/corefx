@@ -20,15 +20,15 @@ namespace System.Runtime.Serialization
     {
         protected XmlObjectSerializer serializer;
         protected DataContract rootTypeDataContract;
-        internal ScopedKnownTypes scopedKnownTypes = new ScopedKnownTypes();
+        internal ScopedKnownTypes scopedKnownTypes;
         protected DataContractDictionary serializerKnownDataContracts;
         private bool _isSerializerKnownDataContractsSetExplicit;
         protected IList<Type> serializerKnownTypeList;
         private int _itemCount;
-        private int _maxItemsInObjectGraph;
-        private StreamingContext _streamingContext;
-        private bool _ignoreExtensionDataObject;
-        private DataContractResolver _dataContractResolver;
+        private readonly int _maxItemsInObjectGraph;
+        private readonly StreamingContext _streamingContext;
+        private readonly bool _ignoreExtensionDataObject;
+        private readonly DataContractResolver _dataContractResolver;
         private KnownTypeDataContractResolver _knownTypeResolver;
 
         internal XmlObjectSerializerContext(XmlObjectSerializer serializer, int maxItemsInObjectGraph, StreamingContext streamingContext, bool ignoreExtensionDataObject,
@@ -47,12 +47,10 @@ namespace System.Runtime.Serialization
         {
         }
 
-        internal XmlObjectSerializerContext(DataContractSerializer serializer, DataContract rootTypeDataContract
-                                                                                                                , DataContractResolver dataContractResolver
-                                                                                                                                                           )
+        internal XmlObjectSerializerContext(DataContractSerializer serializer, DataContract rootTypeDataContract, DataContractResolver dataContractResolver)
             : this(serializer,
             serializer.MaxItemsInObjectGraph,
-            new StreamingContext(),
+            default(StreamingContext),
             serializer.IgnoreExtensionDataObject,
             dataContractResolver
             )

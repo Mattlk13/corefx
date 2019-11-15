@@ -21,7 +21,6 @@ namespace System.DirectoryServices.AccountManagement
         static GlobalDebug()
         {
             GlobalDebug.s_debugLevel = GlobalConfig.DebugLevel;
-//#if DEBUG        
 #if SUPPORTDEBUGLOGFILE // not defined
             string debugLogFile = GlobalConfig.DebugLogFile;
 
@@ -85,6 +84,6 @@ namespace System.DirectoryServices.AccountManagement
                             category);
         }
 
-        private static DebugLevel s_debugLevel;
+        private static readonly DebugLevel s_debugLevel;
     }
 }

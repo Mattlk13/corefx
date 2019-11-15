@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace System.Runtime
 {
@@ -11,15 +10,14 @@ namespace System.Runtime
     {
         private static ulong GetTopOfMemory()
         {
-            Interop.Kernel32.SYSTEM_INFO info = new Interop.Kernel32.SYSTEM_INFO();
-            Interop.Kernel32.GetSystemInfo(out info);
+            Interop.Kernel32.GetSystemInfo(out Interop.Kernel32.SYSTEM_INFO info);
             return (ulong)info.lpMaximumApplicationAddress;
         }
 
         private static bool CheckForAvailableMemory(out ulong availPageFile, out ulong totalAddressSpaceFree)
         {
             bool r;
-            Interop.Kernel32.MEMORYSTATUSEX memory = new Interop.Kernel32.MEMORYSTATUSEX();
+            Interop.Kernel32.MEMORYSTATUSEX memory = default;
             r = Interop.Kernel32.GlobalMemoryStatusEx(ref memory);
             if (!r)
                 throw Win32Marshal.GetExceptionForLastWin32Error();
@@ -29,11 +27,10 @@ namespace System.Runtime
             return true;
         }
 
-        // Based on the shouldThrow parameter, this will throw an exception, or 
-        // returns whether there is enough space.  In all cases, we update
-        // our last known free address space, hopefully avoiding needing to 
-        // probe again.
-        private static unsafe bool CheckForFreeAddressSpace(ulong size, bool shouldThrow)
+        // Based on the shouldThrow parameter, this will throw an exception.
+        // In all cases, we update our last known free address space, hopefully
+        // avoiding needing to probe again.
+        private static unsafe void CheckForFreeAddressSpace(ulong size, bool shouldThrow)
         {
             // Start walking the address space at 0.  VirtualAlloc may wrap
             // around the address space.  We don't need to find the exact
@@ -44,7 +41,7 @@ namespace System.Runtime
             // Console.WriteLine($"MemoryFailPoint: Checked for free VA space.  Found enough? {(freeSpaceAfterGCHeap >= size)}  Asked for: {size}  Found: {freeSpaceAfterGCHeap}");
 
             // We may set these without taking a lock - I don't believe
-            // this will hurt, as long as we never increment this number in 
+            // this will hurt, as long as we never increment this number in
             // the Dispose method.  If we do an extra bit of checking every
             // once in a while, but we avoid taking a lock, we may win.
             LastKnownFreeAddressSpace = (long)freeSpaceAfterGCHeap;
@@ -52,12 +49,11 @@ namespace System.Runtime
 
             if (freeSpaceAfterGCHeap < size && shouldThrow)
                 throw new InsufficientMemoryException(SR.InsufficientMemory_MemFailPoint_VAFrag);
-            return freeSpaceAfterGCHeap >= size;
         }
 
         // Returns the amount of consecutive free memory available in a block
-        // of pages.  If we didn't have enough address space, we still return 
-        // a positive value < size, to help potentially avoid the overhead of 
+        // of pages.  If we didn't have enough address space, we still return
+        // a positive value < size, to help potentially avoid the overhead of
         // this check if we use a MemoryFailPoint with a smaller size next.
         private static unsafe ulong MemFreeAfterAddress(void* address, ulong size)
         {
@@ -65,7 +61,7 @@ namespace System.Runtime
                 return 0;
 
             ulong largestFreeRegion = 0;
-            Interop.Kernel32.MEMORY_BASIC_INFORMATION memInfo = new Interop.Kernel32.MEMORY_BASIC_INFORMATION();
+            Interop.Kernel32.MEMORY_BASIC_INFORMATION memInfo = default;
             UIntPtr sizeOfMemInfo = (UIntPtr)sizeof(Interop.Kernel32.MEMORY_BASIC_INFORMATION);
 
             while (((ulong)address) + size < s_topOfMemory)

@@ -11,6 +11,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Linq.Parallel
 {
@@ -21,7 +22,7 @@ namespace System.Linq.Parallel
     /// find the 'count'th index from the input.  We do this in parallel by sharing a count-
     /// sized array.  Each thread races to populate the array with indices in ascending
     /// order.  This requires synchronization for inserts.  We use a simple heap, for decent
-    /// worst case performance.  After a thread has scanned ‘count’ elements, or its current
+    /// worst case performance.  After a thread has scanned 'count' elements, or its current
     /// index is greater than or equal to the maximum index in the array (and the array is
     /// fully populated), the thread can stop searching.  All threads issue a barrier before
     /// moving to the Yield phase.  When the Yield phase is entered, the count-1th element
@@ -145,7 +146,7 @@ namespace System.Linq.Parallel
         // The enumerator type responsible for executing the Take or Skip.
         //
 
-        class TakeOrSkipQueryOperatorEnumerator<TKey> : QueryOperatorEnumerator<TResult, TKey>
+        private class TakeOrSkipQueryOperatorEnumerator<TKey> : QueryOperatorEnumerator<TResult, TKey>
         {
             private readonly QueryOperatorEnumerator<TResult, TKey> _source; // The data source to enumerate.
             private readonly int _count; // The number of elements to take or skip.
@@ -157,8 +158,8 @@ namespace System.Linq.Parallel
             private readonly CountdownEvent _sharedBarrier; // To separate the search/yield phases.
             private readonly CancellationToken _cancellationToken; // Indicates that cancellation has occurred.
 
-            private List<Pair<TResult, TKey>> _buffer; // Our buffer.
-            private Shared<int> _bufferIndex; // Our current index within the buffer. [allocate in moveNext to avoid false-sharing]
+            private List<Pair<TResult, TKey>>? _buffer; // Our buffer.
+            private Shared<int>? _bufferIndex; // Our current index within the buffer. [allocate in moveNext to avoid false-sharing]
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new select enumerator.
@@ -187,7 +188,7 @@ namespace System.Linq.Parallel
             // Straightforward IEnumerator<T> methods.
             //
 
-            internal override bool MoveNext(ref TResult currentElement, ref TKey currentKey)
+            internal override bool MoveNext([MaybeNullWhen(false), AllowNull] ref TResult currentElement, ref TKey currentKey)
             {
                 Debug.Assert(_sharedIndices != null);
 
@@ -199,10 +200,10 @@ namespace System.Linq.Parallel
 
                     // Enter the search phase. In this phase, all partitions race to populate
                     // the shared indices with their first 'count' contiguous elements.
-                    TResult current = default(TResult);
-                    TKey index = default(TKey);
+                    TResult current = default(TResult)!;
+                    TKey index = default(TKey)!;
                     int i = 0; //counter to help with cancellation
-                    while (buffer.Count < _count && _source.MoveNext(ref current, ref index))
+                    while (buffer.Count < _count && _source.MoveNext(ref current!, ref index))
                     {
                         if ((i++ & CancellationState.POLL_INTERVAL) == 0)
                             CancellationState.ThrowIfCanceled(_cancellationToken);
@@ -235,6 +236,7 @@ namespace System.Linq.Parallel
                 // index of the 'count'-th input element.
                 if (_take)
                 {
+                    Debug.Assert(_buffer != null && _bufferIndex != null);
                     // In the case of a Take, we will yield each element from our buffer for which
                     // the element is lesser than the 'count'-th index found.
                     if (_count == 0 || _bufferIndex.Value >= _buffer.Count - 1)
@@ -253,7 +255,7 @@ namespace System.Linq.Parallel
                 }
                 else
                 {
-                    TKey minKey = default(TKey);
+                    TKey minKey = default(TKey)!;
 
                     // If the count to skip was greater than 0, look at the buffer.
                     if (_count > 0)
@@ -266,6 +268,7 @@ namespace System.Linq.Parallel
 
                         minKey = _sharedIndices.MaxValue;
 
+                        Debug.Assert(_buffer != null && _bufferIndex != null);
                         // In the case of a skip, we must skip over elements whose index is lesser than the
                         // 'count'-th index found. Once we've exhausted the buffer, we must go back and continue
                         // enumerating the data source until it is empty.
@@ -286,7 +289,7 @@ namespace System.Linq.Parallel
                     }
 
                     // Lastly, so long as our input still has elements, they will be yieldable.
-                    if (_source.MoveNext(ref currentElement, ref currentKey))
+                    if (_source.MoveNext(ref currentElement!, ref currentKey))
                     {
                         Debug.Assert(_count <= 0 || _keyComparer.Compare(currentKey, minKey) > 0,
                                         "expected remaining element indices to be greater than smallest");
@@ -323,10 +326,10 @@ namespace System.Linq.Parallel
         // results were indexable.
         //
 
-        class TakeOrSkipQueryOperatorResults : UnaryQueryOperatorResults
+        private class TakeOrSkipQueryOperatorResults : UnaryQueryOperatorResults
         {
-            private TakeOrSkipQueryOperator<TResult> _takeOrSkipOp; // The operator that generated the results
-            private int _childCount; // The number of elements in child results
+            private readonly TakeOrSkipQueryOperator<TResult> _takeOrSkipOp; // The operator that generated the results
+            private readonly int _childCount; // The number of elements in child results
 
             public static QueryResults<TResult> NewResults(
                 QueryResults<TResult> childQueryResults, TakeOrSkipQueryOperator<TResult> op,

@@ -44,6 +44,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+#pragma warning disable SA1028 // ignore whitespace warnings for generated code
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
@@ -56,7 +57,7 @@ namespace <xsl:value-of select="@namespace" />
     internal partial struct <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
       <xsl:if test="*[@defaultDerInit]">
-#if DEBUG  
+#if DEBUG
         static <xsl:value-of select="@name" />()
         {
             <xsl:value-of select="@name" /> decoded = default;
@@ -121,6 +122,7 @@ namespace <xsl:value-of select="@namespace" />
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+#pragma warning disable SA1028 // ignore whitespace warnings for generated code
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
@@ -205,7 +207,7 @@ namespace <xsl:value-of select="@namespace" />
   </xsl:template>
 
   <xsl:template match="*[@defaultDerInit]" mode="DefaultFieldDef">
-        private static byte[] <xsl:call-template name="DefaultValueField"/> = { <xsl:value-of select="@defaultDerInit"/> };
+        private static readonly byte[] <xsl:call-template name="DefaultValueField"/> = { <xsl:value-of select="@defaultDerInit"/> };
   </xsl:template>
 
   <xsl:template match="*[@defaultDerInit]" mode="DefaultFieldVerify">
@@ -863,16 +865,24 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:param name="indent" />
     <xsl:param name="name" select="@name"/>
     <xsl:variable name="nullable" select="@optional | parent::asn:Choice"/>
-    <xsl:if test="1" xml:space="preserve">
-            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteGeneralizedTime(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>);</xsl:if>
+    <xsl:choose>
+      <xsl:when test="@omitFractionalSeconds" xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteGeneralizedTime(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>, omitFractionalSeconds: <xsl:value-of select="@omitFractionalSeconds"/>);</xsl:when>
+      <xsl:otherwise xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteGeneralizedTime(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>);</xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   
   <xsl:template match="asn:GeneralizedTime" mode="DecodeSimpleValue" xml:space="default">
     <xsl:param name="readerName" />
     <xsl:param name="indent" />
     <xsl:param name="name" select="concat('decoded.', @name)"/>
-    <xsl:if test="1" xml:space="preserve">
-            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadGeneralizedTime(<xsl:call-template name="MaybeImplicitCall0"/>);</xsl:if>
+    <xsl:choose>
+      <xsl:when test="@omitFractionalSeconds" xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadGeneralizedTime(<xsl:call-template name="MaybeImplicitCallP"/>disallowFractions: <xsl:value-of select="@omitFractionalSeconds"/>);</xsl:when>
+      <xsl:otherwise xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadGeneralizedTime(<xsl:call-template name="MaybeImplicitCall0"/>);</xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   
   <xsl:template match="asn:GeneralizedTime" mode="DefaultTag">Asn1Tag.GeneralizedTime</xsl:template>

@@ -10,7 +10,7 @@ using Internal.Cryptography;
 
 using Microsoft.Win32.SafeHandles;
 
-using ErrorCode=Interop.NCrypt.ErrorCode;
+using ErrorCode = Interop.NCrypt.ErrorCode;
 
 namespace System.Security.Cryptography
 {
@@ -177,7 +177,7 @@ namespace System.Security.Cryptography
                 bytesWritten = 0;
                 return false;
             }
-            
+
             // Sanity check the current bounds
             Span<byte> empty = default;
 
@@ -281,7 +281,7 @@ namespace System.Security.Cryptography
                 {
                     Interop.NCrypt.NCryptBuffer* buffers = stackalloc Interop.NCrypt.NCryptBuffer[3];
 
-                    Interop.NCrypt.PBE_PARAMS pbeParams = new Interop.NCrypt.PBE_PARAMS();
+                    Interop.NCrypt.PBE_PARAMS pbeParams = default;
                     Span<byte> salt = new Span<byte>(pbeParams.rgbSalt, Interop.NCrypt.PBE_PARAMS.RgbSaltSize);
                     RandomNumberGenerator.Fill(salt);
                     pbeParams.Params.cbSalt = salt.Length;
@@ -597,7 +597,7 @@ namespace System.Security.Cryptography
 
         /// <summary>
         /// Retrieve a well-known CNG string property. (Note: desktop compat: this helper likes to return special values rather than throw exceptions for missing
-        /// or ill-formatted property values. Only use it for well-known properties that are unlikely to be ill-formatted.) 
+        /// or ill-formatted property values. Only use it for well-known properties that are unlikely to be ill-formatted.)
         /// </summary>
         internal static string GetPropertyAsString(SafeNCryptHandle ncryptHandle, string propertyName, CngPropertyOptions options)
         {

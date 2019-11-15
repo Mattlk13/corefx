@@ -35,7 +35,7 @@ namespace System.Linq.Parallel
         //     comparer    - a comparison routine used to test equality.
         //
 
-        internal ContainsSearchOperator(IEnumerable<TInput> child, TInput searchValue, IEqualityComparer<TInput> comparer)
+        internal ContainsSearchOperator(IEnumerable<TInput> child, TInput searchValue, IEqualityComparer<TInput>? comparer)
             : base(child)
         {
             Debug.Assert(child != null, "child data source cannot be null");
@@ -59,7 +59,7 @@ namespace System.Linq.Parallel
 
         internal bool Aggregate()
         {
-            // Because the final reduction is typically much cheaper than the intermediate 
+            // Because the final reduction is typically much cheaper than the intermediate
             // reductions over the individual partitions, and because each parallel partition
             // could do a lot of work to produce a single output element, we prefer to turn off
             // pipelining, and process the final reductions serially.
@@ -133,14 +133,14 @@ namespace System.Linq.Parallel
         // requested.
         //
 
-        class ContainsSearchOperatorEnumerator<TKey> : QueryOperatorEnumerator<bool, int>
+        private class ContainsSearchOperatorEnumerator<TKey> : QueryOperatorEnumerator<bool, int>
         {
             private readonly QueryOperatorEnumerator<TInput, TKey> _source; // The source data.
             private readonly TInput _searchValue; // The value for which we are searching.
             private readonly IEqualityComparer<TInput> _comparer; // The comparer to use for equality tests.
             private readonly int _partitionIndex; // This partition's unique index.
             private readonly Shared<bool> _resultFoundFlag; // Whether to cancel the operation.
-            private CancellationToken _cancellationToken;
+            private readonly CancellationToken _cancellationToken;
 
             //---------------------------------------------------------------------------------------
             // Instantiates a new any/all search operator.
@@ -177,9 +177,9 @@ namespace System.Linq.Parallel
                     return false;
 
                 // We just scroll through the enumerator and accumulate the result.
-                TInput element = default(TInput);
-                TKey keyUnused = default(TKey);
-                if (_source.MoveNext(ref element, ref keyUnused))
+                TInput element = default(TInput)!;
+                TKey keyUnused = default(TKey)!;
+                if (_source.MoveNext(ref element!, ref keyUnused))
                 {
                     currentElement = false;
                     currentKey = _partitionIndex;
@@ -207,7 +207,7 @@ namespace System.Linq.Parallel
                             break;
                         }
                     }
-                    while (_source.MoveNext(ref element, ref keyUnused));
+                    while (_source.MoveNext(ref element!, ref keyUnused));
 
                     return true;
                 }

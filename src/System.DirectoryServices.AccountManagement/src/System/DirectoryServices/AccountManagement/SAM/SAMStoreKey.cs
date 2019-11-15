@@ -10,8 +10,8 @@ namespace System.DirectoryServices.AccountManagement
 {
     internal class SAMStoreKey : StoreKey
     {
-        private byte[] _sid;
-        private string _machineName;
+        private readonly byte[] _sid;
+        private readonly string _machineName;
 
         public SAMStoreKey(string machineName, byte[] sid)
         {
@@ -22,7 +22,7 @@ namespace System.DirectoryServices.AccountManagement
 
             // Make a copy of the SID, since a byte[] is mutable
             _sid = new byte[sid.Length];
-            Array.Copy(sid, 0, _sid, 0, sid.Length);
+            Array.Copy(sid, _sid, sid.Length);
 
             GlobalDebug.WriteLineIf(
                             GlobalDebug.Info,
@@ -51,4 +51,3 @@ namespace System.DirectoryServices.AccountManagement
         }
     }
 }
-

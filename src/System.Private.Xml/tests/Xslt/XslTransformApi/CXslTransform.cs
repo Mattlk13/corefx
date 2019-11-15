@@ -473,7 +473,6 @@ namespace System.Xml.Tests
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Writer, DocType.XPathDocument)]
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Stream, DocType.XPathDocument)]
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.TextWriter, DocType.XPathDocument)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Absolute path access is denied in uap")]
         [Theory]
         public void TC_AbsolutePath_Transform(InputType inputType, ReaderType readerType, TransformType transformType, DocType docType)
         {
@@ -1069,20 +1068,11 @@ namespace System.Xml.Tests
         }
 
         //[Variation("Style sheet has import/include, call Load first with default resolver and then with custom null resolver, should fail")]
-        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader, TransformType.Reader, DocType.XPathDocument)]
-        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader, TransformType.Stream, DocType.XPathDocument)]
-        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader, TransformType.Writer, DocType.XPathDocument)]
-        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader, TransformType.TextWriter, DocType.XPathDocument)]
-        [InlineData(InputType.URI, ReaderType.XmlValidatingReader, TransformType.Reader, DocType.XPathDocument)]
-        [InlineData(InputType.URI, ReaderType.XmlValidatingReader, TransformType.Writer, DocType.XPathDocument)]
-        [InlineData(InputType.URI, ReaderType.XmlValidatingReader, TransformType.Stream, DocType.XPathDocument)]
-        [InlineData(InputType.URI, ReaderType.XmlValidatingReader, TransformType.TextWriter, DocType.XPathDocument)]
-        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Reader, DocType.XPathDocument)]
-        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Writer, DocType.XPathDocument)]
-        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Stream, DocType.XPathDocument)]
-        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.TextWriter, DocType.XPathDocument)]
+        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader)]
+        [InlineData(InputType.URI, ReaderType.XmlValidatingReader)]
+        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader)]
         [Theory]
-        public void TC_No_Explicit_Resolver_Prohibits_External_Url(InputType inputType, ReaderType readerType, TransformType transformType, DocType docType)
+        public void TC_No_Explicit_Resolver_Prohibits_External_Url(InputType inputType, ReaderType readerType)
         {
             AppContext.TryGetSwitch("Switch.System.Xml.AllowDefaultResolver", out bool isEnabled);
             Assert.False(isEnabled);
@@ -2107,7 +2097,6 @@ namespace System.Xml.Tests
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Writer, DocType.XPathDocument)]
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Stream, DocType.XPathDocument)]
         [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.TextWriter, DocType.XPathDocument)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "Absolute path access is denied in uap")]
         [Theory]
         public void TC_AbsolutePath_Transform(InputType inputType, ReaderType readerType, TransformType transformType, DocType docType)
         {
@@ -2324,7 +2313,7 @@ namespace System.Xml.Tests
                     {
                         VerifyResult(expected);
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         _output.WriteLine("Failed to process Load after calling {0} times", i);
                         throw;
@@ -2583,11 +2572,11 @@ namespace System.Xml.Tests
         }
 
         //[Variation("Pass XmlUrlResolver, load style sheet with document function, should resolve during transform")]
-        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader, TransformType.Stream)]
-        [InlineData(InputType.URI, ReaderType.XmlValidatingReader, TransformType.Stream)]
-        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader, TransformType.Stream)]
+        [InlineData(InputType.Reader, ReaderType.XmlValidatingReader)]
+        [InlineData(InputType.URI, ReaderType.XmlValidatingReader)]
+        [InlineData(InputType.Navigator, ReaderType.XmlValidatingReader)]
         [Theory]
-        public void TC_Xslt_Document_Function_Use_XmlUrlResolver(InputType inputType, ReaderType readerType, TransformType transformType)
+        public void TC_Xslt_Document_Function_Use_XmlUrlResolver(InputType inputType, ReaderType readerType)
         {
             // "xmlResolver_document_function.xsl" contains
             // <xsl:for-each select="document('xmlResolver_document_function.xml')//elem">

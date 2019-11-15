@@ -16,7 +16,7 @@ namespace System.Xml
     internal abstract class XmlBaseWriter : XmlDictionaryWriter
     {
         private XmlNodeWriter _writer;
-        private NamespaceManager _nsMgr;
+        private readonly NamespaceManager _nsMgr;
         private Element[] _elements;
         private int _depth;
         private string _attributeLocalName;
@@ -33,7 +33,7 @@ namespace System.Xml
         private const string xmlnsNamespace = "http://www.w3.org/2000/xmlns/";
         private const string xmlNamespace = "http://www.w3.org/XML/1998/namespace";
         private static BinHexEncoding _binhexEncoding;
-        private static string[] s_prefixes = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
+        private static readonly string[] s_prefixes = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
 
         protected XmlBaseWriter()
         {
@@ -686,7 +686,7 @@ namespace System.Xml
             else if (_elements.Length == _depth)
             {
                 Element[] newElementNodes = new Element[_depth * 2];
-                Array.Copy(_elements, 0, newElementNodes, 0, _depth);
+                Array.Copy(_elements, newElementNodes, _depth);
                 _elements = newElementNodes;
             }
             Element element = _elements[_depth];
@@ -1161,7 +1161,7 @@ namespace System.Xml
 
             if (_attributeValue != null)
             {
-                char[] chars = new char[2] { highChar, lowChar };
+                Span<char> chars = stackalloc char[2] { highChar, lowChar };
                 WriteAttributeText(new string(chars));
             }
 
@@ -1855,7 +1855,7 @@ namespace System.Xml
             private XmlSpace _space;
             private string _lang;
             private int _nsTop;
-            private Namespace _defaultNamespace;
+            private readonly Namespace _defaultNamespace;
 
             public NamespaceManager()
             {
@@ -1987,7 +1987,7 @@ namespace System.Xml
                 else if (_attributes.Length == _attributeCount)
                 {
                     XmlAttribute[] newAttributes = new XmlAttribute[_attributeCount * 2];
-                    Array.Copy(_attributes, 0, newAttributes, 0, _attributeCount);
+                    Array.Copy(_attributes, newAttributes, _attributeCount);
                     _attributes = newAttributes;
                 }
                 XmlAttribute attribute = _attributes[_attributeCount];
@@ -2081,7 +2081,7 @@ namespace System.Xml
                 if (_namespaces.Length == _nsCount)
                 {
                     Namespace[] newNamespaces = new Namespace[_nsCount * 2];
-                    Array.Copy(_namespaces, 0, newNamespaces, 0, _nsCount);
+                    Array.Copy(_namespaces, newNamespaces, _nsCount);
                     _namespaces = newNamespaces;
                 }
                 nameSpace = _namespaces[_nsCount];
